@@ -1,6 +1,8 @@
 #' Evaluation a Probabilty Mass Function of a Feature Allocation Distribution
 #'
-#' @param featureAllocation
+#' This is great!!
+#'
+#' @param featureAllocation test
 #' @param distribution A feature allocation distribution
 #' @param log Should results be given on the log scale?
 #'
@@ -8,7 +10,7 @@
 #' @export
 #'
 #' @examples
-#' fa <-
+#' fa <- 1
 #' d <- ibp(2,nrow(fa))
 #' prFeatureAllocation(fa,d)
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE) {

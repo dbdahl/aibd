@@ -7,6 +7,7 @@
 #' @export
 #'
 #' @examples
+#' rnorm(1)
 sampleFeatureAllocation <- function(nSamples, distribution) {
   stop("Not yet implemented.")
 }
