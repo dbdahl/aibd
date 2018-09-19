@@ -7,7 +7,11 @@
 #' @export
 #'
 #' @examples
-#' rnorm(1)
+#' ibp1 <- ibp(1,4)
+#'
+#' sampleFeatureAllocation(2,ibp1)
+#'
+#'
 sampleFeatureAllocation <- function(nSamples, distribution) {
 
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
