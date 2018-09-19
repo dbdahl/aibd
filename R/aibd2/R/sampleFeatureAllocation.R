@@ -13,7 +13,7 @@ sampleFeatureAllocation <- function(nSamples, distribution) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
 
-  # add a check for distribution
+  if ( class(distribution) != "ibpFADistribution" ) stop("'distribution' must be an ibp object.")
 
   listOfZ <- list()
 
