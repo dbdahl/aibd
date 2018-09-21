@@ -10,6 +10,7 @@
 #' ibp1 <- ibp(1,4)
 #'
 #' sampleFeatureAllocation(2,ibp1)
+#' sampleFeatureAllocation(3,ibp1)
 #'
 #'
 sampleFeatureAllocation <- function(nSamples, distribution) {
