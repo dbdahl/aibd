@@ -14,7 +14,7 @@
 #' d <- ibp(2,nrow(fa))
 #' prFeatureAllocation(fa,d)
 
-d <- ipb(2, 5)
+d <- ibp(2, 5)
 
 Z <- matrix(c(1,0,0,
               1,0,1,
@@ -22,12 +22,12 @@ Z <- matrix(c(1,0,0,
               0,0,1,
               1,1,0), ncol=3, byrow = TRUE)
 
-prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE) {
-  if ( inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
+prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof.prob=TRUE) {
+  if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
 
   N <- nrow(featureAllocation)
   K <- ncol(featureAllocation)
-  alpha <- 5 #**Extracting mass parameter from distribution
+  alpha <- distribution$mass
 
   lof_Z <- featureAllocation[,order(apply(featureAllocation, 2,
               function(x) sum(2^((N-1):0)*x)), decreasing = TRUE)]
@@ -36,7 +36,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   mk <- apply(featureAllocation, 2, sum)
 
 
-  if (lof){
+  if (lof.prob){
     Kh <- tabulate(apply(lof_Z,2,sum))
     khfac <- sum(lfactorial(Kh)) # #Why did they sum from to 2^N-1? Start at zero or 2^N-1?
     lpmf <- -khfac + K*log(alpha)-alpha*HN*sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
@@ -46,8 +46,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
     k1fac <- sum(lfactorial(k1))
     lpmf <- K*log(alpha)-k1fac-alpha*HN*sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
   }
-  if ( log ) lpmf else exp(lpmf)
-
+  if ( log ) return(lpmf) else return(exp(lpmf))
 
 }
 # Report: lof matrices do in fact use the binary rule.
@@ -70,7 +69,6 @@ k1 <- numeric(nrow(Z))
 tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
 
 
-parameterDistribution <- multivariateNormalParameterDistribution(rep(0,nResponses), precision=precX*diag(nResponses))
-AIBDdist <- aibd(mass,1:nItems,D,nItems,parameterDistribution)
+
 
 lof_Z = Z[,order(apply(Z, 2, function(x) sum(2^((nrow(Z)-1):0)*x)), decreasing = TRUE)]
