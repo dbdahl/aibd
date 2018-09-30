@@ -20,7 +20,7 @@ sampleFeatureAllocation <- function(nSamples, distribution) {
 
   if ( class(distribution) != "ibpFADistribution" ) stop("'distribution' must be an ibp object.")
 
-  listOfZ <- list()
+  listOfZ <- vector(nSamples,mode="list")
 
   for(i in 1:nSamples) {
 
@@ -59,8 +59,6 @@ sampleOneFeatureAllocation <- function(distribution) {
     }
     sumZ <- sumZ+Z[i,]
   }
-
-  return(Z)
-
+  Z
 }
 
