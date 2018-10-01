@@ -36,7 +36,7 @@ sampleOneFeatureAllocation <- function(distribution) {
 
   customerFeatureNumbers <- rpois(distribution$nItems,distribution$mass/(1:distribution$nItems))
 
-  if (sum(customerFeatureNumbers)==0) return('no Features')
+  if (sum(customerFeatureNumbers)==0) return(matrix(0,nrow=distribution$nItems,ncol=0))
 
   Z <- matrix(0,nrow=distribution$nItems,ncol=sum(customerFeatureNumbers))
 
