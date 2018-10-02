@@ -11,17 +11,13 @@
 #' @export
 #'
 #' @examples
-#' fa <- 1
-#' d <- ibp(2,nrow(fa))
-#' prFeatureAllocation(fa,d)
-
-distribution <- ibp(2, 5)
-
-Z <- matrix(c(1,0,0,0,
-              1,0,1,1,
-              0,1,1,1,
-              0,0,1,1,
-              1,1,0,0), ncol=4, byrow = TRUE)
+#' d <- ibp(2,5)
+#' Z <- matrix(c(1,0,0,0,
+#'               1,0,1,1,
+#'               0,1,1,1,
+#'               0,0,1,1,
+#'               1,1,0,0), ncol=4, byrow = TRUE)
+#' prFeatureAllocation(Z,d)
 
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
@@ -40,12 +36,12 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   if (lof){
     Kh <- tabulate(apply(lof_Z,2,sum))
     khfac <- sum(lfactorial(table(binary_nums)))
-    lpmf <- -khfac + K*log(alpha)-alpha*HN*sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
+    lpmf <- -khfac + K*log(alpha)-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
   }
   else{
     k1 <- tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
     k1fac <- sum(lfactorial(k1))
-    lpmf <- K*log(alpha)-k1fac-alpha*HN*sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
+    lpmf <- K*log(alpha)-k1fac-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
   }
   if ( log ) return(lpmf) else return(exp(lpmf))
 
