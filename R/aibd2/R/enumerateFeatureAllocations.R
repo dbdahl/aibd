@@ -9,7 +9,14 @@
 #' @export
 #'
 #' @examples
-#' enumerateFeatureAllocations(4,5)
+#' nItems <- 3
+#' d <- ibp(1,nItems)
+#' samples <- enumerateFeatureAllocations(nItems,8)
+#' sums <- sapply(samples, function(x) prFeatureAllocation(x,d))
+#' sum(sums) # This is close to 1
+#'
+#'
+#'
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
   ref <- s$FeatureAllocation.enumerate(as.integer(nItems), s ^ 'List(0)', as.integer(maxNFeatures))
   scalaPull(ref,"featureAllocation")
