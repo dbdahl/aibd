@@ -1,13 +1,13 @@
 #' Given a starting Z, sigx, sigw, alpha, and X obtain another MCMC draw of Z, sigx, sigw, and alpha
 #'
-#' @param Z ???????
-#' @param sigx ?????????
-#' @param sigw ?????????
-#' @param alpha ?????????
-#' @param X The data?????????
-#' @param truncpt The number of possible features that can be added
-#'
-#'
+#' @param Z A starting value for the latent feature matrix
+#' @param sigx The common standard deviation of the error matrix
+#' @param sigw The standard deviation of the ????latent features????
+#' @param alpha The prior prarameter which affects the number of features
+#' @param X The data in matrix form
+#' @param truncpt The number of possible features that can be added to each
+#'                cumstomer on one Gibbs iteration
+#'#'
 #' @return A new sampled feature allocation matrix Z
 #' @export
 #'
@@ -106,11 +106,11 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
     }
   }
 
-### Update sigx
+### Update sigx -- Need to fix a prior or get one as an input
 
-### Update sigw
+### Update sigw -- Need to fix a prior or get one as an input
 
-### Update alpha
+### Update alpha -- Need to fix a prior or get one as an input
 
   list(Z,sigx,sigw,alpha)
 }
