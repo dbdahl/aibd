@@ -18,7 +18,12 @@
 #' Z <- matrix(c(1,0,0,0, 1,0,1,1, 0,1,1,1, 0,0,1,1, 1,1,0,0), ncol=4, byrow = TRUE)
 #' Z0 <- matrix(0, ncol=0, nrow=5)
 #' Z1 <- matrix(c(1,1,1,1), nrow=4)
+#' Z2 <- cbind(Z1,Z1)
+#' Z3 <- Z2
+#' Z3[3,2] <- 0
 #' prFeatureAllocation(Z0, d, log=TRUE)
+#' prFeatureAllocation(Z2, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d, log=TRUE, lof=FALSE)
+#' prFeatureAllocation(Z3, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d, log=TRUE, lof=FALSE)
 #' prFeatureAllocation(Z0, d, log=TRUE, implementation="scala")
 #'
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
@@ -31,15 +36,14 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
     lof_Z <- as.matrix(featureAllocation[,order(binary_nums, decreasing = TRUE)])
     HN <- sum(1/1:N)
     mk <- apply(featureAllocation, 2, sum)
-    if (lof){
-      if(K > 0){
+    if (lof) {
+      if (K > 0) {
           Kh <- tabulate(apply(lof_Z,2,sum))
           khfac <- sum(lfactorial(table(binary_nums)))
       }
-      else{ khfac <- log(1)}
+      else khfac <- log(1)
       -khfac + K*log(alpha)-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
-    }
-    else{
+    } else {
       k1 <- tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
       k1fac <- sum(lfactorial(k1))
       K*log(alpha)-k1fac-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
