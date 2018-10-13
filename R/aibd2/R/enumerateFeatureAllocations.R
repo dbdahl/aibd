@@ -14,10 +14,13 @@
 #' samples <- enumerateFeatureAllocations(nItems,8)
 #' sums <- sapply(samples, function(x) prFeatureAllocation(x,d))
 #' sum(sums) # This is close to 1
-#'
-#'
+#' save(samples, file='partitions.Rbin')
+#' load('partitions.Rbin')
 #'
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
   ref <- s$FeatureAllocation.enumerate(as.integer(nItems), s ^ 'List(0)', as.integer(maxNFeatures))
   scalaPull(ref,"featureAllocation")
 }
+
+# Are all of these left-ordered form? Yes!
+# Reduce('&', sapply(samples, isLof))
