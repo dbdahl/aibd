@@ -21,6 +21,3 @@ enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
   ref <- s$FeatureAllocation.enumerate(as.integer(nItems), s ^ 'List(0)', as.integer(maxNFeatures))
   scalaPull(ref,"featureAllocation")
 }
-
-# Are all of these left-ordered form? Yes!
-# Reduce('&', sapply(samples, isLof))

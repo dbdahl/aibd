@@ -14,9 +14,9 @@
 #' @export
 #'
 #' @examples
-#' d <- ibp(2,5)
+#' d <- ibp(1,4)
 #' Z <- matrix(c(1,0,0,0, 1,0,1,1, 0,1,1,1, 0,0,1,1, 1,1,0,0), ncol=4, byrow = TRUE)
-#' Z0 <- matrix(0, ncol=0, nrow=5)
+#' Z0 <- matrix(0, ncol=0, nrow=4)
 #' Z1 <- matrix(c(1,1,1,1), nrow=4)
 #' Z2 <- cbind(Z1,Z1)
 #' Z3 <- Z2
@@ -29,13 +29,15 @@
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
   N <- nrow(featureAllocation)
+  if (N != distribution$nItems) stop("Rows of feature allocation do not match given distribution")
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
-    K <- ncol(featureAllocation)
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
+    binary_nums <- binary_nums[binary_nums != 0]
     lof_Z <- as.matrix(featureAllocation[,order(binary_nums, decreasing = TRUE)])
     HN <- sum(1/1:N)
     mk <- apply(featureAllocation, 2, sum)
+    K <- ncol(lof_Z)
     if (lof) {
       if (K > 0) {
           Kh <- tabulate(apply(lof_Z,2,sum))
@@ -57,8 +59,11 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   if ( log ) lpmf else exp(lpmf)
 }
 
-# First get it to work!
-# Later: Look at how customers resample dishes
+# Log:
+# Fixed an issue where if nItems of the distribution mismatches user-inputted feature allocation
+# What if you supply a column of zeros?
+# Z00 <- matrix(c(0,0,0,0,1,1,1,1), nrow=4)
+# prFeatureAllocation(Z00, ibp1)
 
 
 # Completed: Enumerate all possible feature allocations for <=5 features, set mass parameter to something low.
