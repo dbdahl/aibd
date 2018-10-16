@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-#' nItems <- 3
+#' nItems <- 4
 #' d <- ibp(1,nItems)
 #' samples <- enumerateFeatureAllocations(nItems,8)
 #' sums <- sapply(samples, function(x) prFeatureAllocation(x,d))
