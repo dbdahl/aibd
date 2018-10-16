@@ -30,7 +30,7 @@ sampleOneFeatureAllocation <- function(distribution) {
   Z <- matrix(0,nrow=distribution$nItems,ncol=sum(customerFeatureNumbers))
   currentFeatureIndex <- 1
   firstFeatureIndex <- min(which(customerFeatureNumbers>0))
-  Z[1,currentFeatureIndex:(currentFeatureIndex+customerFeatureNumbers[firstFeatureIndex]-1)] <- 1
+  Z[firstFeatureIndex,currentFeatureIndex:(currentFeatureIndex+customerFeatureNumbers[firstFeatureIndex]-1)] <- 1
   currentFeatureIndex <- currentFeatureIndex+customerFeatureNumbers[firstFeatureIndex]
   if (firstFeatureIndex==distribution$nItems) return(Z)
   sumZ <- Z[firstFeatureIndex,]
