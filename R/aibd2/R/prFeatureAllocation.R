@@ -21,6 +21,8 @@
 #' Z2 <- cbind(Z1,Z1)
 #' Z3 <- Z2
 #' Z3[3,2] <- 0
+#' Z00 <- matrix(c(0,0,0,0), nrow=4)
+#' prFeatureAllocation(Z00, ibp1)
 #' prFeatureAllocation(Z0, d, log=TRUE)
 #' prFeatureAllocation(Z2, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d, log=TRUE, lof=FALSE)
 #' prFeatureAllocation(Z3, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d, log=TRUE, lof=FALSE)
@@ -33,10 +35,12 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
-    binary_nums <- binary_nums[binary_nums != 0]
-    lof_Z <- as.matrix(featureAllocation[,order(binary_nums, decreasing = TRUE)])
+    zero_cols <- sum(binary_nums == 0)
+    K0 <- ncol(featureAllocation)
+    lof_Zeros <- as.matrix(featureAllocation[,order(binary_nums, decreasing = TRUE)])
+    lof_Z <- as.matrix(lof_Zeros[,-c((K0+1):(K0+1-zero_cols))], nrow=N)
     HN <- sum(1/1:N)
-    mk <- apply(featureAllocation, 2, sum)
+    mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
     if (lof) {
       if (K > 0) {
@@ -61,13 +65,12 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
 
 # Log:
 # Fixed an issue where if nItems of the distribution mismatches user-inputted feature allocation
-# What if you supply a column of zeros?
-# Z00 <- matrix(c(0,0,0,0,1,1,1,1), nrow=4)
-# prFeatureAllocation(Z00, ibp1)
+# Fixed an issue that happened if you supplied a column of zeros
+# For some reason, the column c(0,1,0,0) is over-represented in the sampling
 
 
 # Completed: Enumerate all possible feature allocations for <=5 features, set mass parameter to something low.
 # Compare with old aibd method for accuracy. For some reason all of these work except case with 1 feature
 # Think about efficiency. Run testimes to see what's faster
-# Thought: What happens with Zeros?
+
 
