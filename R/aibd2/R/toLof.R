@@ -34,5 +34,5 @@ isLof <- function(Z, include.zeros=TRUE){
   if (include.zeros){
     if(0 %in% binary_nums) return(FALSE)
   }
-  binary_nums == sort(binary_nums, decreasing=TRUE)
+  as.logical(prod(binary_nums == sort(binary_nums, decreasing=TRUE)))
 }
