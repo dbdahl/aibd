@@ -8,10 +8,7 @@
 #'
 #' @examples
 #' ibp1 <- ibp(1,4)
-#'
-#' sampleFeatureAllocation(2,ibp1)
-#' sampleFeatureAllocation(3,ibp1)
-#'
+#' samples <- sampleFeatureAllocation(1000, ibp1)
 #'
 sampleFeatureAllocation <- function(nSamples, distribution) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||

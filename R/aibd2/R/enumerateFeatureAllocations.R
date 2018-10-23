@@ -11,11 +11,9 @@
 #' @examples
 #' nItems <- 4
 #' d <- ibp(1,nItems)
-#' samples <- enumerateFeatureAllocations(nItems,8)
-#' sums <- sapply(samples, function(x) prFeatureAllocation(x,d))
-#' sum(sums) # This is close to 1
-#' save(samples, file='partitions.Rbin')
-#' load('partitions.Rbin')
+#' samples <- enumerateFeatureAllocations(nItems,7)
+#' probs <- sapply(samples, function(x) prFeatureAllocation(x,d))
+#' sum(probs) # This is close to 1
 #'
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
   ref <- s$FeatureAllocation.enumerate(as.integer(nItems), s ^ 'List(0)', as.integer(maxNFeatures))
