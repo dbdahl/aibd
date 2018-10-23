@@ -27,7 +27,7 @@
 #'
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
-  N <- nrow(featureAllocation)
+  N <- if ( is.list(featureAllocation) ) nrow(featureAllocation[[1]]) else nrow(featureAllocation)
   if (N != distribution$nItems) stop("Rows of feature allocation do not match given distribution")
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {

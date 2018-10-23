@@ -65,6 +65,37 @@ class LinearGaussianSamplingModel private (private val response: Array[Array[Dou
     }
   }
 
+  def logLikelihood(fa: FeatureAllocation[Null], dimW: Int, precisionX: Double, precisionW: Double): Double = {
+    val N = fa.nItems.toDouble
+    val K = fa.nFeatures.toDouble
+    val D = dimW.toDouble
+    val Z = MatrixFactory(fa.toMatrix)
+    val Zt = Z.t
+    val I = MatrixFactory.identity(fa.nItems)
+    val ZtZplusRatioI = Zt * Z + (precisionW/precisionX) *: I
+    val X = MatrixFactory(response)
+    (N-K)*D/2 * log(precisionX) + K*D/2 * log(precisionW) - D/2 * log(ZtZplusRatioI.det) - precisionX/2 * (X.t * ( I - Z * ZtZplusRatioI.inverse * Zt) * X).getTrace
+  }
+
+  /*
+  def gibbsUpdate(fa: FeatureAllocation[Null], dimW: Int, precisionX: Double, precisionW: Double): FeatureAllocation[Null] = {
+    var state = fa
+    var logLikelihoodState = logLikelihood(state, dimW, precisionX, precisionW)
+    for ( i <- 0 until fa.nItems ) {
+      for ( feature <- state.features ) {
+        val (f0,f1) = if ( feature.contains(i) ) (feature.remove(i), feature) else (feature, feature.add(i))
+        val w0 = logLikelihoodState(f0, dimW, precisionX, precisionW) + log(f0.size)
+
+
+        val mMinusIK = feature.size - ( if ( feature.contains(i) ) 1 else 0 )
+        val featureProposal = if ( feature.contains(i) ) feature.remove(i) else feature.add(i)
+        val faProposal = state.remove(feature).add(featureProposal)
+        val wProposal = logLikelihood(faProposal, dimW, precisionX, precisionW) + featureProposal.size
+      }
+    }
+  }
+  */
+
   def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): (Double, FeatureAllocation[Vector[Double]]) = {
     precision.zip(fas).par.maxBy(x => logLikelihood(x._1, x._2))
   }

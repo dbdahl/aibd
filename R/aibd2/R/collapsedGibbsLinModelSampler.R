@@ -25,7 +25,7 @@
 #' sigw <- 1
 #'
 #' SavedZ[[1]] <- collapsedGibbsLinModelSampler(Z,sigx,sigw,alpha,X)
-#' for(i in 2:n) {
+#' for (i in 2:n) {
 #'   SavedZ[[i]] <- collapsedGibbsLinModelSampler(SavedZ[[i-1]][[1]],sigx,sigw,alpha,X)
 #' }
 #'

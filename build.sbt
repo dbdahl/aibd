@@ -10,7 +10,7 @@ lazy val root = (project in file(".")).
     scalacOptions ++= List("-feature", "-deprecation", "-unchecked", "-Xlint"),
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "org.ddahl" %% "commonsmath" % "1.2-SNAPSHOT",
-    libraryDependencies += "org.ddahl" %% "rscala" % "3.2.0",
+    libraryDependencies += "org.ddahl" %% "rscala" % "3.2.3",
     libraryDependencies += "org.ddahl" %% "sdols" % "1.6-SNAPSHOT",
     libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
   )
