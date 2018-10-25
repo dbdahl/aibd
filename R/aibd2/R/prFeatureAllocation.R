@@ -27,22 +27,22 @@
 #'
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
+  if (inherits(featureAllocation, 'list')) return(sapply(featureAllocation, function(x)
+    prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
   N <- if ( is.list(featureAllocation) ) nrow(featureAllocation[[1]]) else nrow(featureAllocation)
   if (N != distribution$nItems) stop("Rows of feature allocation do not match given distribution")
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
-    zero_cols <- sum(binary_nums == 0)
-    K0 <- ncol(featureAllocation)
-    lof_Zeros <- as.matrix(featureAllocation[,order(binary_nums, decreasing = TRUE)])
-    lof_Z <- as.matrix(lof_Zeros[,-c((K0+1):(K0+1-zero_cols))], nrow=N)
+    lof_Z <- aibd2:::toLof(featureAllocation) # Is this how to reference this?
     HN <- sum(1/1:N)
     mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
     if (lof) {
       if (K > 0) {
-          Kh <- tabulate(apply(lof_Z,2,sum))
-          khfac <- sum(lfactorial(table(binary_nums)))
+        binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
+        Kh <- tabulate(apply(lof_Z,2,sum))
+        khfac <- sum(lfactorial(table(binary_nums)))
       }
       else khfac <- log(1)
       -khfac + K*log(alpha)-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
