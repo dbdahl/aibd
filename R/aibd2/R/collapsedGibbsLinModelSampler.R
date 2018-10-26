@@ -7,7 +7,7 @@
 #' @param X The data in matrix form
 #' @param truncpt The number of possible features that can be added to each
 #'                cumstomer on one Gibbs iteration
-#'#'
+#'
 #' @return A new sampled feature allocation matrix Z
 #' @export
 #'
@@ -48,7 +48,7 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
   ###########???? Need to think about the ramifications of left ordered form or not!!!!
   ###########???? I don't think it matters since we are not explicitly using the prior for the LOF of Z
 
-### Update Z
+  ### Update Z
   dimZ <- dim(Z)
   N <- dimZ[1]
   K <- dimZ[2]
@@ -67,8 +67,9 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
         loglike <- loglikelihood(X,Z,sigx,sigw,M,i,k)
         sumFeatures[k] <- sumFeatures[k]-Z[i,k]
         priorProb <- sumFeatures[k]/N
-        Z1prob <- priorProb*exp(loglike[[2]][[1]])/
-                 (priorProb*exp(loglike[[2]][[1]])+(1-priorProb)*exp(loglike[[1]][[1]]))
+        const1 <- max(loglike[[1]][[1]],loglike[[2]][[1]])
+        Z1prob <- priorProb*exp(loglike[[2]][[1]]-const1)/
+          (priorProb*exp(loglike[[2]][[1]]-const1)+(1-priorProb)*exp(loglike[[1]][[1]]-const1))
         Z[i,k] <- rbinom(1,1,Z1prob)
         if (Z[i,k]) {
           M <- loglike[[2]][[2]]
@@ -84,17 +85,17 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
     if (length(sumFeatures)>0) {
       zeroCol <- which(sumFeatures==0)
       if (length(zeroCol)>0) {
-          Z <- as.matrix(Z[,-zeroCol])
-          sumFeatures <- sumFeatures[-zeroCol]
-          K <- K-length(zeroCol)
-          M <- M[-zeroCol,-zeroCol] #????????????? not sure if this is right
+        Z <- as.matrix(Z[,-zeroCol])
+        sumFeatures <- sumFeatures[-zeroCol]
+        K <- K-length(zeroCol)
+        M <- M[-zeroCol,-zeroCol] #????????????? not sure if this is right
       }
     }
     ## Add new features for the i^th customer
     #???? I think this would be more efficient to do a metropolis update (add one or not)
     loglikeNF <- loglikelihoodNewFeat(X,Z,sigx,sigw,M,i,truncpt)
     for (j in 1:truncpt) {ll <- c(ll,loglikeNF[[j]][[1]])}
-    priorProbNF <- dpois(0:truncpt,alpha/N)*exp(ll)
+    priorProbNF <- dpois(0:truncpt,alpha/N)*exp(ll-max(ll))
     priorProbNF <- priorProbNF/sum(priorProbNF)
     numNewFeat <- which(rmultinom(1,1,priorProbNF)[,1]==1)-1
     if (numNewFeat>0) {
@@ -106,26 +107,26 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
     }
   }
 
-### Update sigx -- Need to fix a prior or get one as an input
+  ### Update sigx -- Need to fix a prior or get one as an input
 
-### Update sigw -- Need to fix a prior or get one as an input
+  ### Update sigw -- Need to fix a prior or get one as an input
 
-### Update alpha -- Need to fix a prior or get one as an input
+  ### Update alpha -- Need to fix a prior or get one as an input
 
   list(Z,sigx,sigw,alpha)
 }
 
 loglikelihood <- function(X,Z,sigx,sigw,M,i,k) {
-# Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
-#????? Z can't not have any columns of all zeros (should be in left ordered form)
+  # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
+  #????? Z can't not have any columns of all zeros (should be in left ordered form)
   N <- dim(Z)[1]
   D <- dim(X)[2]
   K <- dim(Z)[2]
   zi <- Z[i,]
   Z1 <- Z; Z1[i,k] <- 1
   Z0 <- Z; Z0[i,k] <- 0
-#????  if(dim(M)[1] != length(zi)) {M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))}
-# removed when fixed M to match the dim of t(Z)%*%Z
+  #????  if(dim(M)[1] != length(zi)) {M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))}
+  # removed when fixed M to match the dim of t(Z)%*%Z
   Mminus_i <- M - M%*%outer(zi,zi)%*%M/as.vector(t(zi)%*%M%*%zi-1)
   if (Z[i,k]) {
     M1 <- M
@@ -185,6 +186,3 @@ loglikelihoodNewFeat <- function(X,Z,sigx,sigw,M,i,truncpt) {
   }
   ListOut
 }
-
-
-
