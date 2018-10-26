@@ -22,7 +22,6 @@ toLof <- function(Z, removeZeros = TRUE){
   binary_nums <- apply(Z, 2, function(x) sum(2^((N-1):0)*x))
   lof_Zeros <- as.matrix(Z[,order(binary_nums, decreasing = TRUE)])
   if (!removeZeros) return(lof_Zeros)
-
   zero_cols <- sum(binary_nums == 0)
   K0 <- ncol(Z)
   as.matrix(lof_Zeros[,-c((K0+1):(K0+1-zero_cols))], nrow=N)
@@ -30,6 +29,7 @@ toLof <- function(Z, removeZeros = TRUE){
 
 # If include.zeros = TRUE, it will return FALSE if zeros columns are found
 isLof <- function(Z, include.zeros=TRUE){
+  N <- nrow(Z)
   binary_nums <- apply(Z, 2, function(x) sum(2^((N-1):0)*x))
   if (include.zeros){
     if(0 %in% binary_nums) return(FALSE)

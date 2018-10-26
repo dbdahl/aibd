@@ -4,11 +4,16 @@
 #' @param distribution A feature allocation distribution
 #'
 #' @return A list of feature allocation matrices
+#' @importFrom stats rpois
 #' @export
 #'
 #' @examples
 #' ibp1 <- ibp(1,4)
 #' samples <- sampleFeatureAllocation(1000, ibp1)
+#'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd2:::s)
+#' }
 #'
 sampleFeatureAllocation <- function(nSamples, distribution) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||

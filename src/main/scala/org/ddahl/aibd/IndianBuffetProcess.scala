@@ -45,8 +45,6 @@ class IndianBuffetProcess[A] protected(val mass: Double, val nItems: Int, val pa
     sum
   }
 
-  def logDensity(fa: Array[FeatureAllocation[A]], parallel: Boolean): Array[Double] = fa.map(logDensity(_,parallel))
-
   def toEmpericalDistributionViaMCMC(rdg: RandomDataGenerator, nSamples: Int, nCores: Int = Runtime.getRuntime.availableProcessors) = {
     val dist = this.dropParameter
     val nSamplesPerCore = (nSamples - 1) / nCores + 1

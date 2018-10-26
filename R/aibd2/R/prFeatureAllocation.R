@@ -14,27 +14,51 @@
 #' @export
 #'
 #' @examples
-#' d <- ibp(1,4)
+#' d1 <- ibp(1,4)
+#'
+#' states <- c("California","Wisconsin","Nebraska","New York")
+#' data <- USArrests[states,]
+#' dist <- dist(scale(data))
+#' similarity <- exp(-1.0*dist)
+#' d2 <- aibd(1,seq_along(states),similarity)
+#'
 #' Z0 <- matrix(0, ncol=0, nrow=4)
 #' Z00 <- matrix(c(0,0,0,0), nrow=4)
 #' Z1 <- matrix(c(1,1,1,1), nrow=4)
 #' Z2 <- cbind(Z1,Z1)
 #' Z3 <- Z2
 #' Z3[3,2] <- 0
-#' prFeatureAllocation(Z00, d) == prFeatureAllocation(Z0, d)
-#' prFeatureAllocation(Z2, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d, log=TRUE, lof=FALSE)
-#' prFeatureAllocation(Z3, d, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d, log=TRUE, lof=FALSE)
+#'
+#' prFeatureAllocation(Z00, d1) == prFeatureAllocation(Z0, d1)
+#' prFeatureAllocation(Z2, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d1, log=TRUE, lof=FALSE)
+#' prFeatureAllocation(Z3, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d1, log=TRUE, lof=FALSE)
+#'
+#' prFeatureAllocation(Z00, d2, implementation="scala") ==
+#'   prFeatureAllocation(Z0, d2, implementation="scala")
+#' prFeatureAllocation(Z2, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d1, log=TRUE, lof=FALSE)
+#' prFeatureAllocation(Z3, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d1, log=TRUE, lof=FALSE)
+#'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd2:::s)
+#' }
 #'
 prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
-  if ( !inherits(distribution,"ibpFADistribution") ) stop("Unsupported distribution.")
-  if (inherits(featureAllocation, 'list')) return(sapply(featureAllocation, function(x)
-    prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
-  N <- if ( is.list(featureAllocation) ) nrow(featureAllocation[[1]]) else nrow(featureAllocation)
-  if (N != distribution$nItems) stop("Rows of feature allocation do not match given distribution")
+  if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
+  N <- if ( is.list(featureAllocation) ) {
+    Ns <- sapply(featureAllocation, function(x) nrow(x))
+    if ( length(unique(Ns)) != 1 ) stop("Inconsistent number of rows among feature allocations in the list.")
+    else Ns[1]
+  } else nrow(featureAllocation)
+  if ( N != distribution$nItems ) stop("Number of rows in feature allocation does not match given distribution.")
+  implementation <- toupper(implementation)
+  if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
+    return(sapply(featureAllocation, function(x) prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
+  }
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
+    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
-    lof_Z <- aibd2:::toLof(featureAllocation) # Is this how to reference this?
+    lof_Z <- toLof(featureAllocation) # Is this how to reference this?
     HN <- sum(1/1:N)
     mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
@@ -51,11 +75,16 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
       k1fac <- sum(lfactorial(k1))
       K*log(alpha)-k1fac-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
     }
-  } else if ( implementation == "scala" ) {
+  } else if ( implementation == "SCALA" ) {
     if ( ! lof ) stop("Only left-ordered-form is currently supported for the Scala implementation.")
-    ibp <- s$IndianBuffetProcess(alpha,N)
+    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(alpha,N)
+    else if ( inherits(distribution,"aibdFADistribution") ) {
+      permutation <- s$Permutation(distribution$permutation-1L)
+      similarity <- s$Similarity(distribution$similarity)
+      s$AttractionIndianBuffetDistribution(alpha,permutation,similarity)
+    } else stop("Unsupported distribution.")
     fa <- scalaPush(featureAllocation,"featureAllocation",s)
-    ibp$logDensity(fa, parallel)
+    dist$logDensity(fa, parallel)
   }
   if ( log ) lpmf else exp(lpmf)
 }

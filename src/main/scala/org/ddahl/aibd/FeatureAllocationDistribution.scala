@@ -40,6 +40,12 @@ abstract class FeatureAllocationDistribution[A] {
 
   def logDensity(fa: FeatureAllocation[A], parallel: Boolean): Double
 
+  def logDensity(fa: Array[FeatureAllocation[A]], parallel: Boolean): Array[Double] = if ( parallel ) {
+    fa.par.map(logDensity(_, false)).toArray
+  } else {
+    fa.map(logDensity(_,false))
+  }
+
   def logDensityWithParameters(fa: FeatureAllocation[A], parallel: Boolean): Double = {
     logDensity(fa,parallel) + fa.foldLeft(0.0)( (sum,f) => sum + parameterDistribution.logDensity(f.parameter) )
   }
