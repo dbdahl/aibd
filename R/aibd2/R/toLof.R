@@ -4,6 +4,7 @@
 #'
 #' @param Z Feature allocation matrix desired to be made into left ordered form
 #' @param removeZeros (Default TRUE) Should we remove the zero columns?
+#' @param nums Optional arguement that takes the binary numbers if already calculated for efficiency pruposes.
 #'
 #' @return a left-ordered form matrix (with zero columns removed).
 #' @export
@@ -16,14 +17,16 @@
 #' toLof(Z)
 #'
 
-toLof <- function(Z, removeZeros = TRUE){
+toLof <- function(Z, removeZeros = TRUE, nums = rep(-1, ncol(Z))){
   if (!inherits(Z,"matrix") ) stop("Feature Allocation must be a matrix!")
   N <- nrow(Z)
-  binary_nums <- apply(Z, 2, function(x) sum(2^((N-1):0)*x))
+  K0 <- ncol(Z)
+  if (k0 > 0 && nums[1] != -1){
+    binary_nums <- nums
+  }else {binary_nums <- apply(Z, 2, function(x) sum(2^((N-1):0)*x))}
   lof_Zeros <- as.matrix(Z[,order(binary_nums, decreasing = TRUE)])
   if (!removeZeros) return(lof_Zeros)
   zero_cols <- sum(binary_nums == 0)
-  K0 <- ncol(Z)
   as.matrix(lof_Zeros[,-c((K0+1):(K0+1-zero_cols))], nrow=N)
 }
 

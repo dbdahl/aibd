@@ -1,10 +1,10 @@
-#' Evaluation a Probabilty Mass Function of a Feature Allocation Distribution
+#' Evaluation of a Probabilty Mass Function of a Feature Allocation Distribution
 #'
 #' This function evaluates the probability mass function of a feature allocation matrix or a list
 #' of feature allocations for the supplied distribution.
 #'
 #' @param featureAllocation A feature allocation Z matrix
-#' @param distribution A feature allocation distribution or a list of allocaitons
+#' @param distribution A feature allocation distribution
 #' @param log Should results be given on the log scale? (FALSE by default)
 #' @param lof Should the probability be given on the left ordered form feature allocation?
 #' @param implementation Either "R" or "scala", to indicate the implementation to use.
@@ -57,13 +57,13 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
     if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
-    lof_Z <- toLof(featureAllocation)
+    binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
+    lof_Z <- toLof(featureAllocation, nums=binary_nums)
     HN <- sum(1/1:N)
     mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
     if (lof) {
       if (K > 0) {
-        binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
         Kh <- tabulate(apply(lof_Z,2,sum))
         khfac <- sum(lfactorial(table(binary_nums)))
       }
@@ -89,6 +89,11 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
 }
 
 # Log:
-# Fixed an issue where if nItems of the distribution mismatches user-inputted feature allocation
-# Fixed an issue that happened if you supplied a column of zeros
-# Now start worrying about efficiency
+# Problem: Can't sample from scala
+# Made prFeatureAllocation vectorized
+# Improved efficiency of feature allocation code so it evaluated prob mass faster.
+# Is the IBP LOF dependent?
+# Did you want to put both IBP and AIBD in the same function?
+
+
+
