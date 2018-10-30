@@ -1,10 +1,10 @@
 #' Evaluation a Probabilty Mass Function of a Feature Allocation Distribution
 #'
-#' This function evaluates the probability mass function of a feature allocation for the
-#' supplied distribution.
+#' This function evaluates the probability mass function of a feature allocation matrix or a list
+#' of feature allocations for the supplied distribution.
 #'
 #' @param featureAllocation A feature allocation Z matrix
-#' @param distribution A feature allocation distribution
+#' @param distribution A feature allocation distribution or a list of allocaitons
 #' @param log Should results be given on the log scale? (FALSE by default)
 #' @param lof Should the probability be given on the left ordered form feature allocation?
 #' @param implementation Either "R" or "scala", to indicate the implementation to use.
@@ -57,8 +57,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
     if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
-    binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
-    lof_Z <- toLof(featureAllocation) # Is this how to reference this?
+    lof_Z <- toLof(featureAllocation)
     HN <- sum(1/1:N)
     mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
