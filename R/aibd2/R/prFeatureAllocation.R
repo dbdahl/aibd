@@ -89,11 +89,11 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
 }
 
 # Log:
-# Problem: Can't sample from scala
+# Problem: Can't calc pmf from scala
 # Made prFeatureAllocation vectorized
 # Improved efficiency of feature allocation code so it evaluated prob mass faster.
 # Is the IBP LOF dependent?
 # Did you want to put both IBP and AIBD in the same function?
 
-
+# What is yi_1 referring to? Is that adding up all dishes, all previous inclusive, or all up to k?
 

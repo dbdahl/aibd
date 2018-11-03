@@ -21,7 +21,7 @@ toLof <- function(Z, removeZeros = TRUE, nums = rep(-1, ncol(Z))){
   if (!inherits(Z,"matrix") ) stop("Feature Allocation must be a matrix!")
   N <- nrow(Z)
   K0 <- ncol(Z)
-  if (k0 > 0 && nums[1] != -1){
+  if (K0 > 0 && nums[1] != -1){
     binary_nums <- nums
   }else {binary_nums <- apply(Z, 2, function(x) sum(2^((N-1):0)*x))}
   lof_Zeros <- as.matrix(Z[,order(binary_nums, decreasing = TRUE)])
