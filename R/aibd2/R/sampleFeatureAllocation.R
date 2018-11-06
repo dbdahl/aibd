@@ -4,6 +4,7 @@
 #' @param distribution A feature allocation distribution
 #'
 #' @return A list of feature allocation matrices
+#' @param implementation Either "R" or "scala", to indicate the implementation to use.
 #' @importFrom stats rpois
 #' @export
 #'
