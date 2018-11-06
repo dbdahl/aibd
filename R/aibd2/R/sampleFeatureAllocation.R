@@ -8,22 +8,47 @@
 #' @export
 #'
 #' @examples
-#' ibp1 <- ibp(1,4)
-#' samples <- sampleFeatureAllocation(1000, ibp1)
+#' d1 <- ibp(1,4)
+#'
+#' states <- c("California","Wisconsin","Nebraska","New York")
+#' data <- USArrests[states,]
+#' dist <- dist(scale(data))
+#' similarity <- exp(-1.0*dist)
+#' d2 <- aibd(1,seq_along(states),similarity)
+#'
+#' system.time(samples <- sampleFeatureAllocation(1000, d1))
+#' system.time(samples <- sampleFeatureAllocation(1000, d1, implementation="scala"))
+#' system.time(samples <- sampleFeatureAllocation(1000, d2, implementation="scala"))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd2:::s)
 #' }
 #'
-sampleFeatureAllocation <- function(nSamples, distribution) {
+sampleFeatureAllocation <- function(nSamples, distribution, implementation="R") {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
-  if ( class(distribution) != "ibpFADistribution" ) stop("'distribution' must be an ibp object.")
-  listOfZ <- vector(nSamples,mode="list")
-  for(i in 1:nSamples) {
-    listOfZ[[i]] <- sampleOneFeatureAllocation(distribution)
-  }
-  listOfZ
+  if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
+  implementation <- toupper(implementation)
+  if ( implementation == "R" ) {
+    if ( ! inherits(distribution,"ibpFADistribution") ) stop("When implementation='R', the distribution must be an Indian buffet process.")
+    listOfZ <- vector(nSamples,mode="list")
+    for(i in 1:nSamples) {
+      listOfZ[[i]] <- sampleOneFeatureAllocation(distribution)
+    }
+    listOfZ
+  } else if ( implementation == "SCALA" ) {
+    alpha <- distribution$mass
+    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(alpha,distribution$nItems)
+    else if ( inherits(distribution,"aibdFADistribution") ) {
+      permutation <- s$Permutation(distribution$permutation-1L)
+      similarity <- s$Similarity(distribution$similarity)
+      s$AttractionIndianBuffetDistribution(alpha,permutation,similarity)
+    } else stop("Unsupported distribution.")
+    nSamples <- as.integer(nSamples)
+    rdg <- s$.new_RDG()
+    samples <- s(dist,nSamples,rdg) ^ 'List.fill(nSamples) { dist.sample(rdg) }'
+    scalaPull(samples, "featureAllocation")
+  } else stop("Unsupported 'implementation' argument.")
 }
 
 sampleOneFeatureAllocation <- function(distribution) {

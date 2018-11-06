@@ -84,7 +84,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
     } else stop("Unsupported distribution.")
     fa <- scalaPush(featureAllocation,"featureAllocation",s)
     dist$logDensity(fa, parallel)
-  }
+  } else stop("Unsupported 'implementation' argument.")
   if ( log ) lpmf else exp(lpmf)
 }
 

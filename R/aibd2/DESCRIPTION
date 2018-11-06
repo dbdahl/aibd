@@ -8,5 +8,5 @@ Description: An implementation of probability mass function and sampling algorit
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: sdols (>= 1.6), rscala (>= 3.2.3)
+Imports: sdols (>= 1.7), rscala (>= 3.2.5)
 RoxygenNote: 6.1.0
