@@ -187,3 +187,37 @@ loglikelihoodNewFeat <- function(X,Z,sigx,sigw,M,i,truncpt) {
   }
   ListOut
 }
+
+probabilityOfFeature <- function(X,Z,sigx,sigw,alpha,truncpt=4) {
+  N <- nrow(Z)
+  K <- ncol(Z)
+  probs <- matrix(NA,ncol=K+truncpt,nrow=N)
+  if (K>0) {
+    M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))
+  } else {
+    M <- NA
+  }
+  for (i in 1:N) {
+    if (K>0) {
+      sumFeatures <- apply(Z,2,sum)
+      for(k in 1:K) {
+        loglike <- loglikelihood(X,Z,sigx,sigw,M,i,k)
+        priorProb <- (sumFeatures[k]-Z[i,k])/N
+        const1 <- max(loglike[[1]][[1]],loglike[[2]][[1]])
+        probs[i,k] <- priorProb*exp(loglike[[2]][[1]]-const1)/
+          (priorProb*exp(loglike[[2]][[1]]-const1)+(1-priorProb)*exp(loglike[[1]][[1]]-const1))
+      }
+    }
+    if (K>0) {
+      if(Z[i,k]) {ll <- loglike[[2]][[1]]} else {ll <- loglike[[1]][[1]]}
+    } else {
+      ll <- sum(dnorm(X,0,sd=sigx,log=T))
+    }
+    loglikeNF <- loglikelihoodNewFeat(X,Z,sigx,sigw,M,i,truncpt)
+    for (j in 1:truncpt) {ll <- c(ll,loglikeNF[[j]][[1]])}
+    priorProbNF <- dpois(0:(truncpt),alpha/N)*exp(ll-max(ll))
+    temp <- rev(cumsum(rev(priorProbNF/sum(priorProbNF))))
+    probs[i,(K+1):(K+truncpt)] <- temp[-1]
+  }
+  probs
+}
