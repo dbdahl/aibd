@@ -221,3 +221,19 @@ probabilityOfFeature <- function(X,Z,sigx,sigw,alpha,truncpt=4) {
   }
   probs
 }
+
+LMloglike <- function(X,Z,sigx,sigw) {
+  # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
+  N <- dim(Z)[1]
+  D <- dim(X)[2]
+  K <- dim(Z)[2]
+  if (K==0) {
+    M <- NA
+  } else {
+    M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))
+  }
+  part1 <- -N*D*log(2*pi)-(N-K)*D*log(sigx)-K*D*log(sigw)
+  part2 <- -D/2*log(det(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K)))
+  part3 <- -1/(2*sigx^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
+  part1+part2+part3
+}
