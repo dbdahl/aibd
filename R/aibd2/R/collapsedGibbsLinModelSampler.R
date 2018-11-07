@@ -114,7 +114,7 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
 
   ### Update alpha -- Need to fix a prior or get one as an input
 
-  list(Z,sigx,sigw,alpha)
+  list(Z,sigx,sigw,alpha,ll[numNewFeat+1])
 }
 
 loglikelihood <- function(X,Z,sigx,sigw,M,i,k) {
