@@ -3,8 +3,8 @@
 #' This function evaluates the probability mass function of a feature allocation matrix or a list
 #' of feature allocations for the supplied distribution.
 #'
-#' @param featureAllocation A feature allocation Z matrix
-#' @param distribution A feature allocation distribution
+#' @param featureAllocation An N-by-K binary feature allocation matrix, or a list of such matrices.
+#' @param distribution A feature allocation distribution.
 #' @param log Should results be given on the log scale? (FALSE by default)
 #' @param lof Should the probability be given on the left ordered form feature allocation?
 #' @param implementation Either "R" or "scala", to indicate the implementation to use.
@@ -52,7 +52,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   if ( N != distribution$nItems ) stop("Number of rows in feature allocation does not match given distribution.")
   implementation <- toupper(implementation)
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(x) prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
+    return(sapply(featureAllocation, function(Z) prFeatureAllocation(Z, distribution, log, lof, implementation, parallel)))
   }
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {

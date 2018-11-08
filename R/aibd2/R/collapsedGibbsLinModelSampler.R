@@ -15,10 +15,11 @@
 #' @examples
 #'
 #' set.seed(1)
-#' X <- matrix(rnorm(8),nrow=4,ncol=2)
+#' nItems <- 4
+#' X <- matrix(rnorm(8),nrow=nItems,ncol=2)
 #' X[1:2,1] <- X[1:2,1]+10
 #' X[,2] <- X[,2]-5
-#' Z <- matrix(0,nrow=4,ncol=0)
+#' Z <- matrix(0,nrow=nItems,ncol=0)
 #' n <- 1000
 #' SavedZ <- vector(mode="list",length=n)
 #' alpha <- 0.1

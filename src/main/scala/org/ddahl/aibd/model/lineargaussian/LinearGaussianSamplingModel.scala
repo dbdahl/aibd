@@ -65,16 +65,19 @@ class LinearGaussianSamplingModel private (private val response: Array[Array[Dou
     }
   }
 
-  def logLikelihood(fa: FeatureAllocation[Null], dimW: Int, precisionX: Double, precisionW: Double): Double = {
-    val N = fa.nItems.toDouble
-    val K = fa.nFeatures.toDouble
-    val D = dimW.toDouble
+  private val X = MatrixFactory(response)
+  private val Xt = X.t
+  private val I = MatrixFactory.identity(nItems)
+  private val N = nItems
+  private val Dhalf = nResponses/2.0
+  private val const = -N*Dhalf * log(2*math.Pi)
+  def logLikelihood(fa: FeatureAllocation[Null], precisionX: Double, precisionW: Double): Double = {
+    if ( fa.nItems != nItems ) throw new IllegalArgumentException("Feature allocation has "+fa.nItems+" items, but "+nItems+" were expected.")
+    val K = fa.nFeatures
     val Z = MatrixFactory(fa.toMatrix)
     val Zt = Z.t
-    val I = MatrixFactory.identity(fa.nItems)
-    val ZtZplusRatioI = Zt * Z + (precisionW/precisionX) *: I
-    val X = MatrixFactory(response)
-    (N-K)*D/2 * log(precisionX) + K*D/2 * log(precisionW) - D/2 * log(ZtZplusRatioI.det) - precisionX/2 * (X.t * ( I - Z * ZtZplusRatioI.inverse * Zt) * X).getTrace
+    val ZtZplusRatioI = Zt * Z + (precisionW/precisionX) *: MatrixFactory.identity(K)
+    const + (N-K)*Dhalf * log(precisionX) + K*Dhalf * log(precisionW) - Dhalf * log(ZtZplusRatioI.det) - precisionX/2 * (Xt * ( I - Z * ZtZplusRatioI.inverse * Zt) * X).getTrace
   }
 
   /*

@@ -18,7 +18,7 @@
 #' similarity <- exp(-1.0*dist)
 #' d2 <- aibd(1,seq_along(states),similarity)
 #'
-#' samples <- enumerateFeatureAllocations(nItems,6)
+#' samples <- enumerateFeatureAllocations(nItems,5)
 #'
 #' probs1 <- prFeatureAllocation(samples,d1,implementation="scala")
 #' sum(probs1)    # This should be close to 1.
