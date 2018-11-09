@@ -1,5 +1,7 @@
 library(aibd2)
 
+set.seed(1)
+
 featureAllocation2ID <- function(Z) {
   Z <- toLof(Z)
   paste0(sapply(seq_len(ncol(Z)), function(j) {
@@ -9,12 +11,12 @@ featureAllocation2ID <- function(Z) {
 
 nItems <- 2
 X <- matrix(rnorm(8),nrow=nItems,ncol=2)
-X[1:2,1] <- X[1:2,1]+10
-X[,2] <- X[,2]-5
+X[1:2,1] <- X[1:2,1]+1
+X[,2] <- X[,2]-1
 X
 
 nSamples <- 10000
-alpha <- 0.2
+alpha <- 1
 sigx <- 1
 sigw <- 1
 

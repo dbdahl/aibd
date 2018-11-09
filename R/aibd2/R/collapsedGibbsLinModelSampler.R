@@ -90,7 +90,7 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
         Z <- as.matrix(Z[,-zeroCol])
         sumFeatures <- sumFeatures[-zeroCol]
         K <- K-length(zeroCol)
-        M <- M[-zeroCol,-zeroCol] #????????????? not sure if this is right
+        M <- M[-zeroCol,-zeroCol,drop=FALSE] #????????????? not sure if this is right
       }
     }
     ## Add new features for the i^th customer
