@@ -14,7 +14,7 @@ X[,2] <- X[,2]-5
 X
 
 nSamples <- 10000
-alpha <- 1.0
+alpha <- 0.2
 sigx <- 1
 sigw <- 1
 
