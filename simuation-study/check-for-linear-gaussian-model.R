@@ -49,6 +49,7 @@ results.theoretical <- data.frame(ID=allPossibleIDs,theoretical.prob=prob)
 
 results <- merge.data.frame(results.theoretical,results.emperical)
 results
+apply(results[,-1],2,sum)
 
 plot(results$theoretical.prob,results$emperical.prob)
 abline(a=0, b=1)
