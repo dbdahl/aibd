@@ -63,7 +63,8 @@ collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
   for (i in 1:N) {
     # Updating all K elements of the i^th row of Z
     if (K==0) {
-      ll <- sum(dnorm(X,0,sd=sigx,log=T))
+      D <- dim(X)[2]
+      ll <- -N*D*log(2*pi)-N*D*log(sigx)-1/(2*sigx^2)*sum(diag(t(X)%*%X))
     } else {
       for(k in 1:K) {
         loglike <- loglikelihood(X,Z,sigx,sigw,M,i,k)
@@ -212,7 +213,8 @@ probabilityOfFeature <- function(X,Z,sigx,sigw,alpha,truncpt=4) {
     if (K>0) {
       if(Z[i,k]) {ll <- loglike[[2]][[1]]} else {ll <- loglike[[1]][[1]]}
     } else {
-      ll <- sum(dnorm(X,0,sd=sigx,log=T))
+      D <- dim(X)[2]
+      ll <- -N*D*log(2*pi)-N*D*log(sigx)-1/(2*sigx^2)*sum(diag(t(X)%*%X))
     }
     loglikeNF <- loglikelihoodNewFeat(X,Z,sigx,sigw,M,i,truncpt)
     for (j in 1:truncpt) {ll <- c(ll,loglikeNF[[j]][[1]])}
@@ -229,12 +231,14 @@ LMloglike <- function(X,Z,sigx,sigw) {
   D <- dim(X)[2]
   K <- dim(Z)[2]
   if (K==0) {
-    M <- NA
+    D <- dim(X)[2]
+    ll <- -N*D*log(2*pi)-N*D*log(sigx)-1/(2*sigx^2)*sum(diag(t(X)%*%X))
   } else {
     M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))
+    part1 <- -N*D*log(2*pi)-(N-K)*D*log(sigx)-K*D*log(sigw)
+    part2 <- -D/2*log(det(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K)))
+    part3 <- -1/(2*sigx^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
+    ll <- part1+part2+part3
   }
-  part1 <- -N*D*log(2*pi)-(N-K)*D*log(sigx)-K*D*log(sigw)
-  part2 <- -D/2*log(det(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K)))
-  part3 <- -1/(2*sigx^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
-  part1+part2+part3
+  ll
 }
