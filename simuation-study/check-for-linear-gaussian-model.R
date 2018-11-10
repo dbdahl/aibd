@@ -44,7 +44,7 @@ results.emperical
 allPossibleZs <- enumerateFeatureAllocations(nItems,6)
 allPossibleIDs <- sapply(allPossibleZs, featureAllocation2ID)
 
-lp <- logPosteriorLGLFM(allPossibleZs,dist,X,sdX=sigx,sdW=sigw)
+lp <- logPosteriorLGLFM(allPossibleZs,dist,X,sdX=sigx,sdW=sigw)  # ,implementation="scala")
 weights <- exp(lp - max(lp))
 prob <- weights / sum(weights)
 results.theoretical <- data.frame(ID=allPossibleIDs,theoretical.prob=prob)

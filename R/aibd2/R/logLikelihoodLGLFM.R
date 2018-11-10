@@ -18,25 +18,30 @@
 #'   if \code{precisionW} is missing.
 #' @param implementation Either "R" or "scala", to indicate the implementation
 #'   to use.
+#' @param parallel Should parallel computations be employeed for the Scala implementation?
 #'
 #' @return A numeric vector giving the log of the likelihood.
 #' @export
 #'
 #'
-logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="R") {
+logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="R", parallel=FALSE) {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
   if ( missing(sdX) ) sdX <- 1/sqrt(precisionX)
   if ( missing(sdW) ) sdW <- 1/sqrt(precisionW)
-  if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(Z) logLikelihoodLGLFM(Z, X, precisionX, precisionW, sdX, sdW, implementation)))
-  }
   Z <- featureAllocation
-  N <- nrow(Z)
+  N <- if ( is.list(featureAllocation) ) {
+    Ns <- sapply(featureAllocation, function(x) nrow(x))
+    if ( length(unique(Ns)) != 1 ) stop("Inconsistent number of rows among feature allocations in the list.")
+    else Ns[1]
+  } else nrow(featureAllocation)
   D <- ncol(X)
   K <- ncol(Z)
   if ( nrow(X) != N ) stop("The number of rows in 'featureAllocation' and 'X' should be the same.")
+  if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
+    return(sapply(featureAllocation, function(Z) logLikelihoodLGLFM(Z, X, precisionX, precisionW, sdX, sdW, implementation)))
+  }
   implementation <- toupper(implementation)
   if ( implementation == "R" ) {
     Minv <- t(Z)%*%Z+(sdX^2)/(sdW^2)*diag(K)
@@ -46,6 +51,8 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX
     part3 <- -1/(2*sdX^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
     part1 + part2 + part3
   } else if ( implementation == "SCALA" ) {
-    stop("The Scala implementation is not yet supported.")
+    fa <- scalaPush(featureAllocation,"featureAllocation",s)
+    m <- s$LinearGaussianSamplingModel(X)
+    m$logLikelihood(fa, precisionX, precisionW, parallel)
   } else stop("Unsupported 'implementation' argument.")
 }

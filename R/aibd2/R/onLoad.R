@@ -6,6 +6,7 @@
   scalaLazy(function(s) {
     s + '
       import org.ddahl.aibd._
+      import org.ddahl.aibd.model.lineargaussian.LinearGaussianSamplingModel
       import org.ddahl.sdols.featureallocation.FeatureAllocation
     '
   },s)
