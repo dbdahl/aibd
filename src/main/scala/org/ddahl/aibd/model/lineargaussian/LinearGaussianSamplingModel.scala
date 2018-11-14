@@ -71,12 +71,13 @@ class LinearGaussianSamplingModel private (private val response: Array[Array[Dou
   private val N = nItems
   private val Dhalf = nResponses/2.0
   private val const = -N*Dhalf * log(2*math.Pi)
+  private val XtXtrace = (Xt * X).getTrace
 
   def logLikelihood(fa: FeatureAllocation[Null], precisionX: Double, precisionW: Double, parallel: Boolean): Double = {
     if ( fa.nItems != nItems ) throw new IllegalArgumentException("Feature allocation has "+fa.nItems+" items, but "+nItems+" were expected.")
     val K = fa.nFeatures
     if ( K == 0 ) {
-      const + (N    ) * Dhalf * log(precisionX) + K * Dhalf * log(precisionW) -                                - precisionX / 2 * (Xt *                                        X).getTrace
+      const + (N    ) * Dhalf * log(precisionX) +                                                              - precisionX / 2 * XtXtrace
     } else {
       val Z = MatrixFactory(fa.toMatrix)
       val Zt = Z.t

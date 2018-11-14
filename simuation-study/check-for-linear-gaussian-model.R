@@ -9,7 +9,8 @@ featureAllocation2ID <- function(Z) {
   }),collapse=",")
 }
 
-nItems <- 2
+nItems <- 3
+nResponses <- 2
 X <- matrix(rnorm(8),nrow=nItems,ncol=2)
 X[1:2,1] <- X[1:2,1]+1
 X[,2] <- X[,2]-1
@@ -44,7 +45,7 @@ results.emperical
 allPossibleZs <- enumerateFeatureAllocations(nItems,6)
 allPossibleIDs <- sapply(allPossibleZs, featureAllocation2ID)
 
-lp <- logPosteriorLGLFM(allPossibleZs,dist,X,sdX=sigx,sdW=sigw)  # ,implementation="scala")
+lp <- logPosteriorLGLFM(allPossibleZs,dist,X,sdX=sigx,sdW=sigw)
 weights <- exp(lp - max(lp))
 prob <- weights / sum(weights)
 results.theoretical <- data.frame(ID=allPossibleIDs,theoretical.prob=prob)
