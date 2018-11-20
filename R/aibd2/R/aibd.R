@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-#' states <- c("California","Wisconsin","Nebraska","New York","Utah")
+#' states <- c("California","Wisconsin","Nebraska","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
 #' similarity <- exp(-1.0*dist)

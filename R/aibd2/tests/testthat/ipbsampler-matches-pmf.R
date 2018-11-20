@@ -47,8 +47,8 @@ head(results, 100)
 
 # Idea (MC_est-theor)/theor
 summary(results[abs(results[,3]) > 5,])
-# Problem: A lot are even bigger than 10. Low estimates can easially be twice the value of the theoritical.
-results[abs(results[,3]) > 500,] # Values with a low pmf are HUGE!
+# Problem: A lot are even bigger than 5. Low estimates can easially be twice the value of the theoritical.
+results[abs(results[,3]) > 500,] # Values with a low theoritical pmf are HUGE!
 
 # Idea 2: Only check theoritical values with enough significant digits from the number of simulations.
 # so only check anything with a theoritical probability greater than 1e-5
