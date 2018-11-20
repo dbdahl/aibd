@@ -11,16 +11,20 @@
 #'
 #' @examples
 #'ibp1 <- ibp(1,4)
-#'x <- sampleFeatureAllocation(2e4, ibp1) # For 20,000 reps
+#'x <- sampleFeatureAllocation(5e3, ibp1) # For 20,000 reps
 #'
-#'# Both are inconsistent
+#'# Both are about the same
 #'system.time(r <- prFeatureAllocation(x, ibp1)) #5.50 secs
 #'system.time(r1 <- prFeatureAllocationAlt(x, ibp1)) #5.43 secs!, but sometimes slower
 #'
 #'system.time(r2 <- prFeatureAllocation(x, ibp1, implementation = 'SCALA')) #5.58 first, 0.9 second
 #'
+#'orig <- sapply(1:100, function(t) system.time(r2 <- prFeatureAllocation(x, ibp1))['elapsed'])
+#'alt <- sapply(1:100, function(t) system.time(r2 <- prFeatureAllocationAlt(x, ibp1))['elapsed'])
+#'
+#'
 
-prFeatureAllocationAlt <- function(featureAllocation, distribution, lof=TRUE, log=FALSE, implementation='R', parallel=FALSE){
+prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, lof=TRUE ,implementation='R', parallel=FALSE){
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   N <- if ( is.list(featureAllocation) ) {
     Ns <- sapply(featureAllocation, function(x) nrow(x))
@@ -30,11 +34,11 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, lof=TRUE, lo
   if ( N != distribution$nItems ) stop("Number of rows in feature allocation does not match given distribution.")
   implementation <- toupper(implementation)
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(x) prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
+    return(sapply(featureAllocation, function(x) prFeatureAllocationAlt(x, distribution, log, lof, implementation, parallel)))
   }
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
-    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
+    # if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
     lof_Z <- toLof(featureAllocation, nums=binary_nums)
     HN <- sum(1/1:N)
@@ -47,15 +51,37 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, lof=TRUE, lo
     if (K > 0){
         mik <- apply(lof_Z, 2, cumsum)
         yis <- cumsum(xi)
-        for (i in 2:N){
-          if (yis[i-1] != 0){
-            for (k in 1:yis[i-1]){
-              zik <- lof_Z[i,k]
-              tot.prod <- tot.prod + zik*log(mik[i-1, k]/i) + (1-zik)*log(1-mik[i-1,k]/i)
+        isAibd <- FALSE
+        if(inherits(distribution,"aibdFADistribution")){
+          isAibd <- TRUE
+          D <- distribution$similarity
+        }
+
+        hik <- function(i,k, isAibd){
+          if (!isAibd) return(1)
+          num <- sum(D[1:(i-1), i]*lof_Z[1:(i-1), k])
+          # Add up all dishes before customer I
+          denom <- 0
+          yi <- yis[i-1]
+          for( k in 1:yi){
+            for (j in 1:(i-1)){
+              denom <- denom + D[j, i]*lof_Z[j,k]
+            }
+          }
+          num/denom
+        }
+
+          for (i in 2:N){
+            if (yis[i-1] != 0){
+              for (k in 1:yis[i-1]){
+                zik <- lof_Z[i,k]
+                h_ik <- hik(i,k, isAibd)
+                tot.prod <- tot.prod + zik*log(h_ik*mik[i-1, k]/i) + (1-zik)*log(1-h_ik*mik[i-1,k]/i)
+              }
             }
           }
         }
-    }
+
     if (lof){
       khfac <- sum(lfactorial(table(binary_nums)))
       -khfac + K*log(alpha) - alpha * HN - sum(xi*log(1:N)) + tot.prod

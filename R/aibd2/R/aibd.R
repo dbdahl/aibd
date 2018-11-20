@@ -16,7 +16,7 @@
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
 #' similarity <- exp(-1.0*dist)
-#' aibd(1,seq_along(states),similarity)
+#' a1 <- aibd(1,seq_along(states),similarity)
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd2:::s)
