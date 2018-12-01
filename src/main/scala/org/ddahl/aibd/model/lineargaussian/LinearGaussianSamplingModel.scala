@@ -92,24 +92,29 @@ class LinearGaussianSamplingModel private (private val response: Array[Array[Dou
     fa.map(logLikelihood(_, precisionX, precisionW, false))
   }
 
-  /*
-  def gibbsUpdate(fa: FeatureAllocation[Null], dimW: Int, precisionX: Double, precisionW: Double): FeatureAllocation[Null] = {
+  def gibbsUpdate(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: IndianBuffetProcess[Null], dimW: Int, precisionX: Double, precisionW: Double, rdg: RandomDataGenerator, parallel: Boolean): FeatureAllocation[Null] = {
     var state = fa
-    var logLikelihoodState = logLikelihood(state, dimW, precisionX, precisionW)
+    var posteriorCurrent = exp(logLikelihood(state, precisionX, precisionW, parallel))
     for ( i <- 0 until fa.nItems ) {
       for ( feature <- state.features ) {
-        val (f0,f1) = if ( feature.contains(i) ) (feature.remove(i), feature) else (feature, feature.add(i))
-        val w0 = logLikelihoodState(f0, dimW, precisionX, precisionW) + log(f0.size)
-
-
-        val mMinusIK = feature.size - ( if ( feature.contains(i) ) 1 else 0 )
-        val featureProposal = if ( feature.contains(i) ) feature.remove(i) else feature.add(i)
-        val faProposal = state.remove(feature).add(featureProposal)
-        val wProposal = logLikelihood(faProposal, dimW, precisionX, precisionW) + featureProposal.size
+        val proposal = if ( feature.contains(i) ) state.remove(i,feature) else state.add(i,feature)
+        val posteriorProposal = exp(logLikelihood(proposal, precisionX, precisionW, parallel) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
+        if ( rdg.nextUniform(0,1) < posteriorCurrent / ( posteriorCurrent + posteriorProposal ) ) {
+          state = proposal
+          posteriorCurrent = posteriorProposal
+        }
       }
+      val featureWithOnlyI = Feature.apply(null, i)
+      val proposals = (0 until 4).scanLeft((state,posteriorCurrent)) { (previousState,j) =>
+        val proposal = previousState._1.add(featureWithOnlyI)
+        val posteriorProposal = exp(logLikelihood(proposal, precisionX, precisionW, parallel) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
+        (proposal, posteriorProposal)
+      }
+      println("New Feature Allocations:\n  "+proposals.mkString("  \n"))
+      state = rdg.nextItem(proposals)
     }
+    state
   }
-  */
 
   def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): (Double, FeatureAllocation[Vector[Double]]) = {
     precision.zip(fas).par.maxBy(x => logLikelihood(x._1, x._2))
