@@ -23,7 +23,6 @@
 #' @return A numeric vector giving the log of the likelihood.
 #' @export
 #'
-#'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="R", parallel=FALSE) {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
