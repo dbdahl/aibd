@@ -1,6 +1,7 @@
 package org.ddahl.aibd
 
 import org.ddahl.aibd.Utils.logOnInt
+import org.ddahl.commonsmath._
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.CombinatoricsUtils.factorialLog
@@ -230,4 +231,32 @@ object MCMCSamplers {
     (faCurrent, acceptances, attempts)
   }
 
+  def updateFeatureAllocationGibbsWhenNull(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: FeatureAllocationDistribution[Null], logLikelihood: FeatureAllocation[Null] => Double, newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[Null]] = {
+    var results = List[FeatureAllocation[Null]]()
+    var state = fa
+    var posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
+    for (b <- 0 until nSamples) {
+      if (b % thin == 0) results = state :: results
+      for (i <- 0 until fa.nItems) {
+        for (feature <- state.features) {
+          val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
+          val posteriorProposal = exp(logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
+          if (rdg.nextUniform(0, 1) < posteriorProposal / (posteriorCurrent + posteriorProposal)) {
+            state = proposal
+            posteriorCurrent = posteriorProposal
+          }
+        }
+        val featureWithOnlyI = Feature.apply(null, i)
+        val proposals = (0 until newFeaturesTruncation).scanLeft((state, log(posteriorCurrent))) { (previousState, j) =>
+          val proposal = previousState._1.add(featureWithOnlyI)
+          val logPosteriorProposal = logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel)
+          (proposal, logPosteriorProposal)
+        }
+        state = rdg.nextItem(proposals, onLogScale = true)
+      }
+    }
+    results.reverse
+  }
+
 }
+

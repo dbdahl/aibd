@@ -26,39 +26,6 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     precision.zip(fas).par.map(x => logLikelihood(x._1, x._2)).toArray
   }
 
-  def logLikelihood(fa: Array[FeatureAllocation[Null]], precisionX: Double, precisionW: Double, parallel: Boolean): Array[Double] = if (parallel) {
-    fa.par.map(logLikelihood(_, precisionX, precisionW, false)).toArray
-  } else {
-    fa.map(logLikelihood(_, precisionX, precisionW, false))
-  }
-
-  def gibbsUpdate(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: IndianBuffetProcess[Null], precisionX: Double, precisionW: Double, newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[Null]] = {
-    var results = List[FeatureAllocation[Null]]()
-    var state = fa
-    var posteriorCurrent = exp(logLikelihood(state, precisionX, precisionW, parallel) + priorFeatureAllocationDistribution.logDensity(state, parallel))
-    for (b <- 0 until nSamples) {
-      if ( b % thin == 0 ) results = state :: results
-      for (i <- 0 until fa.nItems) {
-        for (feature <- state.features) {
-          val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
-          val posteriorProposal = exp(logLikelihood(proposal, precisionX, precisionW, parallel) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
-          if (rdg.nextUniform(0, 1) < posteriorProposal / (posteriorCurrent + posteriorProposal)) {
-            state = proposal
-            posteriorCurrent = posteriorProposal
-          }
-        }
-        val featureWithOnlyI = Feature.apply(null, i)
-        val proposals = (0 until newFeaturesTruncation).scanLeft((state, log(posteriorCurrent))) { (previousState, j) =>
-          val proposal = previousState._1.add(featureWithOnlyI)
-          val logPosteriorProposal = logLikelihood(proposal, precisionX, precisionW, parallel) + priorFeatureAllocationDistribution.logDensity(proposal, parallel)
-          (proposal, logPosteriorProposal)
-        }
-        state = rdg.nextItem(proposals, onLogScale = true)
-      }
-    }
-    results.reverse
-  }
-
   def logLikelihood(fa: FeatureAllocation[Null], precisionX: Double, precisionW: Double, parallel: Boolean): Double = {
     if (fa.nItems != nItems) throw new IllegalArgumentException("Feature allocation has " + fa.nItems + " items, but " + nItems + " were expected.")
     val K = fa.nFeatures
@@ -70,6 +37,17 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
       val ZtZplusRatioI = Zt * Z + (precisionW / precisionX) *: MatrixFactory.identity(K)
       const + (N - K) * Dhalf * log(precisionX) + K * Dhalf * log(precisionW) - Dhalf * log(ZtZplusRatioI.det) - precisionX / 2 * (Xt * (I - Z * ZtZplusRatioI.inverse * Zt) * X).getTrace
     }
+  }
+
+  def logLikelihood(fa: Array[FeatureAllocation[Null]], precisionX: Double, precisionW: Double, parallel: Boolean): Array[Double] = if (parallel) {
+    fa.par.map(logLikelihood(_, precisionX, precisionW, false)).toArray
+  } else {
+    fa.map(logLikelihood(_, precisionX, precisionW, false))
+  }
+
+  def gibbsUpdate(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: FeatureAllocationDistribution[Null], precisionX: Double, precisionW: Double, newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[Null]] = {
+    val logLike = (state: FeatureAllocation[Null]) => logLikelihood(state, precisionX, precisionW, parallel)
+    MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, priorFeatureAllocationDistribution, logLike, newFeaturesTruncation, nSamples, thin, rdg, parallel)
   }
 
   def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): (Double, FeatureAllocation[Vector[Double]]) = {

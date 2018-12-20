@@ -32,7 +32,7 @@
 #' X <- Z %*% W + e
 #' dist <- ibp(alpha, nItems)
 #' Zlist <- list(matrix(0,nrow=nrow(Z),ncol=0))
-#' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw, implementation="R", nSamples=1000, thin=10)
+#' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw, implementation="scala", nSamples=10000, thin=10)
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(Zlist)
 #' Ztruth %*% t(Ztruth)
