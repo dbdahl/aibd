@@ -3,6 +3,7 @@
 #' @param featureAllocation A feature allocation Z matrix
 #' @param distribution A feature allocation IBP distribution
 #' @param log Should results be given on the log scale? (FALSE by default)
+#' @param lof Should the probability be given on the left ordered form feature allocation?
 #' @param implementation Either "R" or "scala", to indicate the implementation to use.
 #' @param parallel Should parallel computations be employeed for the Scala implementation?
 #'
@@ -10,17 +11,6 @@
 #' @export
 #'
 #' @examples
-#'ibp1 <- ibp(1,4)
-#'x <- sampleFeatureAllocation(5e3, ibp1) # For 20,000 reps
-#'
-#'# Both are about the same
-#'system.time(r <- prFeatureAllocation(x, ibp1)) #5.50 secs
-#'system.time(r1 <- prFeatureAllocationAlt(x, ibp1)) #5.43 secs!, but sometimes slower
-#'
-#'system.time(r2 <- prFeatureAllocation(x, ibp1, implementation = 'SCALA')) #5.58 first, 0.9 second
-#'
-#'orig <- sapply(1:100, function(t) system.time(r2 <- prFeatureAllocation(x, ibp1))['elapsed'])
-#'alt <- sapply(1:100, function(t) system.time(r2 <- prFeatureAllocationAlt(x, ibp1))['elapsed'])
 #'
 #'
 
