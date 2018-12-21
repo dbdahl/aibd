@@ -47,7 +47,7 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, l
     xi <- numeric(N)
     new_dishes <- tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
     xi[1:length(new_dishes)] <- new_dishes
-    tot.prod <- log(1)
+    tot.prod <-log(1)
     if (K > 0){
         mik <- apply(lof_Z, 2, cumsum)
         yis <- cumsum(xi)
@@ -57,8 +57,7 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, l
           D <- distribution$similarity
         }
 
-        hik <- function(i,k, isAibd){
-          if (!isAibd) return(1)
+        hik <- function(i,k,D){
           num <- sum(D[1:(i-1), i]*lof_Z[1:(i-1), k])
           # Add up all dishes before customer I
           denom <- 0
@@ -73,10 +72,23 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, l
 
           for (i in 2:N){
             if (yis[i-1] != 0){
+              m_i <- sum(lof_Z[1:(i-1),]) # New Change
+              #print(paste("m_i:", m_i))
+
               for (k in 1:yis[i-1]){
                 zik <- lof_Z[i,k]
-                h_ik <- hik(i,k, isAibd)
-                tot.prod <- tot.prod + zik*log(h_ik*mik[i-1, k]/i) + (1-zik)*log(1-h_ik*mik[i-1,k]/i)
+                #print(paste("h_ik:", h_ik))
+                #print(paste("i:", i))
+                #print(paste(""))
+                if (isAibd){
+                  h_ik <- hik(i,k,D)
+                  tot.prod <- tot.prod + zik*log(h_ik*m_i/i) + (1-zik)*log(1-h_ik*m_i/i)
+                }else{
+                  # tot.prod <- tot.prod + zik*log(h_ik*mik[i-1, k]/i) + (1-zik)*log(1-h_ik*mik[i-1,k]/i)
+                  tot.prod <- tot.prod + zik*log(mik[i-1, k]/i) + (1-zik)*log(1-mik[i-1,k]/i)
+
+                }
+
               }
             }
           }
