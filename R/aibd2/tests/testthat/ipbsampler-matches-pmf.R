@@ -1,5 +1,7 @@
 context("IBP-sampler-matches-pmf")
 
+skip("IBP-sampler-matches-pmf")
+
 mass <- 1
 nItems <- 4
 
