@@ -1,22 +1,43 @@
 context("ibp-sampling-matches-pmf")
 
-# skip("ibp-sampling-matches-pmf")
+skip("ibp-sampling-matches-pmf")
 
-test_that("R and Scala give the sample values for PMF", {
-  mass <- 1.0
-  nItems <- 4
-  maxNFeatures <- 4
-  samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromR     <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="R")
-  probsFromScala <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="scala")
-  expect_equal(probsFromR, probsFromScala)
+test_that("Direct sampling from the prior gives number of features consistent with the pmf.", {
+  # set.seed(3)
+  alpha <- 1
+  nItems <- 3
+  dist <- ibp(alpha, nItems)
+  nSamples <- 10000
+  Zlist <- sampleFeatureAllocation(nSamples, dist, implementation="R")
+  library(sdols)
+  epam <- expectedPairwiseAllocationMatrix(Zlist)
+  expect_equal(diag(epam),rep(alpha,nItems),tolerance=3*sqrt(alpha/nSamples))  # False positive rate: 1-0.997 = 0.003
 })
 
-test_that("PMF (almost) sums to one.", {
-  mass <- 0.7
+test_that("MCMC sampling from the prior gives number of features consistent with the pmf.", {
+  # set.seed(3)
+  alpha <- 1
+  nItems <- 3
+  dist <- ibp(alpha, nItems)
+  Zlist <- list(matrix(0,nrow=nItems,ncol=0))
+  nSamples <- 10000
+  Zlist <- samplePosteriorNullModel(Zlist[[length(Zlist)]], dist, newFeaturesTruncation=4L, implementation="scala", nSamples=nSamples, thin=1)
+  library(sdols)
+  epam <- expectedPairwiseAllocationMatrix(Zlist)
+  expect_equal(diag(epam),rep(alpha,nItems),tolerance=3*sqrt(alpha/nSamples))  # False positive rate: 1-0.997 = 0.003
+})
+
+test_that("MCMC sampling from the prior yields feature allocations in proportions consistent with the pmf.", {
+  # set.seed(3)
+  alpha <- 1
   nItems <- 3
   maxNFeatures <- 6
-  samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromScala <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="scala")
-  expect_gte(sum(probsFromScala), 0.9996)
+  dist <- ibp(alpha, nItems)
+  Zlist <- list(matrix(0,nrow=nItems,ncol=0))
+  nSamples <- 10000
+  Zlist <- samplePosteriorNullModel(Zlist[[length(Zlist)]], dist, newFeaturesTruncation=4L, implementation="scala", nSamples=nSamples, thin=1)
+  IDlist <- sapply(Zlist, aibd2:::featureAllocation2ID)
+  library(sdols)
+  epam <- expectedPairwiseAllocationMatrix(Zlist)
+  expect_equal(diag(epam),rep(alpha,nItems),tolerance=3*sqrt(alpha/nSamples))  # False positive rate: 1-0.997 = 0.003
 })

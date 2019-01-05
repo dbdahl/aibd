@@ -33,6 +33,7 @@
 #' dist <- ibp(alpha, nItems)
 #' Zlist <- list(matrix(0,nrow=nrow(Z),ncol=0))
 #' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw, implementation="scala", nSamples=10000, thin=10)
+#' Zlist <- samplePosteriorNullModel(Zlist[[length(Zlist)]], dist, implementation="scala", nSamples=10000, thin=10)
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(Zlist)
 #' Ztruth %*% t(Ztruth)
@@ -69,4 +70,52 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newZs <- m$gibbsUpdate(fa, dist, precisionX, precisionW, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
+}
+
+#' @export
+samplePosteriorNullModel <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+  if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
+  # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
+  Z <- featureAllocation
+  N <- nrow(featureAllocation)
+  K <- ncol(Z)
+  if ( N != distribution$nItems ) stop("Inconsistent number of rows among feature allocations and prior feature allocation distribution.")
+  implementation <- toupper(implementation)
+  if ( implementation == "R" ) {
+    stop("There is no R implementation yet.")
+  } else if ( implementation == "SCALA" ) {
+    dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
+    fa <- scalaPush(featureAllocation,"featureAllocation",s)
+    nSamples <- as.integer(nSamples[1])
+    thin <- as.integer(thin[1])
+    newFeaturesTruncation <- as.integer(newFeaturesTruncation[1])
+    # logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
+    # newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, dist, logLike, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
+    logLike <- s ^ '(i: Int, fa: FeatureAllocation[Null]) => 0.0'
+    newZs <- s(nSamples,thin,fa,dist,logLike,rdg=s$rdg(),parallel) ^ '
+      var state = fa
+      Seq.fill(nSamples) {
+        var i = 0
+        while ( i < thin ) {
+          state = MCMCSamplers.updateFeatureAllocationGibbs(1, state, dist, logLike, rdg, parallel)
+          state = MCMCSamplers.updateFeatureAllocationSingletons(1, state, dist, logLike, rdg)._1
+          i += 1
+        }
+        state
+      }
+    '
+    scalaPull(newZs,"featureAllocation")
+  } else stop("Unsupported 'implementation' argument.")
+}
+
+featureAllocation2Id <- function(Z) {
+  Z <- toLof(Z)
+  paste0(sapply(seq_len(ncol(Z)), function(j) {
+    sum((2^(0:(nrow(Z)-1)))*Z[,j])
+  }),collapse=",")
+}
+
+id2FeatureAllocation <- function(id, nItems) {
+  cells <- as.numeric(strsplit(id,",")[[1]])
+  sapply(cells,function(cell) as.integer(intToBits(cell)))[1:nItems,]}
 }
