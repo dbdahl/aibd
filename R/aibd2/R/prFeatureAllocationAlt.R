@@ -11,7 +11,15 @@
 #' @export
 #'
 #' @examples
+#' states <- c("California","Wisconsin","Nebraska")
+#' data <- USArrests[states,]
+#' dis <- exp(-1.0*dist(scale(data)))
 #'
+#' N <- length(states)
+#' alpha <- 1
+#' featureAllocation <- matrix(c(0,1,0), nrow=N)
+#' distribution <- aibd3 <- aibd(alpha, 1:N, dis)
+#' D <- aibd3$similarity
 #'
 
 prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, lof=TRUE ,implementation='R', parallel=FALSE){
@@ -52,6 +60,7 @@ prFeatureAllocationAlt <- function(featureAllocation, distribution, log=FALSE, l
           # Add up all dishes before customer I
           denom <- 0
           yi <- yis[i-1]
+          if (yi == 0) return(0)
           for( k in 1:yi){
             for (j in 1:(i-1)){
               denom <- denom + D[j, i]*lof_Z[j,k]
