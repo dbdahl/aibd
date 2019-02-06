@@ -252,7 +252,7 @@ object MCMCSamplers {
           val logPosteriorProposal = logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel)
           (proposal, logPosteriorProposal)
         }
-        state = rdg.nextItem(proposals, onLogScale = true)
+        state = rdg.nextItem(proposals, onLogScale = true)._1
       }
     }
     results.reverse

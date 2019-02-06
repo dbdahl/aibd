@@ -11,6 +11,7 @@
 .Rproj.user
 /target
 /project/target
+/project/project
 /tmp
 /.idea
 /R/aibd2/R/testing_code.R
