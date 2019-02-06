@@ -41,7 +41,6 @@
 #'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
-  # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
   if ( missing(sdX) ) sdX <- 1/sqrt(precisionX)
@@ -74,8 +73,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
 
 #' @export
 samplePosteriorNullModel <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
-  if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
-  # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
+  if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented.")
   Z <- featureAllocation
   N <- nrow(featureAllocation)
   K <- ncol(Z)
@@ -89,21 +87,8 @@ samplePosteriorNullModel <- function(featureAllocation, distribution, newFeature
     nSamples <- as.integer(nSamples[1])
     thin <- as.integer(thin[1])
     newFeaturesTruncation <- as.integer(newFeaturesTruncation[1])
-    # logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-    # newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, dist, logLike, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
-    logLike <- s ^ '(i: Int, fa: FeatureAllocation[Null]) => 0.0'
-    newZs <- s(nSamples,thin,fa,dist,logLike,rdg=s$rdg(),parallel) ^ '
-      var state = fa
-      Seq.fill(nSamples) {
-        var i = 0
-        while ( i < thin ) {
-          state = MCMCSamplers.updateFeatureAllocationGibbs(1, state, dist, logLike, rdg, parallel)
-          state = MCMCSamplers.updateFeatureAllocationSingletons(1, state, dist, logLike, rdg)._1
-          i += 1
-        }
-        state
-      }
-    '
+    logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
+    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, dist, logLike, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }
@@ -117,5 +102,5 @@ featureAllocation2Id <- function(Z) {
 
 id2FeatureAllocation <- function(id, nItems) {
   cells <- as.numeric(strsplit(id,",")[[1]])
-  sapply(cells,function(cell) as.integer(intToBits(cell)))[1:nItems,]}
+  sapply(cells,function(cell) as.integer(intToBits(cell)))[1:nItems,]
 }
