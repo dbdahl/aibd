@@ -30,7 +30,7 @@ MC_Theor_Compare <- function(samples, distrib,impl='R', sort_col=1){
   featAlloc <- sapply(samples, function(x) distinguish(x))
   MC_est <- t(t(table(featAlloc)))/n
   Unique_Zs <- lapply(row.names(MC_est), strToZ, nItems=nItems)
-  theoretical <- prFeatureAllocationAlt(Unique_Zs,  distribution=distrib, implementation=impl)
+  theoretical <- prFeatureAllocation(Unique_Zs,  distribution=distrib, implementation=impl)
   error <- MC_est - theoretical
   results <- cbind(MC_est, theoretical, error)
   results <- results[order(results[,sort_col], decreasing = TRUE),]
