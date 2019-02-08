@@ -42,7 +42,7 @@
 #' rscala::scalaDisconnect(aibd2:::s)
 #' }
 #'
-prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE, implementation="R", parallel=FALSE) {
+prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE ,implementation='R', parallel=FALSE){
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   N <- if ( is.list(featureAllocation) ) {
     Ns <- sapply(featureAllocation, function(x) nrow(x))
@@ -52,27 +52,43 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   if ( N != distribution$nItems ) stop("Number of rows in feature allocation does not match given distribution.")
   implementation <- toupper(implementation)
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(Z) prFeatureAllocation(Z, distribution, log, lof, implementation, parallel)))
+    return(sapply(featureAllocation, function(x) prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
   }
   alpha <- distribution$mass
   lpmf <- if ( implementation == "R" ) {
-    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented in R. Please change the implemention to 'scala'.")
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
     lof_Z <- toLof(featureAllocation, nums=binary_nums)
     HN <- sum(1/1:N)
-    mk <- apply(lof_Z, 2, sum)
     K <- ncol(lof_Z)
-    if (lof) {
-      if (K > 0) {
-        Kh <- tabulate(apply(lof_Z,2,sum))
-        khfac <- sum(lfactorial(table(binary_nums)))
+    xi <- numeric(N)
+    new_dishes <- tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
+    xi[1:length(new_dishes)] <- new_dishes
+    tot.prod <-log(1)
+    if (K > 0){
+      mik <- apply(lof_Z, 2, cumsum)
+      yis <- cumsum(xi)
+      # Inner product Terms
+      for (i in 2:N){
+        if (yis[i-1] != 0){
+          sim.component <- if(inherits(distribution,"aibdFADistribution")){ distribution$similarity[i,1:(i-1)]}
+          for (k in 1:yis[i-1]){
+              zik <- lof_Z[i,k]
+              if (!is.null(sim.component)){
+                p <- (i-1)/i * sum(sim.component*lof_Z[1:(i-1),k]) / sum(sim.component)
+                tot.prod <- tot.prod + zik*log(p) + (1-zik)*log(1-p) #AIBD
+              }else{
+                tot.prod <- tot.prod + zik*log(mik[i-1, k]/i) + (1-zik)*log(1-mik[i-1,k]/i) #IBP
+              }
+          }
+        }
       }
-      else khfac <- log(1)
-      -khfac + K*log(alpha)-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
-    } else {
-      k1 <- tabulate(apply(lof_Z, 2, function(x) which(x == 1)[1]))
-      k1fac <- sum(lfactorial(k1))
-      K*log(alpha)-k1fac-alpha*HN+sum(lfactorial(N-mk) + lfactorial(mk-1) - lfactorial(N))
+    }
+
+    if (lof){
+      khfac <- sum(lfactorial(table(binary_nums))) # Lof combinatorics
+      -khfac + K*log(alpha) - alpha * HN - sum(xi*log(1:N)) + tot.prod
+    } else{
+      K*log(alpha) - alpha * HN - sum(xi*log(1:N)+lfactorial(xi)) + tot.prod
     }
   } else if ( implementation == "SCALA" ) {
     if ( ! lof ) stop("Only left-ordered-form is currently supported for the Scala implementation.")
@@ -84,16 +100,8 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
     } else stop("Unsupported distribution.")
     fa <- scalaPush(featureAllocation,"featureAllocation",s)
     dist$logDensity(fa, parallel)
-  } else stop("Unsupported 'implementation' argument.")
-  if ( log ) lpmf else exp(lpmf)
+  }
+
+  if (log) lpmf else exp(lpmf)
 }
-
-# Log:
-# Problem: Can't calc pmf from scala
-# Made prFeatureAllocation vectorized
-# Improved efficiency of feature allocation code so it evaluated prob mass faster.
-# Is the IBP LOF dependent?
-# Did you want to put both IBP and AIBD in the same function?
-
-# What is yi_1 referring to? Is that adding up all dishes, all previous inclusive, or all up to k?
 
