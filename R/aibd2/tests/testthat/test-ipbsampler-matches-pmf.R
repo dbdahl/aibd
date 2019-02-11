@@ -1,7 +1,8 @@
-context("IBP-sampler-matches-pmf")
+context("IBP-Direct-Sampling-matches-pmf")
 
 # skip("IBP-sampler-matches-pmf")
 # Using the sampler, do the MC frequency estimates match the theoretical probabilities?
+test_that('Sampling from the IBP prior matches theoretical pmf up to Monte Carlo error',{
 mass <- 1
 nItems <- 4
 Nsim <- 1e5
@@ -69,6 +70,6 @@ nOutside <- as.integer(NROW(beta.cis[beta.cis[,5]==0 ,]))
 cutoff <- round(NROW(results)*(1-q.cutoff))
 
 
-test_that('IBP samplper matches theoretical pmf up to Monte Carlo error',{
+
   expect_lt(nOutside, cutoff)
 })
