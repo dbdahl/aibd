@@ -2,19 +2,16 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-test_that("Direct sampling from the prior gives number of features consistent with the pmf.", {
-  # set.seed(3)
-  alpha <- 1
-  nItems <- 3
-  dist <- ibp(alpha, nItems)
-  nSamples <- 100000
-  Zlist <- sampleFeatureAllocation(nSamples, dist, implementation="R")
-  library(sdols)
-  epam <- expectedPairwiseAllocationMatrix(Zlist)
-  expect_equal(diag(epam),rep(alpha,nItems),tolerance=3*sqrt(alpha/nSamples))  # False positive rate: 1-0.997 = 0.003
-})
+# This test samples from the IBP using its constructive definition and computes
+# the relative frequency of sampled states. 95% Bayesian credible intervals are
+# formed based on effective prior sample size of 1 and centered about the
+# theoretical probability. The proportion of intervals that contain the
+# theoretical probability is computed and compared to 0.95 using a Z score. A
+# problem is declared if the Z score is less than the 0.003 quantitle of the
+# standard normal distribution.  The sensitivity of this test be investigated by
+# uncommenting the redefintion of the 'dist' object below.
 
-test_that("Direct sampling from the prior gives a distribution consistent with the pmf.", {
+test_that("Direct sampling from the IBP gives a distribution consistent with the pmf.", {
   mass <- 1
   nItems <- 3
   dist <- ibp(mass, nItems)
