@@ -237,16 +237,21 @@ object MCMCSamplers {
     var posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
     for (b <- 0 until nSamples) {
       if (b % thin == 0) results = state :: results
-      for (i <- 0 until fa.nItems) {
+      for (i <- 0 until state.nItems) {
         for (feature <- state.features) {
-          val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
-          val posteriorProposal = exp(logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
-          if (rdg.nextUniform(0, 1) < posteriorProposal / (posteriorCurrent + posteriorProposal)) {
-            state = proposal
-            posteriorCurrent = posteriorProposal
+          if ( feature.contains(i) && ( feature.size == 1 ) ) {
+            state = state.remove(i, feature)
+            posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
+          } else {
+            val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
+            val posteriorProposal = exp(logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
+            if (rdg.nextUniform(0, 1) < posteriorProposal / (posteriorCurrent + posteriorProposal)) {
+              state = proposal
+              posteriorCurrent = posteriorProposal
+            }
           }
         }
-        val featureWithOnlyI = Feature.apply(null, i)
+        val featureWithOnlyI = Feature(null, i)
         val proposals = (0 until newFeaturesTruncation).scanLeft((state, log(posteriorCurrent))) { (previousState, j) =>
           val proposal = previousState._1.add(featureWithOnlyI)
           val logPosteriorProposal = logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel)

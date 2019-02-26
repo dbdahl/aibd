@@ -1,6 +1,6 @@
 context("ibp-pmf")
 
-skip("ibp-pmf")
+# skip("ibp-pmf")
 
 test_that("R and Scala give the same values for PMF", {
   mass <- 1.0

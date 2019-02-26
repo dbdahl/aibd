@@ -32,8 +32,10 @@
 #' X <- Z %*% W + e
 #' dist <- ibp(alpha, nItems)
 #' Zlist <- list(matrix(0,nrow=nrow(Z),ncol=0))
-#' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw, implementation="scala", nSamples=10000, thin=10)
-#' Zlist <- samplePosteriorNullModel(Zlist[[length(Zlist)]], dist, implementation="scala", nSamples=10000, thin=10)
+#' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw,
+#'                               implementation="scala", nSamples=10000, thin=10)
+#' Zlist <- samplePosteriorNullModel(Zlist[[length(Zlist)]], dist, implementation="scala",
+#'                                   nSamples=10000, thin=10)
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(Zlist)
 #' Ztruth %*% t(Ztruth)
@@ -71,6 +73,18 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   } else stop("Unsupported 'implementation' argument.")
 }
 
+#' Sample from the IBP using MCMC
+#'
+#' This function provides a sanity check for our MCMC sampling algorithm.  We expect to remove this function before submitting the package.
+#'
+#' @param featureAllocation x
+#' @param distribution x
+#' @param newFeaturesTruncation x
+#' @param implementation x
+#' @param nSamples x
+#' @param thin x
+#' @param parallel x
+#'
 #' @export
 samplePosteriorNullModel <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented.")
