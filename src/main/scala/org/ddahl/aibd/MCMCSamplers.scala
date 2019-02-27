@@ -14,7 +14,7 @@ object MCMCSamplers {
   // Original method of Griffiths & Ghahramani (2005), but better explained in Section 3 of "Accelerated Sampling for the Indian Buffet Process" by Doshi-Velez, Ghahramani (2009)
   def updateFeatureAllocationIBP[A](nScans: Int, fa: FeatureAllocation[A], ibp: IndianBuffetProcess[A], logLikelihood: (Int, FeatureAllocation[A]) => Double, maxNewFeatures: Int, rdg: RandomDataGenerator): FeatureAllocation[A] = {
     import ibp.nItems
-    val logRate = log(ibp.mass/nItems)
+    val logRate = log(ibp.mass / nItems)
     var faCurrent = fa
     repeat(nScans) {
       for (i <- 0 until nItems) {
@@ -31,8 +31,8 @@ object MCMCSamplers {
               val faP = faCurrent.replace(f, fP)
               (f.size, faCurrent, faP)
             }
-            val logWeight0 = logOnInt(m    ) + logLikelihood(i, fa0)
-            val logWeight1 = logOnInt(m - 1) + logLikelihood(i, fa1)
+            val logWeight0 = logOnInt(m) + logLikelihood(i, fa0)
+            val logWeight1 = logOnInt(m) + logLikelihood(i, fa1)
             val numerator = exp(logWeight1)
             val denominator = exp(logWeight0) + numerator
             if (rdg.nextUniform(0.0, denominator) <= numerator) faCurrent = fa1
@@ -41,11 +41,11 @@ object MCMCSamplers {
         }
         // Work on new features
         val candidates = Array.fill(maxNewFeatures)(Feature(ibp.parameterDistribution.sample(rdg), i))
-          .scanLeft((faCurrent,exp(0.0+logLikelihood(i,faCurrent)),0.0,1)) { (state, f) =>
+          .scanLeft((faCurrent, exp(0.0 + logLikelihood(i, faCurrent)), 0.0, 1)) { (state, f) =>
             val newFA = state._1.add(f)
             val logIncrement = state._3 + logRate - logOnInt(state._4)
-            val weight = exp(logIncrement + logLikelihood(i,newFA))
-            (newFA, weight, logIncrement, state._4+1)
+            val weight = exp(logIncrement + logLikelihood(i, newFA))
+            (newFA, weight, logIncrement, state._4 + 1)
           }
         val weights = candidates.map(fa => new Pair[FeatureAllocation[A], java.lang.Double](fa._1, fa._2)).toList.asJava
         val dist = new EnumeratedDistribution(rdg.getRandomGenerator, weights)
@@ -53,6 +53,20 @@ object MCMCSamplers {
       }
     }
     faCurrent
+  }
+
+  def trashme(mass: Double, nItems: Int, nSamples: Int, thin: Int, maxNewFeatures: Int): Array[Int] = {
+    val logLikelihood = (x: Int, fa: FeatureAllocation[Null]) => 0.0
+    val logLikelihood2 = (fa: FeatureAllocation[Null]) => 0.0
+    val rdg = new RandomDataGenerator()
+    val dist = IndianBuffetProcess(mass, nItems)
+    //val results = updateFeatureAllocationGibbsWhenNull(FeatureAllocation[Null](nItems), dist, logLikelihood2, maxNewFeatures, nSamples, thin, rdg, false)
+    var results = List[FeatureAllocation[Null]](FeatureAllocation[Null](nItems))
+    for (i <- 0 until nSamples) {
+      results = updateFeatureAllocationIBP(thin, results.head, dist, logLikelihood, maxNewFeatures, rdg) :: results
+      //results = dist.sample(rdg) :: results
+    }
+    results.map(fa => fa.size).toArray
   }
 
   def updateFeatureAllocationInOrOut[A](nScans: Int, fa: FeatureAllocation[A], faDistribution: FeatureAllocationDistribution[A], logLikelihood: (Int, FeatureAllocation[A]) => Double, rdg: RandomDataGenerator, parallel: Boolean): (FeatureAllocation[A], Int, Int) = {
@@ -88,6 +102,7 @@ object MCMCSamplers {
         engine(fa, features.tail) ++ engine(fa2, features.tail)
       }
     }
+
     engine(fa, fa.toList).toSet.toVector
   }
 
@@ -159,6 +174,7 @@ object MCMCSamplers {
         val alpha = mass / (index + 1)
         val neighborhood = neighbors(i, faCurrent.remove(i))
         val newFeatures = faCurrent.filter(f => f.contains(i) && (f.size == 1))
+
         def engine(target: Option[FeatureAllocation[A]]): (FeatureAllocation[A], Double, Double) = {
           val faCandidates = neighborhood.map(_.add(newFeatures))
           val iterator = if (parallel) faCandidates.par else faCandidates
@@ -182,6 +198,7 @@ object MCMCSamplers {
             log(probabilities.find(x => x._1 == faProposal).get._2)
           (faProposal, logWeights.find(x => x._1 == faProposal).get._2, logMHRatioContribution)
         }
+
         val proposalTuple = engine(None)
         val currentTuple = engine(Some(faCurrent))
         val logMHRatio = proposalTuple._2 - currentTuple._2 - proposalTuple._3 + currentTuple._3
@@ -197,13 +214,14 @@ object MCMCSamplers {
   }
 
   def updateFeatureAllocationSingletons[A](nScans: Int, fa: FeatureAllocation[A], faDistribution: FeatureAllocationDistribution[A], logLikelihood: (Int, FeatureAllocation[A]) => Double, rdg: RandomDataGenerator): (FeatureAllocation[A], Int, Int) = {
-    import faDistribution.{mass,nItems,permutation}
+    import faDistribution.{mass, nItems, permutation}
     var faCurrent = fa
     var attempts = 0
     var acceptances = 0
     repeat(nScans) {
       for (index <- 0 until nItems) {
         val i = permutation(index)
+
         def engine(fa: FeatureAllocation[A], features: Vector[Feature[A]]): Double = {
           val logDensity = faDistribution.logDensityStartingFromIndex(index, fa, false) + logLikelihood(i, fa)
           val featuresMap = features.groupBy(identity).mapValues(_.size)
@@ -212,6 +230,7 @@ object MCMCSamplers {
           }).sum + factorialLog(features.size)
           logDensity - logMHRatioContribution
         }
+
         val set = Set(i)
         val alpha = mass / (index + 1)
         val oldFeatures = faCurrent.filter(f => f.contains(i) && (f.size == 1))
@@ -235,11 +254,10 @@ object MCMCSamplers {
     var results = List[FeatureAllocation[Null]]()
     var state = fa
     var posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
-    for (b <- 0 until nSamples) {
-      if (b % thin == 0) results = state :: results
+    for (b <- 1 to nSamples) {
       for (i <- 0 until state.nItems) {
         for (feature <- state.features) {
-          if ( feature.contains(i) && ( feature.size == 1 ) ) {
+          if (feature.contains(i) && (feature.size == 1)) {
             state = state.remove(i, feature)
             posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
           } else {
@@ -259,6 +277,31 @@ object MCMCSamplers {
         }
         state = rdg.nextItem(proposals, onLogScale = true)._1
       }
+      if (b % thin == 0) results = state :: results
+    }
+    results.reverse
+  }
+
+  def updateFeatureAllocationGibbs(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator): Seq[FeatureAllocation[Null]] = {
+    val nItems = fa.nItems
+    val mass = ibp.mass
+    var results = List[FeatureAllocation[Null]]()
+    var state = fa
+    for (b <- 1 to nSamples) {
+      for (i <- 0 until nItems) {
+        for (feature <- state.features) {
+          val m = feature.size - (if (feature.contains(i)) 1 else 0)
+          state = if (m == 0) state.remove(feature)
+          else if (rdg.nextUniform(0, 1) < m.toDouble / nItems) {
+            if (feature.contains(i)) state else state.add(i, feature)
+          } else {
+            if (feature.contains(i)) state.remove(i, feature) else state
+          }
+        }
+        val nNewFeatures = rdg.nextPoisson(mass / nItems).toInt
+        for (r <- 0 until nNewFeatures) state = state.add(Feature(null, i))
+      }
+      if (b % thin == 0) results = state :: results
     }
     results.reverse
   }

@@ -86,7 +86,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
 #' @param parallel x
 #'
 #' @export
-samplePosteriorNullModel <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+sampleIBPMCMC <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented.")
   Z <- featureAllocation
   N <- nrow(featureAllocation)
@@ -102,7 +102,51 @@ samplePosteriorNullModel <- function(featureAllocation, distribution, newFeature
     thin <- as.integer(thin[1])
     newFeaturesTruncation <- as.integer(newFeaturesTruncation[1])
     logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, dist, logLike, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
+    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, newFeaturesTruncation, nSamples, thin, s$rdg())
+    scalaPull(newZs,"featureAllocation")
+  } else stop("Unsupported 'implementation' argument.")
+}
+
+#' Sample from the IBP using MCMC
+#'
+#' This function provides a sanity check for our MCMC sampling algorithm.  We expect to remove this function before submitting the package.
+#'
+#' @param featureAllocation x
+#' @param distribution x
+#' @param newFeaturesTruncation x
+#' @param implementation x
+#' @param nSamples x
+#' @param thin x
+#' @param parallel x
+#'
+#' @export
+samplePosteriorNullModel <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+  if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented.")
+  Z <- featureAllocation
+  N <- nrow(featureAllocation)
+  K <- ncol(Z)
+  if ( N != distribution$nItems ) stop("Inconsistent number of rows among feature allocations and prior feature allocation distribution.")
+  implementation <- toupper(implementation)
+  if ( implementation == "R" ) {
+    stop("There is no R implementation yet.")
+  } else if ( implementation == "SCALA" ) {
+    dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
+    fa <- scalaPush(featureAllocation,"featureAllocation",s)
+    nSamples <- as.integer(nSamples[1])
+    thin <- as.integer(thin[1])
+    newFeaturesTruncation <- as.integer(newFeaturesTruncation[1])
+    #logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
+    #newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, dist, logLike, newFeaturesTruncation, nSamples, thin, s$rdg(), parallel)
+    logLike <- s ^ '(i: Int, fa: FeatureAllocation[Null]) => 0.0'
+    newZs <- s(nSamples,thin,fa,dist,logLike,newFeaturesTruncation,rdg=s$rdg()) ^ '
+      var state = fa
+      var results = List[FeatureAllocation[Null]]()
+      for (b <- 1 to nSamples) {
+        state = MCMCSamplers.updateFeatureAllocationIBP(thin,state,dist,logLike,newFeaturesTruncation,rdg)
+        results = state :: results
+      }
+      results.reverse
+    '
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }
