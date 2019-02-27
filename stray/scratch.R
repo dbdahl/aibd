@@ -46,13 +46,10 @@ nItems <- 5
 nSamples <- 100000
 ibp <- ibp(mass,nItems)
 
-
-x <- sapply(1:1000, function(i) {
-  Z <- matrix(0L,nrow=nItems,ncol=0)
-  samplesFromMCMC <- sampleIBPMCMC(           Z,ibp,implementation="scala",nSamples=nSamples,thin=100)
-  samplesFromConstruction <- sampleFeatureAllocation(nSamples,ibp,implementation="scala")
-  t.test(sapply(samplesFromMCMC,ncol), sapply(samplesFromConstruction,ncol))$p.value
-})
+Z <- matrix(0L,nrow=nItems,ncol=0)
+samplesFromMCMC <- sampleIBPMCMC(           Z,ibp,implementation="scala",nSamples=nSamples,thin=100)
+samplesFromConstruction <- sampleFeatureAllocation(nSamples,ibp,implementation="scala")
+t.test(sapply(samplesFromMCMC,ncol), sapply(samplesFromConstruction,ncol))
 
 # R implementation
 Z <- matrix(integer(), nrow=nItems, ncol=0)

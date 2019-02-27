@@ -101,7 +101,7 @@ sampleIBPMCMC <- function(featureAllocation, distribution, implementation="R", n
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }
