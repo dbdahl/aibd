@@ -44,16 +44,17 @@ library(aibd2)
 mass <- 2
 nItems <- 5
 nSamples <- 100000
-truncation <- 6
 ibp <- ibp(mass,nItems)
 
-Z <- matrix(0L,nrow=nItems,ncol=0)
-samplesFromMCMC <- sampleIBPMCMC(           Z,ibp,implementation="scala",nSamples=nSamples,newFeaturesTruncation=truncation,thin=100)
-samplesFromConstruction <- sampleFeatureAllocation(nSamples,ibp,implementation="scala")
-t.test(sapply(samplesFromMCMC,ncol), sapply(samplesFromConstruction,ncol))
 
-# R implementatio
-n
+x <- sapply(1:1000, function(i) {
+  Z <- matrix(0L,nrow=nItems,ncol=0)
+  samplesFromMCMC <- sampleIBPMCMC(           Z,ibp,implementation="scala",nSamples=nSamples,thin=100)
+  samplesFromConstruction <- sampleFeatureAllocation(nSamples,ibp,implementation="scala")
+  t.test(sapply(samplesFromMCMC,ncol), sapply(samplesFromConstruction,ncol))$p.value
+})
+
+# R implementation
 Z <- matrix(integer(), nrow=nItems, ncol=0)
 samplesFromR <- vector(nSamples, mode="list")
 for ( s in 1:nSamples ) {

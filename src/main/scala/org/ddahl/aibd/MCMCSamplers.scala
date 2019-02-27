@@ -282,9 +282,9 @@ object MCMCSamplers {
     results.reverse
   }
 
-  def updateFeatureAllocationGibbs(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator): Seq[FeatureAllocation[Null]] = {
+  def updateFeatureAllocationGibbs(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
     val nItems = fa.nItems
-    val mass = ibp.mass
+    val rate = ibp.mass/nItems
     var results = List[FeatureAllocation[Null]]()
     var state = fa
     for (b <- 1 to nSamples) {
@@ -298,8 +298,17 @@ object MCMCSamplers {
             if (feature.contains(i)) state.remove(i, feature) else state
           }
         }
-        val nNewFeatures = rdg.nextPoisson(mass / nItems).toInt
-        for (r <- 0 until nNewFeatures) state = state.add(Feature(null, i))
+        @scala.annotation.tailrec
+        def engine(weights: List[(Int,Double)], k: Int, max: Double): List[(Int,Double)] = {
+          val newWeight = weights.head._2 * rate/k
+          val expanded = (k,newWeight) :: weights
+          if ( newWeight < max/newFeaturesTruncationDivisor ) expanded
+          else engine(expanded, k+1, if ( newWeight > max ) newWeight else max)
+        }
+        val weights = engine(List((0,rate)),1,0.0)
+        val nNewFeatures = rdg.nextItem(weights.toIndexedSeq)._1
+        val featureWithOnlyI = Feature(null, i)
+        for (r <- 0 until nNewFeatures) state = state.add(featureWithOnlyI)
       }
       if (b % thin == 0) results = state :: results
     }

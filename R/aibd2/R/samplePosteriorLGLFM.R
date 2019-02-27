@@ -83,10 +83,9 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
 #' @param implementation x
 #' @param nSamples x
 #' @param thin x
-#' @param parallel x
 #'
 #' @export
-sampleIBPMCMC <- function(featureAllocation, distribution, newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+sampleIBPMCMC <- function(featureAllocation, distribution, implementation="R", nSamples=1L, thin=1L, newFeaturesTruncationDivisor=1000.0) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented.")
   Z <- featureAllocation
   N <- nrow(featureAllocation)
@@ -100,9 +99,9 @@ sampleIBPMCMC <- function(featureAllocation, distribution, newFeaturesTruncation
     fa <- scalaPush(featureAllocation,"featureAllocation",s)
     nSamples <- as.integer(nSamples[1])
     thin <- as.integer(thin[1])
-    newFeaturesTruncation <- as.integer(newFeaturesTruncation[1])
+    newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     logLike <- s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, newFeaturesTruncation, nSamples, thin, s$rdg())
+    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }
