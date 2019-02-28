@@ -45,7 +45,7 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX
   if ( implementation == "R" ) {
     Minv <- t(Z)%*%Z+(sdX^2)/(sdW^2)*diag(K)
     M <- if ( K==0 ) NA else solve(Minv)
-    part1 <- -N*D*log(2*pi)-(N-K)*D*log(sdX)-K*D*log(sdW)
+    part1 <- -N*(D/2)*log(2*pi)-(N-K)*D*log(sdX)-K*D*log(sdW)
     part2 <- -D/2*log(det(Minv))
     part3 <- -1/(2*sdX^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
     part1 + part2 + part3

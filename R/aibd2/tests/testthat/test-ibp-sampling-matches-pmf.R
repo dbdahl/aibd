@@ -31,7 +31,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE) {
   both$upper <- qbeta(1-(1-confidenceLevel)/2,alpha+both$freq,beta+nSamples-both$freq)
   coverage <- mean(apply(cbind(both$lower - both$prob,both$upper - both$prob),1,prod)<0)
   z <- ( coverage - confidenceLevel ) / sqrt( confidenceLevel * (1-confidenceLevel) / nrow(both) )
-  expect_gt( z, qnorm(0.003) )
+  expect_gt( z, qnorm(0.001) )
 }
 
 # The tests below sample from the IBP and computes the relative frequency of
