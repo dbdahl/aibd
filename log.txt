@@ -1,3 +1,8 @@
+
+2019-02-28: Warr
+
+  1. Added the corrected posters to the respository
+
 2019-02-28: Dahl
 
   1. Debugged discrepency between R and Scala implementation of
