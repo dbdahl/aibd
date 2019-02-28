@@ -9,7 +9,7 @@
 #' @param precisionW x
 #' @param sdX x
 #' @param sdW x
-#' @param newFeaturesTruncation x
+#' @param newFeaturesDivisor x
 #' @param implementation Either \code{"scala"} or \code{"R"}.
 #' @param nSamples Number of feature allocations to sample.
 #' @param thin Only save 1 in \code{thin} feature allocations.
@@ -40,7 +40,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncation=4L, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -57,7 +57,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   if ( implementation == "R" ) {
     Zs <- vector(nSamples %/% thin, mode="list")
     for (b in 1:nSamples) {
-      Z <- collapsedGibbsLinModelSampler(Z,sdX,sdW,distribution$mass,X,truncpt=newFeaturesTruncation)[[1]]
+      Z <- collapsedGibbsLinModelSampler(Z,sdX,sdW,distribution$mass,X,truncpt=6)[[1]]
       if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
     }
     Zs
@@ -66,7 +66,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     fa <- scalaPush(featureAllocation,"featureAllocation",s)
     nSamples <- as.integer(nSamples[1])
     thin <- as.integer(thin[1])
-    newFeaturesTruncation <- as.double(newFeaturesTruncation[1])
+    newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     logLike <- if ( D == 0 ) {
       s ^ '(fa: FeatureAllocation[Null]) => 0.0'
@@ -75,7 +75,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
         (fa: FeatureAllocation[Null]) => LinearGaussianSamplingModel(X).logLikelihood(fa, precisionX, precisionW, parallel)
       '
     }
-    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncation)
+    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }

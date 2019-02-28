@@ -318,9 +318,11 @@ object MCMCSamplers {
   def updateFeatureAllocationGibbsWithLikelihood(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], logLikelihood: FeatureAllocation[Null] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
     val nItems = fa.nItems
     val rate = ibp.mass/nItems
-    var results = List[FeatureAllocation[Null]]()
     var state = fa
-    for (b <- 1 to nSamples) {
+    var results = List[FeatureAllocation[Null]]()
+    val nIterations = thin*nSamples
+    var b = 1
+    while (b <= nIterations) {
       for (i <- 0 until nItems) {
         for (feature <- state.features) {
           val contains = feature.contains(i)
@@ -346,6 +348,7 @@ object MCMCSamplers {
         state = rdg.nextItem(weights)._1
       }
       if (b % thin == 0) results = state :: results
+      b += 1
     }
     results.reverse
   }

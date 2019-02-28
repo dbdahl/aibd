@@ -42,12 +42,13 @@ t.test(x,y)
 
 library(aibd2)
 mass <- 2
-nItems <- 5
+nItems <- 3
 nSamples <- 100000
 ibp <- ibp(mass,nItems)
 
-Z <- matrix(0L,nrow=nItems,ncol=0)
-samplesFromMCMC <- sampleIBPMCMC(Z,ibp,implementation="scala",nSamples=nSamples,thin=100)
+Z <- X <- matrix(0L,nrow=nItems,ncol=0)
+# samplesFromMCMC <- sampleIBPMCMC(Z,ibp,implementation="scala",nSamples=nSamples,thin=100)
+samplesFromMCMC <- samplePosteriorLGLFM(Z,ibp,X,1,1,1,1,implementation="scala",nSamples=nSamples,thin=100)
 samplesFromConstruction <- sampleFeatureAllocation(nSamples,ibp,implementation="scala")
 t.test(sapply(samplesFromMCMC,ncol), sapply(samplesFromConstruction,ncol))
 
