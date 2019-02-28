@@ -53,7 +53,7 @@
           4. Commit the corrected landscape and portrait posters in Git
              repository.
 
-      3. Meyers
+      3. Meyer
           1. Copy 'test-ibp-sampling-matches-pmf.R' to
              'test-aibd-sampling-matches-pmf.R' and implement the tests:
               1. Sampling from AIBD using constructive definition (from Scala)
