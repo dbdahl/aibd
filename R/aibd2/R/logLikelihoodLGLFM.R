@@ -1,7 +1,7 @@
 #' Log of the Likelihood from the Linear Gaussian Latent Feature Model
 #'
 #' The log of the likelihood of a feature allocation from the linear Gaussian latent
-#' feature model is computed. The standard deviation of the error term
+#' feature model (LGLFM) is computed. The standard deviation of the error term
 #' (\code{sdX}) may be supplied or the associated precision (\code{precisionX})
 #' can be provided instead. Likewise, only one of \code{sdW} and
 #' \code{precisionW} should be supplied.
