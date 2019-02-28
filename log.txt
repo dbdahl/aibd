@@ -1,18 +1,63 @@
 2019-02-28: Dahl
-  * Debugged discrepency between R and Scala implementation of logLikelihoodLGLFM.
-  * Made new tests in 'test-lglfm-likelihood.R' to provide:
-      * R and Scala give the same values for likelihood in LGLFM.
-      * R and Scala give the same values for posterior in LGLFM.
+
+  1. Debugged discrepency between R and Scala implementation of
+     logLikelihoodLGLFM.
+
+  2. Made new tests in 'test-lglfm-likelihood.R' to provide:
+      1. R and Scala give the same values for likelihood in LGLFM.
+      2. R and Scala give the same values for posterior in LGLFM.
 
 2019-02-27: Dahl
-  * Wrote the Scala implementation for MCMC from the IBP prior.  Access it by providing an X matrix with no columns to the function 'samplePosteriorLGLFM'.
-  * Edits tests in 'test-ibp-sampling-matches-pmf.R' to provide:
-      * Sampling from IBP using constructive definition (from Scala) gives a distribution consistent with the pmf.
-      * Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.
-      * Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.
-  * Warr has code the needs to be integrated and tested to implement:
-      * Sampling from IBP using MCMC (from R) gives a distribution consistent with the pmf.
-    Specifically, this test needs to be uncommented after Warr modifies the function 'samplePosteriorLGLFM' to perform prior sampling when X matrix has no columns.
 
+  1. Wrote the Scala implementation for MCMC from the IBP prior.  Access it by
+     providing an X matrix with no columns to the function samplePosteriorLGLFM.
 
+  2. Edits tests in 'test-ibp-sampling-matches-pmf.R' to provide:
+      1. Sampling from IBP using constructive definition (from Scala) gives a
+         distribution consistent with the pmf.
+      2. Sampling from IBP using MCMC (from Scala) gives a distribution
+         consistent with the pmf.
+      3. Sampling from IBP using constructive definition (from R) gives a
+         distribution consistent with the pmf.
+
+  3. Warr has code the needs to be integrated and tested to implement:
+      1. Sampling from IBP using MCMC (from R) gives a distribution consistent
+         with the pmf.
+    Specifically, this test needs to be uncommented after Warr modifies the
+    function 'samplePosteriorLGLFM' to perform prior sampling when X matrix has
+    no columns.
+
+2019-02-26: Group meeting notes
+
+  1. Assignments:
+
+      1. Dahl
+          1. Let Warr know where to save corrected landscape and portrait
+             posters in Git repository.
+          2. Scala implementation of MCMC sampling for IBP prior,  including
+             adding tests.
+          3. Scala implementation of MCMC sampling for the posterior of the
+             linear Gaussian latent feature model (LGLFM) using the IBP prior,
+             including adding tests.
+
+      2. Warr
+          1. Integrate code into the package to sampling from the IBP using
+             MCMC (from R).  Specifically, modify the R implementation of the
+             function 'samplePosteriorLGLFM' to perform prior sampling when X
+             matrix has no columns.
+          2. Enable tests for the implementation #1 above by uncommenting the
+             lines at the bottom of 'test-ibp-sampling-matches-pmf.R'.
+          3. Add R implementation in the function 'logPosteriorLGLFM' to
+             provide MCMC sampling for the posterior of the linear Gaussian
+             latent feature model (LGLFM) using the IBP prior.
+          4. Commit the corrected landscape and portrait posters in Git
+             repository.
+
+      3. Meyers
+          1. Copy 'test-ibp-sampling-matches-pmf.R' to
+             'test-aibd-sampling-matches-pmf.R' and implement the tests:
+              1. Sampling from AIBD using constructive definition (from Scala)
+                 gives a distribution consistent with the pmf.
+              2. Sampling from AIBD using constructive definition (from R)
+                 gives a distribution consistent with the pmf.
 
