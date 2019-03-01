@@ -7,6 +7,8 @@
       1. R and Scala give the same values for likelihood in LGLFM.
       2. R and Scala give the same values for posterior in LGLFM.
 
+  3. Wrote and polished documentation for functions related to LGLFM.
+
 2019-02-27: Dahl
 
   1. Wrote the Scala implementation for MCMC from the IBP prior.  Access it by
@@ -47,7 +49,7 @@
              matrix has no columns.
           2. Enable tests for the implementation #1 above by uncommenting the
              lines at the bottom of 'test-ibp-sampling-matches-pmf.R'.
-          3. Add R implementation in the function 'logPosteriorLGLFM' to
+          3. Add R implementation in the function 'samplePosteriorLGLFM' to
              provide MCMC sampling for the posterior of the linear Gaussian
              latent feature model (LGLFM) using the IBP prior.
           4. Commit the corrected landscape and portrait posters in Git

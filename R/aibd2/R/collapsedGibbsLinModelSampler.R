@@ -10,7 +10,6 @@
 #'
 #' @return A new sampled feature allocation matrix Z
 #' @importFrom stats dnorm dpois rbinom rmultinom
-#' @export
 #'
 #' @examples
 #'

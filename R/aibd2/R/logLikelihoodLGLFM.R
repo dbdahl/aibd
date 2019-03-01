@@ -18,10 +18,25 @@
 #'   if \code{precisionW} is missing.
 #' @param implementation Either "R" or "scala", to indicate the implementation
 #'   to use.
-#' @param parallel Should parallel computations be employeed for the Scala implementation?
+#' @param parallel Should parallel computations be employeed for the Scala
+#'   implementation?
 #'
 #' @return A numeric vector giving the log of the likelihood.
 #' @export
+#' @examples
+#' sigx <- 0.1
+#' sigw <- 1.0
+#' dimW <- 1
+#' nItems <- 8  # Should be a multiple of 4
+#' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
+#' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
+#' Ztruth <- Z
+#' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+#' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
+#' X <- Z %*% W + e
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw, implementation="scala")
+#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw, implementation="scala")
 #'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="R", parallel=FALSE) {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
@@ -36,6 +51,7 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX
     else Ns[1]
   } else nrow(featureAllocation)
   D <- ncol(X)
+  if ( D == 0 ) return( if (is.list(featureAllocation)) rep(0.0,length(featureAllocation)) else 0.0)
   K <- ncol(Z)
   if ( nrow(X) != N ) stop("The number of rows in 'featureAllocation' and 'X' should be the same.")
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {

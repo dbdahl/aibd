@@ -1,29 +1,32 @@
 #' Sample from the Posterior Distribution of the Linear Gaussian Feature Allocation Model
 #'
-#' This function samples from the posterior distribution of the linear Gaussian latent feature allocation model (LGLFM) using an Indian buffet process (IBP) prior on the feature allocations.
+#' This function samples from the posterior distribution of the linear Gaussian
+#' latent feature model (LGLFM) using an Indian buffet process (IBP) prior on
+#' the feature allocations.
 #'
-#' @param featureAllocation x
-#' @param distribution x
-#' @param X x
-#' @param precisionX x
-#' @param precisionW x
-#' @param sdX x
-#' @param sdW x
-#' @param newFeaturesTruncationDivisor x
-#' @param implementation Either \code{"scala"} or \code{"R"}.
-#' @param nSamples Number of feature allocations to sample.
+#' @param newFeaturesTruncationDivisor While in theory a countable infinite
+#'   number of new features may be allocated to an item, the posterior
+#'   simulation needs to limit the number of new features that are considered.
+#'   The value of this argument controls when to stop considering additional
+#'   features.  Starting with 0 and 1 new features, the posterior
+#'   probabililities are computed.  Additional new features of considered but
+#'   the algorithm stops when the posterior probabilities of the current number
+#'   of new features is less than the maximum posterior probability (among the
+#'   previous number of new features) dividided by
+#'   \code{newFeaturesTruncationDivisior}.
+#' @param nSamples Number of feature allocations to return.  The actual number
+#'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
-#' @param parallel Should computations be done in parallel?
+#' @inheritParams logPosteriorLGLFM
 #'
 #' @export
 #' @examples
-#'
-#' set.seed(3)
-#' alpha <- 1
+#' mass <- 1
 #' sigx <- 0.1
 #' sigw <- 1.0
 #' dimW <- 1
 #' nItems <- 8  # Should be a multiple of 4
+#' dist <- ibp(mass, nItems)
 #' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
 #' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
 #' Ztruth <- Z
@@ -31,10 +34,12 @@
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
 #' X <- matrix(double(),nrow=nrow(X),ncol=0)
-#' dist <- ibp(alpha, nItems)
-#' Zlist <- list(matrix(0,nrow=nrow(Z),ncol=0))
-#' Zlist <- samplePosteriorLGLFM(Zlist[[length(Zlist)]], dist, X, sdX=sigx, sdW=sigw,
+#' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
 #'                               implementation="scala", nSamples=10000, thin=10)
+#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
+#' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
+#'                               implementation="scala", nSamples=10000, thin=10)
+#'
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(Zlist)
 #' Ztruth %*% t(Ztruth)
@@ -56,7 +61,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   implementation <- toupper(implementation)
   if ( implementation == "R" ) {
     Zs <- vector(nSamples %/% thin, mode="list")
-    for (b in 1:nSamples) {
+    for (b in 1:(thin*nSamples)) {
       Z <- collapsedGibbsLinModelSampler(Z,sdX,sdW,distribution$mass,X,truncpt=6)[[1]]
       if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
     }
