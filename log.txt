@@ -1,4 +1,8 @@
+2019-02-28: Meyer
 
+  1. Consolidated R's implementation for the AIBD pmf into one function and
+     added a test to show both R and Scala's values agree. 
+     
 2019-02-28: Warr
 
   1. Added the corrected posters to the respository
