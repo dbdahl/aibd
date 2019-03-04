@@ -337,15 +337,15 @@ object MCMCSamplers {
         val featureWithOnlyI = Feature(null, i)
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation[Null],Double)], cumProduct: Double, k: Int, max: Double): List[(FeatureAllocation[Null],Double)] = {
-          val newCumProduct = cumProduct * rate/k
+          val newCumProduct = cumProduct + log(rate) - log(k)
           val newCumState = weights.head._1.add(featureWithOnlyI)
-          val newWeight = newCumProduct * exp(logLikelihood(newCumState))
+          val newWeight = newCumProduct + logLikelihood(newCumState)
           val expanded = (newCumState,newWeight) :: weights
-          if ( newWeight < max/newFeaturesTruncationDivisor ) expanded
+          if ( newWeight < max - log(newFeaturesTruncationDivisor) ) expanded
           else engine(expanded, newCumProduct, k+1, if ( newWeight > max ) newWeight else max)
         }
-        val weights = engine((state,rate) :: Nil,rate,1,0.0).toIndexedSeq
-        state = rdg.nextItem(weights)._1
+        val weights = engine((state,log(rate) + logLikelihood(state)) :: Nil,rate,1,0.0).toIndexedSeq
+        state = rdg.nextItem(weights, onLogScale = true)._1
       }
       if (b % thin == 0) results = state :: results
       b += 1
