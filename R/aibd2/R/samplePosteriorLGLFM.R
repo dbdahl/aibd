@@ -62,7 +62,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   if ( implementation == "R" ) {
     Zs <- vector(nSamples %/% thin, mode="list")
     for (b in 1:(thin*nSamples)) {
-      Z <- collapsedGibbsLinModelSampler(Z,sdX,sdW,distribution$mass,X,truncpt=6)[[1]]
+      Z <- collapsedGibbsLinModelSamplerSS(Z,sdX,sdW,distribution$mass,X)[[1]]
       if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
     }
     Zs

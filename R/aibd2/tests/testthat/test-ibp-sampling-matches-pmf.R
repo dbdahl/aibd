@@ -79,7 +79,7 @@ test_that("Sampling from IBP using constructive definition (from R) gives a dist
   engine("R", TRUE)
 })
 
-# test_that("Sampling from IBP using MCMC (from R) gives a distribution consistent with the pmf.", {
-#   engine("R", FALSE)
-# })
+test_that("Sampling from IBP using MCMC (from R) gives a distribution consistent with the pmf.", {
+  engine("R", FALSE)
+})
 
