@@ -85,17 +85,18 @@ collapsedGibbsLinModelSamplerSS <- function(Z,sigx,sigw,alpha,X,truncRatio=1000)
     ## Add new features for the i^th customer
     #    loglikeNF <- loglikelihood(X,Z,sigx,sigw)
     Z_prop <- Z
-    cond <- 0
+    cond <- -Inf
     ll <- loglikelihoodSS(X,Z,sigx,sigw)
-    logpost <- dpois(0,alpha/N,log=T)
-    while (cond < truncRatio) {
+    logprior <- dpois(0,alpha/N,log=T)
+    logTruncRatio <- log(truncRatio)
+    while (cond < logTruncRatio) {
       Z_prop <- cbind(Z_prop,rep(0,N))
       Z_prop[i,dim(Z_prop)[2]] <- 1
       ll <- c(ll,loglikelihoodSS(X,Z_prop,sigx,sigw))
-      logpost <- c(logpost,dpois(length(ll)-1,alpha/N,log=T))
-      cond <- exp(max(ll+logpost))/exp(ll[length(ll)]+logpost[length(ll)])
+      logprior <- c(logprior,dpois(length(ll)-1,alpha/N,log=T))
+      cond <- max(ll+logprior) - (ll[length(ll)]+logprior[length(ll)])
     }
-    probNewFeature <- exp(ll+logpost)
+    probNewFeature <- exp(ll+logprior)
     probNewFeature <- probNewFeature/sum(probNewFeature)
     numNewFeat <- which(rmultinom(1,1,probNewFeature)[,1]==1)-1
     if (numNewFeat>0) {
