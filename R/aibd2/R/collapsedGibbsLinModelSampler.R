@@ -5,31 +5,32 @@
 #' @param sigw The standard deviation of the ????latent features????
 #' @param alpha The prior prarameter which affects the number of features
 #' @param X The data in matrix form
-#' @param truncpt The number of possible features that can be added to each
-#'                cumstomer on one Gibbs iteration
+#' @param truncpt A threshold number for when to stop adding new possible features
 #'
 #' @return A new sampled feature allocation matrix Z
 #' @importFrom stats dnorm dpois rbinom rmultinom
+#' @export
 #'
 #' @examples
 #'
 #' set.seed(1)
-#' nItems <- 4
-#' X <- matrix(rnorm(8),nrow=nItems,ncol=2)
+#' X <- matrix(rnorm(8),nrow=4,ncol=2)
 #' X[1:2,1] <- X[1:2,1]+10
 #' X[,2] <- X[,2]-5
-#' Z <- matrix(0,nrow=nItems,ncol=0)
+#' Z <- matrix(0,nrow=4,ncol=0)
 #' n <- 1000
 #' SavedZ <- vector(mode="list",length=n)
 #' alpha <- 0.1
 #' sigx <- 1
 #' sigw <- 1
 #'
-#' SavedZ[[1]] <- collapsedGibbsLinModelSampler(Z,sigx,sigw,alpha,X)
+#' SavedZ[[1]] <- collapsedGibbsLinModelSamplerSS(Z,sigx,sigw,alpha,X)
 #' for (i in 2:n) {
-#'   SavedZ[[i]] <- collapsedGibbsLinModelSampler(SavedZ[[i-1]][[1]],sigx,sigw,alpha,X)
+#'   SavedZ[[i]] <- collapsedGibbsLinModelSamplerSS(SavedZ[[i-1]][[1]],sigx,sigw,alpha,X)
 #' }
 #'
+#'
+
 collapsedGibbsLinModelSampler <- function(Z,sigx,sigw,alpha,X,truncpt=4) {
   if ( missing(sigx) || is.null(sigx) || is.na(sigx) || is.nan(sigx) ||
        !is.numeric(sigx) || ( length(sigx) != 1 ) ) stop("'sigx' is misspecified.")
@@ -231,10 +232,10 @@ LMloglike <- function(X,Z,sigx,sigw) {
   K <- dim(Z)[2]
   if (K==0) {
     D <- dim(X)[2]
-    ll <- -N*D*log(2*pi)-N*D*log(sigx)-1/(2*sigx^2)*sum(diag(t(X)%*%X))
+    ll <- -(N*D/2)*log(2*pi)-N*D*log(sigx)-1/(2*sigx^2)*sum(diag(t(X)%*%X))
   } else {
     M <- solve(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K))
-    part1 <- -N*D*log(2*pi)-(N-K)*D*log(sigx)-K*D*log(sigw)
+    part1 <- -(N*D/2)*log(2*pi)-(N-K)*D*log(sigx)-K*D*log(sigw)
     part2 <- -D/2*log(det(t(Z)%*%Z+(sigx^2)/(sigw^2)*diag(K)))
     part3 <- -1/(2*sigx^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
     ll <- part1+part2+part3
