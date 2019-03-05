@@ -344,7 +344,7 @@ object MCMCSamplers {
           if ( newWeight < max - log(newFeaturesTruncationDivisor) ) expanded
           else engine(expanded, newCumProduct, k+1, if ( newWeight > max ) newWeight else max)
         }
-        val weights = engine((state,log(rate) + logLikelihood(state)) :: Nil,rate,1,0.0).toIndexedSeq
+        val weights = engine((state,log(rate) + logLikelihood(state)) :: Nil,log(rate),1,Double.NegativeInfinity).toIndexedSeq
         state = rdg.nextItem(weights, onLogScale = true)._1
       }
       if (b % thin == 0) results = state :: results
