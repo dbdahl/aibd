@@ -318,9 +318,11 @@ object MCMCSamplers {
   def updateFeatureAllocationGibbsWithLikelihood(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], logLikelihood: FeatureAllocation[Null] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
     val nItems = fa.nItems
     val rate = ibp.mass/nItems
+    val nIterations = thin*nSamples
+    val logRate = log(rate)
+    val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = fa
     var results = List[FeatureAllocation[Null]]()
-    val nIterations = thin*nSamples
     var b = 1
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
@@ -329,23 +331,23 @@ object MCMCSamplers {
           val m = feature.size - (if (contains) 1 else 0)
           state = if (m == 0) state.remove(feature) else {
             val (state0, state1) = if ( contains ) (state.remove(i,feature),state) else (state,state.add(i,feature))
-            val weight0 = exp(logLikelihood(state0)) * (nItems - m.toDouble)
-            val weight1 = exp(logLikelihood(state1)) * m.toDouble
+            val weight0 = exp(logLikelihood(state0) + logOnInt(nItems - m))
+            val weight1 = exp(logLikelihood(state1) + logOnInt(m))
             if (rdg.nextUniform(0, 1) < weight1 / ( weight0 + weight1 )) state1 else state0
           }
         }
         val featureWithOnlyI = Feature(null, i)
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation[Null],Double)], cumProduct: Double, k: Int, max: Double): List[(FeatureAllocation[Null],Double)] = {
-          val newCumProduct = cumProduct * rate/k
+          val newCumProduct = cumProduct + logRate - logOnInt(k)
           val newCumState = weights.head._1.add(featureWithOnlyI)
-          val newWeight = newCumProduct * exp(logLikelihood(newCumState))
+          val newWeight = newCumProduct + logLikelihood(newCumState)
           val expanded = (newCumState,newWeight) :: weights
-          if ( newWeight < max/newFeaturesTruncationDivisor ) expanded
+          if ( newWeight < max - logNewFeaturesTruncationDivisor ) expanded
           else engine(expanded, newCumProduct, k+1, if ( newWeight > max ) newWeight else max)
         }
-        val weights = engine((state,rate) :: Nil,rate,1,0.0).toIndexedSeq
-        state = rdg.nextItem(weights)._1
+        val weights = engine((state,logRate + logLikelihood(state)) :: Nil,logRate,1,Double.NegativeInfinity).toIndexedSeq
+        state = rdg.nextItem(weights, onLogScale = true)._1
       }
       if (b % thin == 0) results = state :: results
       b += 1

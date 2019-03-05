@@ -33,7 +33,6 @@
 #' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
-#' X <- matrix(double(),nrow=nrow(X),ncol=0)
 #' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
 #'                               implementation="scala", nSamples=10000, thin=10)
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)

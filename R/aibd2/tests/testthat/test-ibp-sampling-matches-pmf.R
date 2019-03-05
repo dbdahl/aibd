@@ -67,13 +67,13 @@ test_that("Sampling from IBP using constructive definition (from Scala) gives a 
   engine("scala", TRUE)
 })
 
-# test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
-#   engine("scala", FALSE, TRUE)
-# })
-
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
   engine("scala", FALSE)
 })
+
+# test_that("Sampling from LGLFM with IBP prior using MCMC (from Scala) gives a distribution consistent with the posterior.", {
+#   engine("scala", FALSE, TRUE)
+# })
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
   engine("R", TRUE)
@@ -83,3 +83,6 @@ test_that("Sampling from IBP using MCMC (from R) gives a distribution consistent
   engine("R", FALSE)
 })
 
+# test_that("Sampling from LGLFM with IBP prior using MCMC (from R) gives a distribution consistent with the posterior.", {
+#   engine("scala", FALSE, TRUE)
+# })

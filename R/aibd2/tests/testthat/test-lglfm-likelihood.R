@@ -28,3 +28,22 @@ test_that("R and Scala give the same values for posterior in LGLFM", {
   logPosteriorFromScala <- logPosteriorLGLFM(featureAllocations, dist, X, sdX=sigx, sdW=sigw, implementation="scala")
   expect_equal(logPosteriorFromR, logPosteriorFromScala)
 })
+
+mass <- 2.0
+sigx <- 0.5
+sigw <- 1.2
+dimW <- 2
+nItems <- 3  # Should be a multiple of 3
+Z <- matrix(c(1,0,1),byrow=TRUE,nrow=nItems,ncol=2)
+Ztruth <- Z
+W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
+X <- Z %*% W + e
+maxNFeatures <- 4
+featureAllocations <- enumerateFeatureAllocations(nItems, maxNFeatures)
+
+test_that("R and Scala give the same values for likelihood (version 2) in LGLFM", {
+  logLikelihoodFromR     <- logLikelihoodLGLFM(featureAllocations, X, sdX=sigx, sdW=sigw, implementation="R")
+  logLikelihoodFromScala <- logLikelihoodLGLFM(featureAllocations, X, sdX=sigx, sdW=sigw, implementation="scala")
+  expect_equal(logLikelihoodFromR, logLikelihoodFromScala)
+})
