@@ -329,8 +329,8 @@ object MCMCSamplers {
           val m = feature.size - (if (contains) 1 else 0)
           state = if (m == 0) state.remove(feature) else {
             val (state0, state1) = if ( contains ) (state.remove(i,feature),state) else (state,state.add(i,feature))
-            val weight0 = exp(logLikelihood(state0)) * (nItems - m.toDouble)
-            val weight1 = exp(logLikelihood(state1)) * m.toDouble
+            val weight0 = exp(logLikelihood(state0) + log(nItems - m.toDouble))
+            val weight1 = exp(logLikelihood(state1) + log(m.toDouble))
             if (rdg.nextUniform(0, 1) < weight1 / ( weight0 + weight1 )) state1 else state0
           }
         }
