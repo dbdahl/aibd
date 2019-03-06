@@ -3,6 +3,37 @@
   1. Completed Tasks 1-3 from 2019-02-26.
 
 
+2019-03-04: Group meeting notes
+
+  1. Report on what we've been working on.
+  2. Tasks:
+
+      1. Dahl
+          1. Scala implementation of MCMC sampling for the posterior of the
+             linear Gaussian latent feature model (LGLFM) using the IBP prior,
+             including adding tests.
+          2. Let Warr know the X matrix and hyperparameter settings for
+             posterior simulation.
+
+      2. Warr
+          1. R implementation of MCMC sampling for the posterior of the
+             linear Gaussian latent feature model (LGLFM) using the IBP prior,
+             including adding tests.
+          2. Construct an X matrix, Z matrix, and hyperparameter values with
+             about 10 items based on simulation using 'set.seed()'.
+
+      3. Meyer
+          1. Implement contructive sampling from the AIBD in R and add tests.
+          2. Copy 'test-ibp-sampling-matches-pmf.R' to
+             'test-aibd-sampling-matches-pmf.R' and implement the tests:
+              1. Sampling from AIBD using constructive definition (from Scala)
+                 gives a distribution consistent with the pmf.
+              2. Sampling from AIBD using constructive definition (from R)
+                 gives a distribution consistent with the pmf.
+          3. Reconstruct plots from poster using our current code.
+
+
+
 2019-03-01: Dahl
 
   1. Improved the tests in 'test-ibp-sampling-matches-pmf.R' in preparation
