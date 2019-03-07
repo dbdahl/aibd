@@ -359,13 +359,16 @@ object MCMCSamplers {
     val nItems = fa.nItems
     val nIterations = thin*nSamples
     var state = fa
+    var stateLogLikelihood = logLikelihood(state)
     var results = List[FeatureAllocation[Null]]()
     var b = 1
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
         val proposal = ibp.sample(i,state,rdg)
-        if ( log(rdg.nextUniform(0.0,1.0)) < logLikelihood(proposal) - logLikelihood(state) ) {
+        val proposalLogLikelihood = logLikelihood(proposal)
+        if ( log(rdg.nextUniform(0.0,1.0)) < proposalLogLikelihood - stateLogLikelihood ) {
           state = proposal
+          stateLogLikelihood = proposalLogLikelihood
         }
       }
       if (b % thin == 0) results = state :: results
