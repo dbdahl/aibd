@@ -28,6 +28,18 @@ class IndianBuffetProcess[A] protected(val mass: Double, val nItems: Int, val pa
     fa
   }
 
+  def sample(index: Int, fa2: FeatureAllocation[A], rdg: RandomDataGenerator): FeatureAllocation[A] = {
+    if ( fa2.nItems != nItems ) throw new IllegalArgumentException("'nItems' does not match.")
+    var fa = fa2.remove(index)
+    fa.foreach { f =>
+      if (rdg.nextUniform(0.0, nItems) < f.size) fa = fa.add(index, f)
+    }
+    repeat(rdg.nextPoisson(mass / nItems)) {
+      fa = fa.add(index, parameterDistribution.sample(rdg))
+    }
+    fa
+  }
+
   private val const1 = -mass * harmonicNumber(nItems)
   private val const2 = log(mass) - logFactorial(nItems)
 
@@ -35,7 +47,7 @@ class IndianBuffetProcess[A] protected(val mass: Double, val nItems: Int, val pa
     var sum = const1 + fa.nFeatures * const2
     sum -= fa.foldLeft(Map.empty[Feature[Null], Int])((map, f) => {
       val ff = f.dropParameter
-      map + ((ff, map.getOrElse(ff,0) + 1))
+      map + ((ff, map.getOrElse(ff, 0) + 1))
     }).values.foldLeft(0.0)((s, x) => s + logFactorial(x))
     val fs = if (parallel) fa.par else fa
     sum += fs.aggregate(0.0)((s, f) => {

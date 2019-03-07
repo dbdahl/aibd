@@ -1,4 +1,5 @@
-#' Sample from the Posterior Distribution of the Linear Gaussian Feature Allocation Model
+#' Sample from the Posterior Distribution of the Linear Gaussian Feature
+#' Allocation Model
 #'
 #' This function samples from the posterior distribution of the linear Gaussian
 #' latent feature model (LGLFM) using an Indian buffet process (IBP) prior on
@@ -14,6 +15,10 @@
 #'   of new features is less than the maximum posterior probability (among the
 #'   previous number of new features) dividided by
 #'   \code{newFeaturesTruncationDivisior}.
+#' @param samplingMethod The string \code{"independence"} or
+#'   \code{"pseudoGibbs"} indicating whether posterior simuluation should be
+#'   based on independing sampling from the prior or from the pseudo Gibbs
+#'   algorithm of Griffiths and Ghahramani (2011).
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
@@ -44,7 +49,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="independence", implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -79,7 +84,11 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
         (fa: FeatureAllocation[Null]) => LinearGaussianSamplingModel(X).logLikelihood(fa, precisionX, precisionW, parallel)
       '
     }
-    newZs <- s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+    newZs <- if ( samplingMethod == "pseudoGibbs" ) {
+      s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+    } else if ( samplingMethod == "independence" ) {
+      s$MCMCSamplers.updateFeatureAllocationIndependence(fa, dist, logLike, nSamples, thin, s$rdg())
+    } else stop("Unrecgonized value for 'samplingMethod'.")
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
 }
