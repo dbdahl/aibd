@@ -361,19 +361,25 @@ object MCMCSamplers {
     var state = fa
     var stateLogLikelihood = logLikelihood(state)
     var results = List[FeatureAllocation[Null]]()
+    var monitor = MCMCAcceptanceMonitor1()
     var b = 1
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
         val proposal = ibp.sample(i,state,rdg)
         val proposalLogLikelihood = logLikelihood(proposal)
-        if ( log(rdg.nextUniform(0.0,1.0)) < proposalLogLikelihood - stateLogLikelihood ) {
-          state = proposal
-          stateLogLikelihood = proposalLogLikelihood
+        state = monitor {
+          if ( log(rdg.nextUniform(0.0,1.0)) < proposalLogLikelihood - stateLogLikelihood ) {
+            stateLogLikelihood = proposalLogLikelihood
+            (proposal,1,1)
+          } else {
+            (state,0,1)
+          }
         }
       }
       if (b % thin == 0) results = state :: results
       b += 1
     }
+    //println("Monitor: "+monitor.rate)
     results.reverse
   }
 
