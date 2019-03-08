@@ -55,20 +55,6 @@ object MCMCSamplers {
     faCurrent
   }
 
-  def trashme(mass: Double, nItems: Int, nSamples: Int, thin: Int, maxNewFeatures: Int): Array[Int] = {
-    val logLikelihood = (x: Int, fa: FeatureAllocation[Null]) => 0.0
-    val logLikelihood2 = (fa: FeatureAllocation[Null]) => 0.0
-    val rdg = new RandomDataGenerator()
-    val dist = IndianBuffetProcess(mass, nItems)
-    //val results = updateFeatureAllocationGibbsWhenNull(FeatureAllocation[Null](nItems), dist, logLikelihood2, maxNewFeatures, nSamples, thin, rdg, false)
-    var results = List[FeatureAllocation[Null]](FeatureAllocation[Null](nItems))
-    for (i <- 0 until nSamples) {
-      results = updateFeatureAllocationIBP(thin, results.head, dist, logLikelihood, maxNewFeatures, rdg) :: results
-      //results = dist.sample(rdg) :: results
-    }
-    results.map(fa => fa.size).toArray
-  }
-
   def updateFeatureAllocationInOrOut[A](nScans: Int, fa: FeatureAllocation[A], faDistribution: FeatureAllocationDistribution[A], logLikelihood: (Int, FeatureAllocation[A]) => Double, rdg: RandomDataGenerator, parallel: Boolean): (FeatureAllocation[A], Int, Int) = {
     import faDistribution.{nItems, permutation}
     var faCurrent = fa
@@ -248,38 +234,6 @@ object MCMCSamplers {
       }
     }
     (faCurrent, acceptances, attempts)
-  }
-
-  def updateFeatureAllocationGibbsWhenNull(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: FeatureAllocationDistribution[Null], logLikelihood: FeatureAllocation[Null] => Double, newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[Null]] = {
-    var results = List[FeatureAllocation[Null]]()
-    var state = fa
-    var posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
-    for (b <- 1 to nSamples) {
-      for (i <- 0 until state.nItems) {
-        for (feature <- state.features) {
-          if (feature.contains(i) && (feature.size == 1)) {
-            state = state.remove(i, feature)
-            posteriorCurrent = exp(logLikelihood(state) + priorFeatureAllocationDistribution.logDensity(state, parallel))
-          } else {
-            val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
-            val posteriorProposal = exp(logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel))
-            if (rdg.nextUniform(0, 1) < posteriorProposal / (posteriorCurrent + posteriorProposal)) {
-              state = proposal
-              posteriorCurrent = posteriorProposal
-            }
-          }
-        }
-        val featureWithOnlyI = Feature(null, i)
-        val proposals = (0 until newFeaturesTruncation).scanLeft((state, log(posteriorCurrent))) { (previousState, j) =>
-          val proposal = previousState._1.add(featureWithOnlyI)
-          val logPosteriorProposal = logLikelihood(proposal) + priorFeatureAllocationDistribution.logDensity(proposal, parallel)
-          (proposal, logPosteriorProposal)
-        }
-        state = rdg.nextItem(proposals, onLogScale = true)._1
-      }
-      if (b % thin == 0) results = state :: results
-    }
-    results.reverse
   }
 
   def updateFeatureAllocationGibbs(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
