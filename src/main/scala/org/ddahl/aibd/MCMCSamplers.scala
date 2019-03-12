@@ -365,9 +365,8 @@ object MCMCSamplers {
         engine(availableFeatures.tail, availableFeatures.head :: occupiedFeatures)
       }
     }
-    //engine(faWithoutI, faWithoutI.toList).map(fa => fa.add(singletonFeatures).leftOrderedForm).toSet.toList  // Remove duplicates
     engine(faWithoutI.toList, Nil)
-    faList.map(_.add(singletonFeatures).leftOrderedForm).toSet.toList
+    faList.map(_.add(singletonFeatures).leftOrderedForm).toSet.toList  // Remove duplicates
   }
 
   def updateFeatureAllocationViaNeighborhoods(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], logLikelihood: FeatureAllocation[Null] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
@@ -382,6 +381,46 @@ object MCMCSamplers {
         val proposals = allPossibleConfigurationsAmongExistingKeepingSingletons(i, state)
         val logWeights = proposals.toIndexedSeq.map(fa => (fa, ibp.logDensity(fa) + logLikelihood(fa)))
         state = rdg.nextItem(logWeights, onLogScale = true)._1
+        state = FeatureAllocation(state.nItems, state.filterNot(f => (f.size == 1 ) && (f.contains(i))).toVector)
+        val featureWithOnlyI = Feature(null, i)
+        @scala.annotation.tailrec
+        def engine(weights: List[(FeatureAllocation[Null],Double)], max: Double): List[(FeatureAllocation[Null],Double)] = {
+          val newCumState = weights.head._1.add(featureWithOnlyI)
+          val newLogWeight = ibp.logDensity(newCumState) + logLikelihood(newCumState)
+          val expanded = (newCumState,newLogWeight) :: weights
+          if ( newLogWeight < max - logNewFeaturesTruncationDivisor ) expanded
+          else engine(expanded, if ( newLogWeight > max ) newLogWeight else max)
+        }
+        val weights = engine((state,ibp.logDensity(state) + logLikelihood(state)) :: Nil,Double.NegativeInfinity).toIndexedSeq
+        state = rdg.nextItem(weights, onLogScale = true)._1
+      }
+      if (b % thin == 0) results = state :: results
+      b += 1
+    }
+    results.reverse
+  }
+
+  def updateFeatureAllocationBert(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], logLikelihood: FeatureAllocation[Null] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
+    val nItems = fa.nItems
+    val nIterations = thin*nSamples
+    val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
+    var state = fa
+    var results = List[FeatureAllocation[Null]]()
+    var b = 1
+    while (b <= nIterations) {
+      for (i <- 0 until nItems) {
+        var stateLogPosterior = logLikelihood(state) + ibp.logDensity(state)
+        val occupiedFeatures = state.features.filterNot( f => ( f.size == 1 ) && f.contains(i) )
+        if ( occupiedFeatures.length > 0 ) {
+          val feature = occupiedFeatures(rdg.nextInt(0, occupiedFeatures.size - 1))
+          val proposal = if (feature.contains(i)) state.remove(i, feature) else state.add(i, feature)
+          val proposalLogPosterior = logLikelihood(proposal) + ibp.logDensity(proposal)
+          val lmh = proposalLogPosterior - stateLogPosterior
+          if ((lmh >= 1) || (log(rdg.nextUniform(0.0, 1.0)) < lmh)) {
+            state = proposal
+            stateLogPosterior = proposalLogPosterior
+          }
+        }
         state = FeatureAllocation(state.nItems, state.filterNot(f => (f.size == 1 ) && (f.contains(i))).toVector)
         val featureWithOnlyI = Feature(null, i)
         @scala.annotation.tailrec
