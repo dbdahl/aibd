@@ -129,6 +129,20 @@ object MCMCSamplers {
     (faCurrent, acceptances, attempts, hitAcceptances, hitAttempts)
   }
 
+  def updateFeatureAllocationGibbs[A](fa: FeatureAllocation[A], faDistribution: FeatureAllocationDistribution[A], logLikelihood: FeatureAllocation[A] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[A]] = {
+    val nIterations = thin*nSamples
+    var state = fa
+    var results = List[FeatureAllocation[A]]()
+    var b = 1
+    val logLike = (i: Int, fa: FeatureAllocation[A]) => logLikelihood(fa)
+    while (b <= nIterations) {
+      state = updateFeatureAllocationGibbs(thin, state, faDistribution, logLike, rdg, parallel)
+      if (b % thin == 0) results = state :: results
+      b += 1
+    }
+    results.reverse
+  }
+
   def updateFeatureAllocationGibbs[A](nScans: Int, fa: FeatureAllocation[A], faDistribution: FeatureAllocationDistribution[A], logLikelihood: (Int, FeatureAllocation[A]) => Double, rdg: RandomDataGenerator, parallel: Boolean): FeatureAllocation[A] = {
     import faDistribution.{nItems, permutation}
     var faCurrent = fa
@@ -236,7 +250,9 @@ object MCMCSamplers {
     (faCurrent, acceptances, attempts)
   }
 
-  def updateFeatureAllocationGibbs(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
+  //-----
+
+  def updateFeatureAllocationGibbsPriorOnly(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
     val nItems = fa.nItems
     val rate = ibp.mass/nItems
     var results = List[FeatureAllocation[Null]]()
@@ -315,7 +331,7 @@ object MCMCSamplers {
     var state = fa
     var stateLogLikelihood = logLikelihood(state)
     var results = List[FeatureAllocation[Null]]()
-    var monitor = MCMCAcceptanceMonitor1()
+    val monitor = MCMCAcceptanceMonitor1()
     var b = 1
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
@@ -334,6 +350,54 @@ object MCMCSamplers {
       b += 1
     }
     //println("Monitor: "+monitor.rate)
+    results.reverse
+  }
+
+  def allPossibleConfigurationsAmongExistingKeepingSingletons[A](i: Int, fa: FeatureAllocation[A]): List[FeatureAllocation[A]] = {
+    val singletonFeatures = fa.featuresOf(i).filter(_.size == 1)
+    val faWithoutI = fa.remove(i)
+    var faList = List[FeatureAllocation[A]]()
+    def engine(availableFeatures: List[Feature[A]], occupiedFeatures: List[Feature[A]]): Unit = {
+      if ( availableFeatures.isEmpty ) {
+        faList = occupiedFeatures.foldLeft(faWithoutI)((cumFA,f) => cumFA.add(i,f)) :: faList
+      } else {
+        engine(availableFeatures.tail,                           occupiedFeatures)
+        engine(availableFeatures.tail, availableFeatures.head :: occupiedFeatures)
+      }
+    }
+    //engine(faWithoutI, faWithoutI.toList).map(fa => fa.add(singletonFeatures).leftOrderedForm).toSet.toList  // Remove duplicates
+    engine(faWithoutI.toList, Nil)
+    faList.map(_.add(singletonFeatures).leftOrderedForm).toSet.toList
+  }
+
+  def updateFeatureAllocationViaNeighborhoods(fa: FeatureAllocation[Null], ibp: IndianBuffetProcess[Null], logLikelihood: FeatureAllocation[Null] => Double, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
+    val nItems = fa.nItems
+    val nIterations = thin*nSamples
+    val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
+    var state = fa
+    var results = List[FeatureAllocation[Null]]()
+    var b = 1
+    while (b <= nIterations) {
+      for (i <- 0 until nItems) {
+        val proposals = allPossibleConfigurationsAmongExistingKeepingSingletons(i, state)
+        val logWeights = proposals.toIndexedSeq.map(fa => (fa, ibp.logDensity(fa) + logLikelihood(fa)))
+        state = rdg.nextItem(logWeights, onLogScale = true)._1
+        state = FeatureAllocation(state.nItems, state.filterNot(f => (f.size == 1 ) && (f.contains(i))).toVector)
+        val featureWithOnlyI = Feature(null, i)
+        @scala.annotation.tailrec
+        def engine(weights: List[(FeatureAllocation[Null],Double)], max: Double): List[(FeatureAllocation[Null],Double)] = {
+          val newCumState = weights.head._1.add(featureWithOnlyI)
+          val newLogWeight = ibp.logDensity(newCumState) + logLikelihood(newCumState)
+          val expanded = (newCumState,newLogWeight) :: weights
+          if ( newLogWeight < max - logNewFeaturesTruncationDivisor ) expanded
+          else engine(expanded, if ( newLogWeight > max ) newLogWeight else max)
+        }
+        val weights = engine((state,ibp.logDensity(state) + logLikelihood(state)) :: Nil,Double.NegativeInfinity).toIndexedSeq
+        state = rdg.nextItem(weights, onLogScale = true)._1
+      }
+      if (b % thin == 0) results = state :: results
+      b += 1
+    }
     results.reverse
   }
 

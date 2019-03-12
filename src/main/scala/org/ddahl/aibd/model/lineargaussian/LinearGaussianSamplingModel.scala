@@ -45,11 +45,6 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     fa.map(logLikelihood(_, precisionX, precisionW, false))
   }
 
-  def gibbsUpdate(fa: FeatureAllocation[Null], priorFeatureAllocationDistribution: FeatureAllocationDistribution[Null], precisionX: Double, precisionW: Double, newFeaturesTruncation: Int, nSamples: Int, thin: Int, rdg: RandomDataGenerator, parallel: Boolean): Seq[FeatureAllocation[Null]] = {
-    val logLike = (state: FeatureAllocation[Null]) => logLikelihood(state, precisionX, precisionW, parallel)
-    MCMCSamplers.updateFeatureAllocationGibbsWhenNull(fa, priorFeatureAllocationDistribution, logLike, newFeaturesTruncation, nSamples, thin, rdg, parallel)
-  }
-
   def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): (Double, FeatureAllocation[Vector[Double]]) = {
     precision.zip(fas).par.maxBy(x => logLikelihood(x._1, x._2))
   }

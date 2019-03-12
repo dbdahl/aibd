@@ -86,8 +86,12 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     }
     newZs <- if ( samplingMethod == "pseudoGibbs" ) {
       s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+    } else if ( samplingMethod == "viaNeighborhoods" ) {
+      s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "independence" ) {
       s$MCMCSamplers.updateFeatureAllocationIndependence(fa, dist, logLike, nSamples, thin, s$rdg())
+    } else if ( samplingMethod == "gibbs" ) {
+      s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
     } else stop("Unrecgonized value for 'samplingMethod'.")
     scalaPull(newZs,"featureAllocation")
   } else stop("Unsupported 'implementation' argument.")

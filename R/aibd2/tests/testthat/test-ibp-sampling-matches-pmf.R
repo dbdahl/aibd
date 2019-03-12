@@ -2,7 +2,8 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, independenceSampler=TRUE) {
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence") {
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods"
   mass <- 1.0
   nItems <- 3  # Should be a multiple of 3
   dist <- ibp(mass, nItems)
@@ -22,7 +23,6 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samplingMethod <- ifelse(independenceSampler,"independence","pseudoGibbs")
     samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod)
   }
   freq <- table(sapply(Zlist, function(Z) aibd2:::featureAllocation2Id(Z)))
@@ -73,11 +73,15 @@ test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consis
 })
 
 test_that("Sampling from LGLFM with IBP prior using psuedo Gibbs sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, FALSE)
+  engine("scala", FALSE, TRUE, "pseudoGibbs")
 })
 
 test_that("Sampling from LGLFM with IBP prior using independence sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, TRUE)
+  engine("scala", FALSE, TRUE, "independence")
+})
+
+test_that("Sampling from LGLFM with IBP prior using neighborhood sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", FALSE, TRUE, "viaNeighborhoods")
 })
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
