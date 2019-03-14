@@ -1,4 +1,4 @@
-package org.ddahl.lglfm
+package org.ddahl.aibd.model.lineargaussian
 
 import breeze.linalg._
 import org.apache.commons.math3.util.FastMath.log
@@ -16,7 +16,7 @@ class LinearGaussianLatentFeatureModel private (val X: DenseMatrix[Double], val 
   private val DhalfTimeslogPrecisionX = Dhalf * log(precisionX)
   private val halfPrecisionX = precisionX / 2
   private val logPrecisionW = log(precisionW)
-  private val ratioOfPrecisionsTimesI = I *:* precisionW / precisionX
+  private val ratioOfPrecisions = precisionW / precisionX
 
   def logLikelihood(lc: LikelihoodComponents): Double = {
     if (lc.K == 0) {
@@ -35,7 +35,7 @@ class LinearGaussianLatentFeatureModel private (val X: DenseMatrix[Double], val 
   def computeLikelihoodComponents(Z: DenseMatrix[Double]) = {
     if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
     val Zt = Z.t
-    val M = inv(Zt * Z + ratioOfPrecisionsTimesI)
+    val M = inv(Zt * Z + diag(DenseVector.fill(Z.cols)(ratioOfPrecisions)))
     new LikelihoodComponents(Z, Zt, M)
   }
 

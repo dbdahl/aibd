@@ -1,19 +1,25 @@
-package org.ddahl.lglfm
+package org.ddahl.aibd.model.lineargaussian
 
 import breeze.linalg._
 
-object FeatureAllocation {
+object FeatureAllocationUtilities {
 
-  def apply(z: Array[Array[Double]]): DenseMatrix[Double] = {
-    DenseMatrix.create(z.size, z(0).size, z.flatten, 0, z(0).size, true)
+  def arrays2Matrix(Z: Array[Array[Double]]): DenseMatrix[Double] = {
+    DenseMatrix.create(Z.size, Z(0).size, Z.flatten, 0, Z(0).size, true)
   }
 
-  def apply(z: Array[Array[Int]]): DenseMatrix[Double] = {
-    apply(z.map(_.map(_.toDouble)))
+  def arrays2Matrix(Z: Array[Array[Int]]): DenseMatrix[Double] = {
+    arrays2Matrix(Z.map(_.map(_.toDouble)))
   }
 
-  def apply(z: Array[Array[Boolean]]): DenseMatrix[Double] = {
-    apply(z.map(_.map(x => if ( x ) 1.0 else 0.0)))
+  def arrays2Matrix(Z: Array[Array[Boolean]]): DenseMatrix[Double] = {
+    arrays2Matrix(Z.map(_.map(x => if ( x ) 1.0 else 0.0)))
+  }
+
+  def matrix2Arrays(Z: DenseMatrix[Double]): Array[Array[Double]] = {
+    Array.tabulate(Z.rows) { i =>
+      Z(i,::).t.toArray
+    }
   }
 
   def isValid(Z: DenseMatrix[Double]): Boolean = {
@@ -91,9 +97,9 @@ object FeatureAllocation {
 
   def main(args: Array[String]): Unit = {
     val m = Array(Array(0,1,0,1),Array(1,0,1,0),Array(1,0,1,0),Array(0,0,0,1),Array(1,0,0,0))
-    val Z = apply(m)
+    val Z = arrays2Matrix(m)
     println(isValid(Z))
-    Z(0,2) = 5.0
+    Z(0,2) = 7.0
     println(isValid(Z))
     Z(0,2) = 1.0
     println(Z)
