@@ -1,5 +1,8 @@
 package org.ddahl.aibd.model.lineargaussian
 
+class Bob
+
+/*
 import breeze.linalg._
 
 object FeatureAllocationUtilities {
@@ -116,3 +119,4 @@ object FeatureAllocationUtilities {
   }
 
 }
+*/

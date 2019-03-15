@@ -1,66 +1,66 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import breeze.linalg._
+import org.ddahl.matrix._
 import org.apache.commons.math3.util.FastMath.log
 
-class LinearGaussianLatentFeatureModel private (val X: DenseMatrix[Double], val precisionX: Double, val precisionW: Double) {
+class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix) {
+  val K = Z.cols
+}
+
+class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: Double, val precisionW: Double) {
 
   val N = X.rows
   val D = X.cols
 
   private val Xt = X.t
-  private val I = DenseMatrix.eye[Double](N)
+  private val XtX = X.t * X
+  private val traceXtX = trace(XtX)
+  private val I = eye(N)
   private val Dhalf = D / 2.0
-  private val const = -N * Dhalf * log(2 * math.Pi)
-  private val XtXtrace = trace(Xt * X)
-  private val DhalfTimeslogPrecisionX = Dhalf * log(precisionX)
+  private val const = -N * Dhalf * log(2 * math.Pi) - precisionX / 2 * traceXtX
+  private val DhalfTimesLogPrecisionX = Dhalf * log(precisionX)
+  private val DhalfTimesLogPrecisionW = Dhalf * log(precisionW)
   private val halfPrecisionX = precisionX / 2
-  private val logPrecisionW = log(precisionW)
   private val ratioOfPrecisions = precisionW / precisionX
 
   def logLikelihood(lc: LikelihoodComponents): Double = {
     if (lc.K == 0) {
-      const + (N) * DhalfTimeslogPrecisionX - halfPrecisionX * XtXtrace
+      const + (N       ) * DhalfTimesLogPrecisionX
     } else {
-      const + (N - lc.K) * DhalfTimeslogPrecisionX + lc.K * Dhalf * logPrecisionW + Dhalf * log(det(lc.M)) - halfPrecisionX * trace(Xt * (I - lc.Z * lc.M * lc.Zt) * X)
+      const + (N - lc.K) * DhalfTimesLogPrecisionX + lc.K * DhalfTimesLogPrecisionW + Dhalf * log(det(lc.M)) + halfPrecisionX * trace(Xt * lc.Z * lc.M * lc.Zt * X)
     }
   }
 
-  def logLikelihood(Z: DenseMatrix[Double]): Double = logLikelihood(computeLikelihoodComponents(Z))
+  def logLikelihood(Z: Matrix): Double = logLikelihood(computeLikelihoodComponents(Z))
 
-  class LikelihoodComponents private[LinearGaussianLatentFeatureModel] (val Z: DenseMatrix[Double], val Zt: DenseMatrix[Double], val M: DenseMatrix[Double]) {
-    val K = Z.cols
-  }
-
-  def computeLikelihoodComponents(Z: DenseMatrix[Double]) = {
+  def computeLikelihoodComponents(Z: Matrix): LikelihoodComponents = {
     if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
     val Zt = Z.t
-    val M = inv(Zt * Z + diag(DenseVector.fill(Z.cols)(ratioOfPrecisions)))
+    val M = inv(Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions)))
     new LikelihoodComponents(Z, Zt, M)
   }
 
-  private def update(M: DenseMatrix[Double], z: Transpose[DenseVector[Double]], add: Boolean) = {
-    val zt = z.t
-    M - M * zt * z * M /:/ (z * M * zt + ( if (add) 1 else -1))
+  private def update(M: Matrix, z: Array[Double], add: Boolean): Matrix = {
+    M - M * z ** z * M / (z * M * z + ( if (add) 1 else -1))
   }
 
   def dropFeaturesFor(i: Int, lc: LikelihoodComponents): LikelihoodComponents = {
     val Z = lc.Z.copy
     val zOld = Z(i,::)
-    Z(i,::) := DenseVector.zeros[Double](lc.K).t
+    Z(i,::) = Array.ofDim[Double](lc.K)
     new LikelihoodComponents(Z, Z.t, update(lc.M, zOld, false))
   }
 
-  def addFeaturesFor(i: Int, lc: LikelihoodComponents, z: Transpose[DenseVector[Double]]): LikelihoodComponents = {
+  def addFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     val Z = lc.Z.copy
-    // assert(!any(Z(i,::)))
-    Z(i,::) := z
+    // assert(Z(i,::).forall(_ == 0.0))
+    Z(i,::) = z
     new LikelihoodComponents(Z, Z.t, update(lc.M, z, true))
   }
 
-  def dropAndAddFeaturesFor(i: Int, lc: LikelihoodComponents, z: Transpose[DenseVector[Double]]): LikelihoodComponents = {
+  def dropAndAddFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     val newLC = dropFeaturesFor(i, lc)
-    newLC.Z(i,::) := z
+    newLC.Z(i,::) = z
     new LikelihoodComponents(newLC.Z, newLC.Z.t, update(newLC.M, z, true))
   }
 
@@ -69,22 +69,28 @@ class LinearGaussianLatentFeatureModel private (val X: DenseMatrix[Double], val 
 
 object LinearGaussianLatentFeatureModel {
 
-  def usingPrecisions(X: DenseMatrix[Double], precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X.copy, precisionX, precisionW)
+  def usingPrecisions(X: Matrix, precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, precisionX, precisionW)
   }
 
-  def usingStandardDeviations(X: DenseMatrix[Double], standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X.copy, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
+  def usingStandardDeviations(X: Matrix, standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
   }
 
-  def usingVariances(X: DenseMatrix[Double], varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X.copy, 1/varianceX, 1/varianceW)
+  def usingVariances(X: Matrix, varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, 1/varianceX, 1/varianceW)
   }
 
-  def main(args: Array[String]): Unit = {
-    val Z = DenseMatrix.zeros[Int](6,2)
-    println(Z)
-    println(3+4)
+  def usingPrecisions(X: Array[Array[Double]], precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
+    usingPrecisions(wrap(X), precisionX, precisionW)
+  }
+
+  def usingStandardDeviations(X: Array[Array[Double]], standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
+    usingStandardDeviations(wrap(X), standardDeviationX, standardDeviationW)
+  }
+
+  def usingVariances(X: Array[Array[Double]], varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
+    usingVariances(wrap(X), varianceX, varianceW)
   }
 
 }

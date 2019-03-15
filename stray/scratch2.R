@@ -22,15 +22,22 @@ all.equal(fas[[1]],a)
 mass <- 1.0
 sigx <- 0.1
 sigw <- 1.0
-dimW <- 1
-nItems <- 4  # Should be a multiple of 4
+dimW <- 3
+nItems <- 2048  # Should be a multiple of 4
+nItems <- 512  # Should be a multiple of 4
 Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
 Z <- Z[order(Z %*% c(2,1)),c(2,1)]
-Zm <- s$FAU.arrays2Matrix(Z)
+Zm <- s$wrap(Z)
 Ztruth <- Z
 W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
-lglfm <- s$LGLFM.usingStandardDeviations(s$FAU.arrays2Matrix(X),sigx,sigw)
-lglfm$logLikelihood(Zm)
+lglfm <- s$LGLFM.usingStandardDeviations(s$wrap(X),sigx,sigw)
+
+library(microbenchmark)
+microbenchmark(
+lglfm$logLikelihood(Zm),
+logLikelihoodLGLFM(Z,X,sdX=sigx,sdW=sigw,implementation="scala"),
+logLikelihoodLGLFM(Z,X,sdX=sigx,sdW=sigw,implementation="R"),
+times=100)
 
