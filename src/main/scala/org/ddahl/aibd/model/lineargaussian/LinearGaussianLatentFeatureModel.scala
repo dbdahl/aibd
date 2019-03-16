@@ -3,7 +3,7 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.matrix._
 import org.apache.commons.math3.util.FastMath.log
 
-class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix) {
+class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix, val d: Double) {
   val K = Z.cols
 }
 
@@ -15,7 +15,6 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
   private val Xt = X.t
   private val XtX = X.t * X
   private val traceXtX = trace(XtX)
-  private val I = eye(N)
   private val Dhalf = D / 2.0
   private val const = -N * Dhalf * log(2 * math.Pi) - precisionX / 2 * traceXtX
   private val DhalfTimesLogPrecisionX = Dhalf * log(precisionX)
@@ -27,7 +26,7 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     if (lc.K == 0) {
       const + (N       ) * DhalfTimesLogPrecisionX
     } else {
-      const + (N - lc.K) * DhalfTimesLogPrecisionX + lc.K * DhalfTimesLogPrecisionW + Dhalf * log(det(lc.M)) + halfPrecisionX * trace(Xt * lc.Z * lc.M * lc.Zt * X)
+      const + (N - lc.K) * DhalfTimesLogPrecisionX + lc.K * DhalfTimesLogPrecisionW + Dhalf * log(lc.d) + halfPrecisionX * trace(Xt * lc.Z * lc.M * lc.Zt * X)
     }
   }
 
@@ -36,32 +35,39 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
   def computeLikelihoodComponents(Z: Matrix): LikelihoodComponents = {
     if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
     val Zt = Z.t
-    val M = inv(Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions)))
-    new LikelihoodComponents(Z, Zt, M)
+    val W = Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions))
+    val m = inv(W)
+    val d = 1/det(W)
+    new LikelihoodComponents(Z, Zt, m, d)
   }
 
-  private def update(M: Matrix, z: Array[Double], add: Boolean): Matrix = {
-    M - M * z ** z * M / (z * M * z + ( if (add) 1 else -1))
+  private def update(M: Matrix, d: Double, z: Array[Double], add: Boolean): (Matrix, Double) = {
+    val sign= if (add) 1 else -1
+    val zMz = z * M * z
+    (M - M * z ** z * M / (zMz + sign), d / ( 1 + sign * zMz ))
   }
 
   def dropFeaturesFor(i: Int, lc: LikelihoodComponents): LikelihoodComponents = {
     val Z = lc.Z.copy
     val zOld = Z(i,::)
     Z(i,::) = Array.ofDim[Double](lc.K)
-    new LikelihoodComponents(Z, Z.t, update(lc.M, zOld, false))
+    val (m,d) = update(lc.M, lc.d, zOld, false)
+    new LikelihoodComponents(Z, Z.t, m, d)
   }
 
   def addFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     val Z = lc.Z.copy
     // assert(Z(i,::).forall(_ == 0.0))
     Z(i,::) = z
-    new LikelihoodComponents(Z, Z.t, update(lc.M, z, true))
+    val (m,d) = update(lc.M, lc.d, z, true)
+    new LikelihoodComponents(Z, Z.t, m, d)
   }
 
   def dropAndAddFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     val newLC = dropFeaturesFor(i, lc)
     newLC.Z(i,::) = z
-    new LikelihoodComponents(newLC.Z, newLC.Z.t, update(newLC.M, z, true))
+    val (m,d) = update(newLC.M, newLC.d, z, true)
+    new LikelihoodComponents(newLC.Z, newLC.Z.t, m, d)
   }
 
 }
