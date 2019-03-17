@@ -5,7 +5,7 @@ import org.apache.commons.math3.linear.CholeskyDecomposition
 import org.apache.commons.math3.util.FastMath.log
 
 class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix, val d: Double) {
-  val K = Z.cols
+  val K = if ( Z == null ) 0 else Z.cols
 }
 
 class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: Double, val precisionW: Double) {
@@ -31,17 +31,25 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     }
   }
 
+  def logLikelihood(lcs: Array[LikelihoodComponents]): Array[Double] = lcs.map(logLikelihood)
+
   def logLikelihood(Z: Matrix): Double = logLikelihood(computeLikelihoodComponents(Z))
 
+  def logLikelihood(Zs: Array[Matrix]): Array[Double] = logLikelihood(computeLikelihoodComponents(Zs))
+
   def computeLikelihoodComponents(Z: Matrix): LikelihoodComponents = {
-    if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
-    val Zt = Z.t
-    val W = Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions))
-    val chol = new CholeskyDecomposition(W)
-    val m = chol.getSolver.getInverse
-    val d = chol.getDeterminant
-    new LikelihoodComponents(Z, Zt, m, d)
+    if ( Z == null ) new LikelihoodComponents(null, null, null, 0.0) else {
+      if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
+      val Zt = Z.t
+      val W = Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions))
+      val chol = new CholeskyDecomposition(W)
+      val m = chol.getSolver.getInverse
+      val d = chol.getDeterminant
+      new LikelihoodComponents(Z, Zt, m, d)
+    }
   }
+
+  def computeLikelihoodComponents(Zs: Array[Matrix]): Array[LikelihoodComponents] = Zs.map(computeLikelihoodComponents)
 
   private def update(M: Matrix, d: Double, z: Array[Double], add: Boolean): (Matrix, Double) = {
     val sign= if (add) 1 else -1

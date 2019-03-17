@@ -6,7 +6,10 @@ object matrix {
 
   type Matrix = org.apache.commons.math3.linear.RealMatrix
 
-  def wrap(X: Array[Array[Double]]): Matrix = new org.apache.commons.math3.linear.Array2DRowRealMatrix(X,false)
+  def wrap(X: Array[Array[Double]]): Matrix = {
+    if ( ( X.length == 0 ) || ( X(0).length == 0 ) ) null
+    else new org.apache.commons.math3.linear.Array2DRowRealMatrix(X,false)
+  }
   def eye(n: Int): Matrix = org.apache.commons.math3.linear.MatrixUtils.createRealIdentityMatrix(n)
   def diag(x: Array[Double]): Matrix = org.apache.commons.math3.linear.MatrixUtils.createRealDiagonalMatrix(x)
   def inv(X: Matrix): Matrix = org.apache.commons.math3.linear.MatrixUtils.inverse(X: Matrix)
