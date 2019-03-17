@@ -6,6 +6,10 @@ object matrix {
 
   type Matrix = org.apache.commons.math3.linear.RealMatrix
 
+  def matrixOfDim(rows: Int, cols: Int): Matrix = {
+    if ( ( rows == 0 ) || ( cols == 0 ) ) null
+    else new org.apache.commons.math3.linear.Array2DRowRealMatrix(rows,cols)
+  }
   def wrap(X: Array[Array[Double]]): Matrix = {
     if ( ( X.length == 0 ) || ( X(0).length == 0 ) ) null
     else new org.apache.commons.math3.linear.Array2DRowRealMatrix(X,false)
@@ -19,7 +23,8 @@ object matrix {
   import scala.language.implicitConversions
 
   implicit def realMatrix2RichMatrix(X: Matrix): RichMatrix = new RichMatrix(X)
-  implicit def array2RichArray(x: Array[Double]): RichArray = new RichArray(x)
+  implicit def array2RichDoubleArray(x: Array[Double]): RichDoubleArray = new RichDoubleArray(x)
+  implicit def array2RichBooleanArray(x: Array[Boolean]): RichBooleanArray = new RichBooleanArray(x)
   implicit def scalar2RichScalar(x: Double): RichDouble = new RichDouble(x)
 
 }
@@ -32,7 +37,13 @@ class RichDouble(x: Double) {
 
 }
 
-class RichArray(x: Array[Double]) {
+class RichBooleanArray(x: Array[Boolean]) {
+
+  def negate: Array[Boolean] = x map(!_)
+
+}
+
+class RichDoubleArray(x: Array[Double]) {
 
   def *(Y: Matrix): Array[Double] = Y preMultiply x
 
@@ -88,7 +99,19 @@ class RichMatrix(X: Matrix) {
 
   def apply(i: Int, j: Int): Double = X.getEntry(i,j)
   def apply(i: Int, j: scala.collection.immutable.::.type): Array[Double] = X.getRow(i)
+  def apply(i: IndexedSeq[Int], j: scala.collection.immutable.::.type)(implicit d: DummyImplicit): Matrix = wrap(i.map(X.getRow).toArray)
+  def apply(i: IndexedSeq[Boolean], j: scala.collection.immutable.::.type)(implicit d1: DummyImplicit, d2: DummyImplicit): Matrix = {
+    wrap(i.zipWithIndex.withFilter(_._1).map(k => X.getRow(k._2)).toArray)
+  }
   def apply(i: scala.collection.immutable.::.type, j: Int): Array[Double] = X.getColumn(j)
+  def apply(i: scala.collection.immutable.::.type, j: IndexedSeq[Int])(implicit d: DummyImplicit): Matrix = {
+    val Xt = wrap(j.map(X.getColumn).toArray)
+    if ( Xt == null ) null else Xt.transpose
+  }
+  def apply(i: scala.collection.immutable.::.type, j: IndexedSeq[Boolean])(implicit d1: DummyImplicit, d2: DummyImplicit): Matrix = {
+    val Xt = wrap(j.zipWithIndex.withFilter(_._1).map(k => X.getColumn(k._2)).toArray)
+    if ( Xt == null ) null else Xt.transpose
+  }
 
   def update(i: Int, j: Int, x: Double): Unit = X.setEntry(i,j,x)
   def update(i: Int, j: scala.collection.immutable.::.type, y: Array[Double]): Unit = X.setRow(i, y)
