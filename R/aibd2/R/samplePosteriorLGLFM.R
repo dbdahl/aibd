@@ -88,6 +88,9 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
       s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "viaNeighborhoods" ) {
       s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+    } else if ( samplingMethod == "viaNeighborhoods2" ) {
+      lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
+      s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$wrap(featureAllocation), dist, lglfm, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "bert" ) {
       s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "independence" ) {

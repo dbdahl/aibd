@@ -3,7 +3,7 @@ context("ibp-sampling-matches-pmf")
 # skip("ibp-sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence") {
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods"
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"
   mass <- 1.0
   nItems <- 3  # Should be a multiple of 3
   dist <- ibp(mass, nItems)
