@@ -90,7 +90,9 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
       s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "viaNeighborhoods2" ) {
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
-      s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$wrap(featureAllocation), dist, lglfm, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$wrap(featureAllocation), dist, lglfm, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+      ref <- s(newZsRef,N) ^ 'newZsRef.map { Z => if ( Z == null ) Array.ofDim[Double](N,0) else getData(Z) }'
+      scalaPull(ref,"arrayOfMatrices")
     } else if ( samplingMethod == "bert" ) {
       s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "independence" ) {
@@ -98,6 +100,6 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     } else if ( samplingMethod == "gibbs" ) {
       s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
     } else stop("Unrecgonized value for 'samplingMethod'.")
-    scalaPull(newZs,"featureAllocation")
+    if ( ! is.list(newZs) ) scalaPull(newZs,"featureAllocation",s) else newZs
   } else stop("Unsupported 'implementation' argument.")
 }

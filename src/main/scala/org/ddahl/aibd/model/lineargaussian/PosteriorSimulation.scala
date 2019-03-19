@@ -20,12 +20,12 @@ object PosteriorSimulation {
     }
   }
 
-  def updateFeatureAllocationViaNeighborhoods(Z: Matrix, ibp: IndianBuffetProcess[Null], lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Seq[FeatureAllocation[Null]] = {
+  def updateFeatureAllocationViaNeighborhoods(Z: Matrix, ibp: IndianBuffetProcess[Null], lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Array[Matrix] = {
     val nItems = lglfm.N
     var state = Z
     val nIterations = thin*nSamples
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
-    var results = List[FeatureAllocation[Null]]()
+    val results = Array.ofDim[Matrix](nSamples)
     var b = 1
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
@@ -50,10 +50,10 @@ object PosteriorSimulation {
         val weights = engine(setup,Double.NegativeInfinity).toIndexedSeq
         state = rdg.nextItem(weights, onLogScale = true)._1
       }
-      if (b % thin == 0) results = Z2fa(state, nItems) :: results
+      if (b % thin == 0) results((b-1) / thin) = state
       b += 1
     }
-    results.reverse
+    results
   }
 
 }
