@@ -20,6 +20,17 @@ object matrix {
   def trace(X: Matrix): Double = X.getTrace
   def det(X: Matrix): Double = new LUDecomposition(X).getDeterminant
 
+  def getData(X: Matrix): Array[Array[Double]] = {
+    X match {
+      case x : org.apache.commons.math3.linear.Array2DRowRealMatrix => x.getDataRef  // Avoid copying
+      case x => x.getData                                                            // Copy if needed
+    }
+  }
+
+  def pretty(X: Matrix): String = {
+    if ( X == null ) "" else getData(X).map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
+  }
+
   import scala.language.implicitConversions
 
   implicit def realMatrix2RichMatrix(X: Matrix): RichMatrix = new RichMatrix(X)
@@ -96,6 +107,19 @@ class RichMatrix(X: Matrix) {
 
   def -(Y: Matrix): Matrix = X subtract Y
   def -(y: Double): Matrix = X scalarAdd -y
+
+  def :|:(Y: Matrix): Matrix = {
+    if ( Y == null ) X
+    else if ( X == null ) Y
+    else {
+      wrap(getData(X).zip(getData(Y)).map { tuple =>
+        val w = Array.ofDim[Double](tuple._1.length + tuple._2.length)
+        Array.copy(tuple._1, 0, w, 0, tuple._1.length)
+        Array.copy(tuple._2, 0, w, tuple._1.length, tuple._2.length)
+        w
+      })
+    }
+  }
 
   def apply(i: Int, j: Int): Double = X.getEntry(i,j)
   def apply(i: Int, j: scala.collection.immutable.::.type): Array[Double] = X.getRow(i)

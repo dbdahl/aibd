@@ -4,17 +4,6 @@ import org.ddahl.matrix._
 
 object FeatureAllocationUtilities {
 
-  def getData(Z: Matrix): Array[Array[Double]] = {
-    Z match {
-      case x : org.apache.commons.math3.linear.Array2DRowRealMatrix => x.getDataRef  // Avoid copying
-      case x => x.getData                                                            // Copy if needed
-    }
-  }
-
-  def pretty(Z: Matrix): String = {
-    if ( Z == null ) "" else getData(Z).map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
-  }
-
   def isValid(Z: Matrix): Boolean = {
     val data = getData(Z)
     data.forall(_.forall(x => ( x == 0.0 ) || ( x == 1.0 )))
@@ -69,25 +58,29 @@ object FeatureAllocationUtilities {
   }
 
   def partitionBySingletonsOf(i: Int, Z: Matrix): (Matrix,Matrix) = {
-    val data = getData(Z.t)
-    val a = data.map { f =>
-      ( f(i) != 0.0 ) && ( f.sum == 1.0 )
+    if ( Z == null) (null,null) else {
+      val data = getData(Z.t)
+      val a = data.map { f =>
+        (f(i) == 1.0) && (f.sum == 1.0)
+      }
+      (Z(::, a), Z(::, a.negate))
     }
-    (Z(::,a), Z(::,a.negate))
   }
 
   def enumerateCombinationsFor(i: Int, Z: Matrix): Array[Matrix] = {
-    if ( Z.cols > 31 ) throw new IllegalArgumentException("No more than 31 columns are supported.")
-    val max = (math.pow(2, Z.cols) - 1).toInt
-    var result = List[Matrix]()
-    var w = 0
-    while ( w <= max ) {
-      val newZ = Z.copy
-      newZ(i,::) = Array.tabulate(Z.cols)(j => if ( (w & (1<<j)) != 0 ) 1.0 else 0.0)
-      result = newZ :: result
-      w += 1
+    if ( Z == null ) new Array[Matrix](0) else {
+      if (Z.cols > 31) throw new IllegalArgumentException("No more than 31 columns are supported.")
+      val max = (math.pow(2, Z.cols) - 1).toInt
+      var result = List[Matrix]()
+      var w = 0
+      while (w <= max) {
+        val newZ = Z.copy
+        newZ(i, ::) = Array.tabulate(Z.cols) { j => if ((w & (1 << j)) != 0) 1.0 else 0.0 }
+        result = newZ :: result
+        w += 1
+      }
+      result.toArray
     }
-    result.toArray
   }
 
   def main(args: Array[String]): Unit = {
@@ -109,4 +102,3 @@ object FeatureAllocationUtilities {
   }
 
 }
-*/
