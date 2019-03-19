@@ -1,18 +1,29 @@
+2019-03-19: Group meeting notes
+
+  1. Report on what we've been working on.
+  2. Tasks:
+
+      1. Dahl
+
+      2. Warr
+
+      3. Meyer
+
+
 2019-03-12: Group meeting notes
 
   1. Report on what we've been working on.
   2. Tasks:
 
       1. Dahl
-          1. Most one-element update based on random sampling an occupied feature
-             and up-down new feature proposal.
+          1. Imlement one-element update based on random sampling an occupied
+             feature and up-down new feature proposal.
 
       2. Warr
           1. Understand rank one updates.
           2. Data into stray directory with recommended hyperprior values.
 
       3. Meyer
-          0. Plots for poster.
           1. Implement contructive sampling from the AIBD in R and add tests.
           2. Copy 'test-ibp-sampling-matches-pmf.R' to
              'test-aibd-sampling-matches-pmf.R' and implement the tests:
@@ -21,10 +32,6 @@
               2. Sampling from AIBD using constructive definition (from R)
                  gives a distribution consistent with the pmf.
           3. Reconstruct plots from poster using our current code.
-
-
-
-
 
 
 2019-03-04: Warr
