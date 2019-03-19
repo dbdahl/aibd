@@ -31,24 +31,24 @@ object PosteriorSimulation {
       for (i <- 0 until nItems) {
         val (singletons, existing) = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)
         val proposals = if (existing == null) Array(singletons)
-        else FeatureAllocationUtilities.enumerateCombinationsFor(i, existing).map(_ :|: singletons)
+        else FeatureAllocationUtilities.enumerateCombinationsFor(i, existing).map(_ | singletons)
         val proposals2 = proposals.map(Z => Z2fa(Z,nItems).leftOrderedForm).toSet.toArray.map(fa2Z)
         val logWeights = proposals2.map(Z => (Z, ibp.logDensity(Z2fa(Z,nItems)) + lglfm.logLikelihood(Z)))
         state = rdg.nextItem(logWeights, onLogScale = true)._1
         state = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)._2
-        val featureWithOnlyI = Feature(null, i)
+        val featureWithOnlyI = Array.ofDim[Double](nItems)
+        featureWithOnlyI(i) = 1.0
         @scala.annotation.tailrec
-        def engine(weights: List[(FeatureAllocation[Null],Double)], max: Double): List[(FeatureAllocation[Null],Double)] = {
-          val newCumState = weights.head._1.add(featureWithOnlyI)
-          val newLogWeight = ibp.logDensity(newCumState) + lglfm.logLikelihood(fa2Z(newCumState))
+        def engine(weights: List[(Matrix,Double)], max: Double): List[(Matrix,Double)] = {
+          val newCumState = weights.head._1 | featureWithOnlyI
+          val newLogWeight = ibp.logDensity(Z2fa(newCumState,nItems)) + lglfm.logLikelihood(newCumState)
           val expanded = (newCumState,newLogWeight) :: weights
           if ( newLogWeight < max - logNewFeaturesTruncationDivisor ) expanded
           else engine(expanded, if ( newLogWeight > max ) newLogWeight else max)
         }
-        val faTmp = Z2fa(state,nItems)
-        val setup1 = (faTmp,ibp.logDensity(faTmp) + lglfm.logLikelihood(state)) :: Nil
-        val weights = engine(setup1,Double.NegativeInfinity).toIndexedSeq
-        state = fa2Z(rdg.nextItem(weights, onLogScale = true)._1)
+        val setup = (state,ibp.logDensity(Z2fa(state,nItems)) + lglfm.logLikelihood(state)) :: Nil
+        val weights = engine(setup,Double.NegativeInfinity).toIndexedSeq
+        state = rdg.nextItem(weights, onLogScale = true)._1
       }
       if (b % thin == 0) results = Z2fa(state, nItems) :: results
       b += 1

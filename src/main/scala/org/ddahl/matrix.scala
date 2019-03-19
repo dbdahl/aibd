@@ -10,10 +10,12 @@ object matrix {
     if ( ( rows == 0 ) || ( cols == 0 ) ) null
     else new org.apache.commons.math3.linear.Array2DRowRealMatrix(rows,cols)
   }
+
   def wrap(X: Array[Array[Double]]): Matrix = {
     if ( ( X.length == 0 ) || ( X(0).length == 0 ) ) null
     else new org.apache.commons.math3.linear.Array2DRowRealMatrix(X,false)
   }
+
   def eye(n: Int): Matrix = org.apache.commons.math3.linear.MatrixUtils.createRealIdentityMatrix(n)
   def diag(x: Array[Double]): Matrix = org.apache.commons.math3.linear.MatrixUtils.createRealDiagonalMatrix(x)
   def inv(X: Matrix): Matrix = org.apache.commons.math3.linear.MatrixUtils.inverse(X: Matrix)
@@ -108,7 +110,22 @@ class RichMatrix(X: Matrix) {
   def -(Y: Matrix): Matrix = X subtract Y
   def -(y: Double): Matrix = X scalarAdd -y
 
-  def :|:(Y: Matrix): Matrix = {
+  def |(y: Array[Double]): Matrix = {
+    if ( y == null ) X
+    else if ( X == null ) new org.apache.commons.math3.linear.Array2DRowRealMatrix(y)
+    else {
+      var i = 0
+      wrap(getData(X).map { row =>
+        val w = Array.ofDim[Double](row.length+1)
+        Array.copy(row,0,w,0,row.length)
+        w(row.length) = y(i)
+        i += 1
+        w
+      })
+    }
+  }
+
+  def |(Y: Matrix): Matrix = {
     if ( Y == null ) X
     else if ( X == null ) Y
     else {
