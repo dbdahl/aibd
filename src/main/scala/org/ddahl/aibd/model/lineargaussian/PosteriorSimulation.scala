@@ -35,7 +35,7 @@ object PosteriorSimulation {
         val proposals2 = proposals.map(Z => Z2fa(Z,nItems).leftOrderedForm).toSet.toArray.map(fa2Z)
         val logWeights = proposals2.map(Z => (Z, ibp.logDensity(Z2fa(Z,nItems)) + lglfm.logLikelihood(Z)))
         state = rdg.nextItem(logWeights, onLogScale = true)._1
-        state = fa2Z(FeatureAllocation(nItems, Z2fa(state, nItems).filterNot(f => (f.size == 1 ) && (f.contains(i))).toVector))
+        state = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)._2
         val featureWithOnlyI = Feature(null, i)
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation[Null],Double)], max: Double): List[(FeatureAllocation[Null],Double)] = {
