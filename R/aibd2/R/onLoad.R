@@ -2,7 +2,6 @@
 #'
 .onLoad <- function(libname, pkgname) {
   s <- sdols:::s
-  scalaJARs(c("breezeJARs",pkgname),s)
   scalaLazy(function(s) {
     s + '
       import org.ddahl.aibd._
