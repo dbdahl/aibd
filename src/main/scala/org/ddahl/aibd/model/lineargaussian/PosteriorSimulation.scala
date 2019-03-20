@@ -8,7 +8,7 @@ import org.ddahl.aibd.{Feature, FeatureAllocation, IndianBuffetProcess, TimeMoni
 
 object PosteriorSimulation {
 
-  def fa2Z(fa: FeatureAllocation[Null]): Matrix = wrap(fa.leftOrderedForm.toMatrix.map(_.map(_.toDouble)))
+  // def fa2Z(fa: FeatureAllocation[Null]): Matrix = wrap(fa.leftOrderedForm.toMatrix.map(_.map(_.toDouble)))
 
   val tm2 = TimeMonitor()
   def Z2fa(Z: Matrix, nItems: Int): FeatureAllocation[Null] = tm2 {
@@ -17,7 +17,7 @@ object PosteriorSimulation {
       FeatureAllocation(Z.rows, (0 until Z.cols).map { i =>
         val col = Z(::, i)
         Feature(null, col.zipWithIndex.filter(x => x._1 != 0.0).map(_._2))
-      }.toVector).leftOrderedForm
+      }.toVector)
     }
   }
 
