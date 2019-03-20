@@ -91,19 +91,21 @@ object FeatureAllocationUtilities {
       val off = x._1
       val on  = x._1 + i
       val count = x._2
-      List.tabulate(count+1) { n =>
-        List.fill(n){on} ++ List.fill(count-n){off}
+      Array.tabulate(count+1) { n =>
+        Array.tabulate(count) { k => if ( k < n ) on else off }
       }
     }
-    var collector = List[List[BitSet]]()
-    def engine(toProcess: Array[List[List[BitSet]]], result: List[BitSet]): Unit = {
-      if ( toProcess.isEmpty ) collector = result :: collector
-      else toProcess.head.foreach { h =>
-        engine(toProcess.tail, h ++ result)
-      }
+    val n = b.map(_.length).product
+    var counter = 0
+    val collector = Array.ofDim[Array[BitSet]](n)
+    def engine(toProcess: Array[Array[Array[BitSet]]], result: Array[BitSet]): Unit = {
+      if ( toProcess.isEmpty ) {
+        collector(counter) = result
+        counter += 1
+      } else toProcess.head.foreach { h => engine(toProcess.tail, h ++ result) }
     }
-    engine(b, Nil)
-    collector.map(x => fromFingerprint(x.toArray.sorted,Z.rows)).toArray
+    engine(b, Array[BitSet]())
+    collector.map(x => fromFingerprint(x.sorted,Z.rows))
   }
 
   def main(args: Array[String]): Unit = {
