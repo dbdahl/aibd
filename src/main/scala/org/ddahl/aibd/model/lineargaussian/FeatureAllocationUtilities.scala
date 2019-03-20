@@ -114,17 +114,6 @@ object FeatureAllocationUtilities {
     println("-- original ---")
     println(pretty(Z))
     println("--")
-    val Zs = enumerateCombinationsFor(0,null,Z)
-    Zs.foreach { ZZ =>
-      println(pretty(ZZ))
-      println("--")
-    }
-    println(Zs.length)
-    val fas = Zs.map { Z =>
-      PosteriorSimulation.Z2fa(Z,Z.rows)
-    }
-    println(fas.length)
-    println(fas.toSet.size)
   }
 
 }
