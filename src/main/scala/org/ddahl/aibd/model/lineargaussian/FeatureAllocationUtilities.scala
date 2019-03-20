@@ -41,15 +41,10 @@ object FeatureAllocationUtilities {
 
 
   def fromFingerprint(x: Array[BitSet], rows: Int): Matrix = {
-    val Z = matrixOfDim(rows, x.length-1)
+    val Z = matrixOfDim(rows, x.length)
     var j = 0
     while ( j < x.length ) {
-      val w = x(j)
-      var i = 0
-      while ( i < rows ) {
-        Z(i,j) = if ( w(i) ) 1.0 else 0.0
-        i += 1
-      }
+      x(j).foreach { Z(_,j) = 1.0 }
       j += 1
     }
     Z
@@ -58,15 +53,15 @@ object FeatureAllocationUtilities {
   implicit val ordering = new Ordering[BitSet] {
     def compare(x: BitSet, y: BitSet): Int = {
       val xi = x.iterator
-      val yi = x.iterator
+      val yi = y.iterator
       while (xi.hasNext && yi.hasNext) {
         val xn = xi.next()
         val yn = yi.next()
-        if (xn < yn) return (-1)
-        if (xn > yn) return (1)
+        if (xn < yn) return -1
+        if (xn > yn) return 1
       }
-      if (xi.hasNext) return (1)
-      if (yi.hasNext) return (-1)
+      if (xi.hasNext) return 1
+      if (yi.hasNext) return -1
       0
     }
   }
@@ -88,27 +83,11 @@ object FeatureAllocationUtilities {
   }
 
   def enumerateCombinationsFor(i: Int, Z: Matrix): Array[Matrix] = {
-    if ( Z == null ) new Array[Matrix](0) else {
-      if (Z.cols > 31) throw new IllegalArgumentException("No more than 31 columns are supported.")
-      val max = (math.pow(2, Z.cols) - 1).toInt
-      var result = List[Matrix]()
-      var w = 0
-      while (w <= max) {
-        val newZ = Z.copy
-        newZ(i, ::) = Array.tabulate(Z.cols) { j => if ((w & (1 << j)) != 0) 1.0 else 0.0 }
-        result = newZ :: result
-        w += 1
-      }
-      result.toArray
-    }
-  }
-
-  /*
-  def enumerateCombinationsFor2(i: Int, Z: Matrix): Array[Matrix] = {
     val data = getData(Z.copy)
     data(i) = Array.ofDim[Double](Z.cols)
     val fp = toFingerprint(wrap(data))
-    val a = fp.groupBy(identity).mapValues(_.size).toArray.map { x =>
+    val a = fp.groupBy(identity).mapValues(_.size).toArray
+    val b = a.map { x =>
       val off = x._1
       val on  = x._1 + i
       val count = x._2
@@ -116,56 +95,35 @@ object FeatureAllocationUtilities {
         List.fill(n){on} ++ List.fill(count-n){off}
       }
     }
-    val n = a.map(_.size).product
-    println(a.mkString(" ||| "))
-    var all = List[List[BigInt]]()
-    def engine(toProcess: Array[List[List[BigInt]]], result: List[BigInt]): Unit = {
-      if ( toProcess.isEmpty ) all = result :: all
+    var collector = List[List[BitSet]]()
+    def engine(toProcess: Array[List[List[BitSet]]], result: List[BitSet]): Unit = {
+      if ( toProcess.isEmpty ) collector = result :: collector
       else toProcess.head.foreach { h =>
         engine(toProcess.tail, h ++ result)
       }
     }
-    engine(a, Nil)
-    println(all.size)
-    println(all)
-    null
+    engine(b, Nil)
+    collector.map(x => fromFingerprint(x.toArray.sorted,Z.rows)).toArray
   }
-  */
-
-  /*
-  def tabulateFeatures(Z: Matrix): List[(Array[Double],Int)] = {
-    if ( Z == null ) null else {
-      val fp = toFingerprint(Z)
-
-
-      val features = getData(Z.t).map { feature =>
-        var bs = BitSet()
-        feature.index
-        feature.map(x => if ( x == 1.0 ) bs(1) else 0L))
-      }
-
-
-
-      if (Z.cols > 31) throw new IllegalArgumentException("No more than 31 columns are supported.")
-      val max = (math.pow(2, Z.cols) - 1).toInt
-      var result = List[Matrix]()
-      var w = 0
-      while (w <= max) {
-        val newZ = Z.copy
-        newZ(i, ::) = Array.tabulate(Z.cols) { j => if ((w & (1 << j)) != 0) 1.0 else 0.0 }
-        result = newZ :: result
-        w += 1
-      }
-      result.toArray
-    }
-  }
-  */
 
   def main(args: Array[String]): Unit = {
-    val m = Array(Array[Double](0,1,0,1),Array[Double](1,1,1,0),Array[Double](1,1,1,0),Array[Double](0,0,0,1),Array[Double](0,0,0,1))
+    val m = Array(Array[Double](0,1,0,1,1,1,0,1,0,0,1,1),Array[Double](1,1,1,0,0,1,1,1,1,1,0,0),Array[Double](1,1,1,0,1,0,0,0,0,0,0,0),Array[Double](0,0,0,1,0,1,1,1,0,1,0,1),Array[Double](0,0,0,1,0,0,1,0,1,0,1,1))
     val Z = wrap(m)
+    println()
+    println("-- original ---")
     println(pretty(Z))
-    //println(enumerateCombinationsFor2(0,Z))
+    println("--")
+    val Zs = enumerateCombinationsFor(0,Z)
+    Zs.foreach { ZZ =>
+      println(pretty(ZZ))
+      println("--")
+    }
+    println(Zs.length)
+    val fas = Zs.map { Z =>
+      PosteriorSimulation.Z2fa(Z,Z.rows)
+    }
+    println(fas.length)
+    println(fas.toSet.size)
   }
 
 }

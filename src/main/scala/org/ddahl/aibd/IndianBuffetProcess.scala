@@ -43,7 +43,9 @@ class IndianBuffetProcess[A] protected(val mass: Double, val nItems: Int, val pa
   private val const1 = -mass * harmonicNumber(nItems)
   private val const2 = log(mass) - logFactorial(nItems)
 
-  def logDensity(fa: FeatureAllocation[A], parallel: Boolean): Double = {
+  val tm = TimeMonitor()
+
+  def logDensity(fa: FeatureAllocation[A], parallel: Boolean): Double = tm {
     var sum = const1 + fa.nFeatures * const2
     sum -= fa.foldLeft(Map.empty[Feature[Null], Int])((map, f) => {
       val ff = f.dropParameter
