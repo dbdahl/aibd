@@ -82,9 +82,10 @@ object FeatureAllocationUtilities {
     }
   }
 
-  def enumerateCombinationsFor(i: Int, Z: Matrix): Array[Matrix] = {
-    val data = getData(Z.copy)
-    data(i) = Array.ofDim[Double](Z.cols)
+  def enumerateCombinationsFor(i: Int, Zsingletons: Matrix, Zexisting: Matrix): Array[Matrix] = {
+    val fpSingletons = toFingerprint(Zsingletons).toList
+    val data = getData(Zexisting.copy)
+    data(i) = Array.ofDim[Double](Zexisting.cols)
     val fp = toFingerprint(wrap(data))
     val a = fp.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
@@ -95,15 +96,15 @@ object FeatureAllocationUtilities {
     }
     val n = b.map(_.length).product
     var counter = 0
-    val collector = Array.ofDim[Array[BitSet]](n)
+    val collector = Array.ofDim[List[BitSet]](n)
     def engine(toProcess: Iterable[List[List[BitSet]]], result: List[BitSet]): Unit = {
       if ( toProcess.isEmpty ) {
-        collector(counter) = result.toArray
+        collector(counter) = result
         counter += 1
       } else toProcess.head.foreach { h => engine(toProcess.tail, h ++ result) }
     }
-    engine(b, Nil)
-    collector.map(x => fromFingerprint(x.sorted,Z.rows))
+    engine(b, fpSingletons)
+    collector.map(x => fromFingerprint(x.toArray.sorted, Zexisting.rows))
   }
 
   def main(args: Array[String]): Unit = {
@@ -113,7 +114,7 @@ object FeatureAllocationUtilities {
     println("-- original ---")
     println(pretty(Z))
     println("--")
-    val Zs = enumerateCombinationsFor(0,Z)
+    val Zs = enumerateCombinationsFor(0,null,Z)
     Zs.foreach { ZZ =>
       println(pretty(ZZ))
       println("--")

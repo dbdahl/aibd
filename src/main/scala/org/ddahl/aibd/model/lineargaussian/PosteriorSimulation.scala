@@ -35,7 +35,7 @@ object PosteriorSimulation {
       for (i <- 0 until nItems) {
         val (singletons, existing) = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)
         val proposals = if (existing == null) Array(singletons)
-        else tm3 { FeatureAllocationUtilities.enumerateCombinationsFor(i, existing).map(_ | singletons) }
+        else tm3 { FeatureAllocationUtilities.enumerateCombinationsFor(i, singletons, existing) }
         val logWeights = proposals.map(Z => (Z, ibp.logDensity(Z2fa(Z, nItems)) + lglfm.logLikelihood(Z)))
         state = rdg.nextItem(logWeights, onLogScale = true)._1
         state = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)._2
