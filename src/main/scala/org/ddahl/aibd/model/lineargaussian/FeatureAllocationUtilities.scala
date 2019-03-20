@@ -86,25 +86,23 @@ object FeatureAllocationUtilities {
     val data = getData(Z.copy)
     data(i) = Array.ofDim[Double](Z.cols)
     val fp = toFingerprint(wrap(data))
-    val a = fp.groupBy(identity).mapValues(_.size).toArray
+    val a = fp.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
       val off = x._1
       val on  = x._1 + i
       val count = x._2
-      Array.tabulate(count+1) { n =>
-        Array.tabulate(count) { k => if ( k < n ) on else off }
-      }
+      List.tabulate(count+1) { n => List.tabulate(count) { k => if ( k < n ) on else off } }
     }
     val n = b.map(_.length).product
     var counter = 0
     val collector = Array.ofDim[Array[BitSet]](n)
-    def engine(toProcess: Array[Array[Array[BitSet]]], result: Array[BitSet]): Unit = {
+    def engine(toProcess: Iterable[List[List[BitSet]]], result: List[BitSet]): Unit = {
       if ( toProcess.isEmpty ) {
-        collector(counter) = result
+        collector(counter) = result.toArray
         counter += 1
       } else toProcess.head.foreach { h => engine(toProcess.tail, h ++ result) }
     }
-    engine(b, Array[BitSet]())
+    engine(b, Nil)
     collector.map(x => fromFingerprint(x.sorted,Z.rows))
   }
 

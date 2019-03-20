@@ -20,6 +20,11 @@ class TimeMonitor private(private var sum: Long, private var invocations: Long) 
 
   def rate = sum.toDouble / invocations
 
+  def reset(): Unit = {
+    sum = 0L
+    invocations = 0L
+  }
+
   override def toString = "%d invocations in %4.4f seconds".format(invocations, sum / 1e9)
 
 }
