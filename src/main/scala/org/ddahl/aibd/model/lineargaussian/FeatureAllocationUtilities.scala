@@ -1,45 +1,53 @@
 package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.matrix._
+import scala.collection.mutable.BitSet
 
 object FeatureAllocationUtilities {
+
+  def toFingerprintString(Z: Matrix): String = {
+    toFingerprint(Z).map(_.mkString(",")).mkString(";")
+  }
+
+  def fromFingerprintString(x: String, rows: Int): Matrix = {
+    fromFingerprint(x.split(";").map( y => {
+      new BitSet(y.split(",").map(_.toLong))
+    }), rows)
+  }
 
   def isValid(Z: Matrix): Boolean = {
     val data = getData(Z)
     data.forall(_.forall(x => ( x == 0.0 ) || ( x == 1.0 )))
   }
 
-  def toFingerprint(Z: Matrix): Array[BigInt] = {
-    val coefficients = Array.fill[BigInt](Z.rows-1)(BigInt(2)).scan(BigInt(1))(_*_)
-    val result = Array.fill(Z.cols+1)(BigInt(0))
-    result(0) = Z.rows
-    var j = 0
-    while ( j < Z.cols ) {
-      var sum = result(j+1)
-      val a = Z(::,j).map(_ != 0.0)
-      var i = 0
-      while ( i < Z.rows ) {
-        if ( a(i) ) sum += coefficients(Z.rows-i-1)
-        i += 1
+  def toFingerprint(Z: Matrix): Array[BitSet] = {
+    if ( Z == null ) Array[BitSet]()
+    else {
+      val result = Array.fill(Z.cols)(BitSet())
+      var j = 0
+      while (j < Z.cols) {
+        val bs = result(j)
+        var i = 0
+        while (i < Z.rows) {
+          if (Z(i,j) != 0.0) bs.add(i)
+          i += 1
+        }
+        result(j) = bs
+        j += 1
       }
-      j += 1
-      result(j) = sum
+      result
     }
-    result
   }
 
-  def toFingerprintString(Z: Matrix): String = {
-    toFingerprint(Z).mkString(",")
-  }
 
-  def fromFingerprint(x: Array[BigInt]): Matrix = {
-    val Z = matrixOfDim(x(0).toInt, x.length-1)
+  def fromFingerprint(x: Array[BitSet], rows: Int): Matrix = {
+    val Z = matrixOfDim(rows, x.length-1)
     var j = 0
-    while ( j < Z.cols ) {
-      val w = x(j+1)
+    while ( j < x.length ) {
+      val w = x(j)
       var i = 0
-      while ( i < Z.rows ) {
-        Z(i,j) = if ( (w & (1<<i)) != 0 ) 1.0 else 0.0
+      while ( i < rows ) {
+        Z(i,j) = if ( w(i) ) 1.0 else 0.0
         i += 1
       }
       j += 1
@@ -47,14 +55,26 @@ object FeatureAllocationUtilities {
     Z
   }
 
-  def fromFingerprintString(x: String): Matrix = {
-    fromFingerprint(x.split(",").map(BigInt.apply))
+  implicit val ordering = new Ordering[BitSet] {
+    def compare(x: BitSet, y: BitSet): Int = {
+      val xi = x.iterator
+      val yi = x.iterator
+      while (xi.hasNext && yi.hasNext) {
+        val xn = xi.next()
+        val yn = yi.next()
+        if (xn < yn) return (-1)
+        if (xn > yn) return (1)
+      }
+      if (xi.hasNext) return (1)
+      if (yi.hasNext) return (-1)
+      0
+    }
   }
 
- def leftOrderedForm(Z: Matrix): Matrix = {
-    val fp = toFingerprint(Z)
-    val order = (0 until Z.cols).zip(fp.view(1,Z.cols+1)).sortWith( _._2 > _._2 ).map(_._1)
-    Z(::,order)
+  def leftOrderedForm(Z: Matrix): Matrix = leftOrderedForm(toFingerprint(Z),Z.rows)
+
+  def leftOrderedForm(fingerprint: Array[BitSet], rows: Int): Matrix = {
+    fromFingerprint(fingerprint.sorted, rows)
   }
 
   def partitionBySingletonsOf(i: Int, Z: Matrix): (Matrix,Matrix) = {
@@ -83,22 +103,69 @@ object FeatureAllocationUtilities {
     }
   }
 
+  /*
+  def enumerateCombinationsFor2(i: Int, Z: Matrix): Array[Matrix] = {
+    val data = getData(Z.copy)
+    data(i) = Array.ofDim[Double](Z.cols)
+    val fp = toFingerprint(wrap(data))
+    val a = fp.groupBy(identity).mapValues(_.size).toArray.map { x =>
+      val off = x._1
+      val on  = x._1 + i
+      val count = x._2
+      List.tabulate(count+1) { n =>
+        List.fill(n){on} ++ List.fill(count-n){off}
+      }
+    }
+    val n = a.map(_.size).product
+    println(a.mkString(" ||| "))
+    var all = List[List[BigInt]]()
+    def engine(toProcess: Array[List[List[BigInt]]], result: List[BigInt]): Unit = {
+      if ( toProcess.isEmpty ) all = result :: all
+      else toProcess.head.foreach { h =>
+        engine(toProcess.tail, h ++ result)
+      }
+    }
+    engine(a, Nil)
+    println(all.size)
+    println(all)
+    null
+  }
+  */
+
+  /*
+  def tabulateFeatures(Z: Matrix): List[(Array[Double],Int)] = {
+    if ( Z == null ) null else {
+      val fp = toFingerprint(Z)
+
+
+      val features = getData(Z.t).map { feature =>
+        var bs = BitSet()
+        feature.index
+        feature.map(x => if ( x == 1.0 ) bs(1) else 0L))
+      }
+
+
+
+      if (Z.cols > 31) throw new IllegalArgumentException("No more than 31 columns are supported.")
+      val max = (math.pow(2, Z.cols) - 1).toInt
+      var result = List[Matrix]()
+      var w = 0
+      while (w <= max) {
+        val newZ = Z.copy
+        newZ(i, ::) = Array.tabulate(Z.cols) { j => if ((w & (1 << j)) != 0) 1.0 else 0.0 }
+        result = newZ :: result
+        w += 1
+      }
+      result.toArray
+    }
+  }
+  */
+
   def main(args: Array[String]): Unit = {
-    val m = Array(Array[Double](0,1,0,1),Array[Double](1,0,1,0),Array[Double](1,0,1,0),Array[Double](0,0,0,1),Array[Double](1,0,0,0))
+    val m = Array(Array[Double](0,1,0,1),Array[Double](1,1,1,0),Array[Double](1,1,1,0),Array[Double](0,0,0,1),Array[Double](0,0,0,1))
     val Z = wrap(m)
-    println(isValid(Z))
-    Z(0,2) = 7.0
-    println(isValid(Z))
-    Z(0,2) = 1.0
     println(pretty(Z))
-    println("---")
-    println(pretty(leftOrderedForm(Z)))
-    println("<<")
-    val (a,b) = partitionBySingletonsOf(1,Z)
-    println(pretty(a))
-    println(pretty(b))
-    println(">>")
-    println(enumerateCombinationsFor(0,Z).map(pretty).mkString("\n---------\n"))
+    //println(enumerateCombinationsFor2(0,Z))
   }
 
 }
