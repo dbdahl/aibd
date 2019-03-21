@@ -22,21 +22,20 @@ object PosteriorSimulation {
     tmAll {
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
+        state.check()
         val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
         val logWeights = proposals.map(fa => (fa, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(fa,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(fa.matrix)) } ) )
         state = rdg.nextItem(logWeights, onLogScale = true)._1
         state = state.partitionBySingletonsOf(i)._2
-        val featureWithOnlyI = Array.ofDim[Double](nItems)
-        featureWithOnlyI(i) = 1.0
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
-          val newCumState = weights.head._1.add(i)
+          val newCumState = FeatureAllocation(weights.head._1).add(i)
+          newCumState.check()
           val newLogWeight = tmPrior { FeatureAllocationDistributions.logProbabilityIBP(newCumState,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(newCumState.matrix)) }
           val expanded = (newCumState, newLogWeight) :: weights
           if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
           else engine(expanded, if (newLogWeight > max) newLogWeight else max)
         }
-
         val setup = (state, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(state,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(state.matrix)) } ) :: Nil
         val weights = engine(setup, Double.NegativeInfinity).toIndexedSeq
         state = rdg.nextItem(weights, onLogScale = true)._1

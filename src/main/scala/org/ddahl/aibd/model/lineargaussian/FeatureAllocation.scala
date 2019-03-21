@@ -10,10 +10,39 @@ sealed trait FeatureAllocation {
   val array: Array[BitSet]
   val matrix: Array[Array[Double]]
 
+  override def toString(): String = {
+    if ( nItems == 0 ) "" else matrix.map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
+  }
+
+  def check(): Unit = {
+    assert(nItems == matrix.length)
+    assert(nFeatures == array.length)
+    assert(nFeatures == sizes.length)
+    assert( ( nFeatures == 0 ) || ( nFeatures == matrix(0).length ) )
+    val that1 = FeatureAllocation(matrix)
+    val that2 = new FeatureAllocationWithArray(nItems, array.map(_.clone))
+    val that3 = new FeatureAllocationWithArrayAndSizes(nItems, array.map(_.clone), sizes.clone)
+    val a = that1.matrix.flatten
+    val b = that2.matrix.flatten
+    val c = that3.matrix.flatten
+    a.zip(b).forall { x => x._1 == x._2 }
+    a.zip(c).forall { x => x._1 == x._2 }
+    val aa = that1.array
+    val bb = that2.array
+    val cc = that3.array
+    aa.zip(bb).forall { x => x._1 == x._2 }
+    aa.zip(cc).forall { x => x._1 == x._2 }
+    val aaa = that1.sizes
+    val bbb = that2.sizes
+    val ccc = that3.sizes
+    aaa.zip(bbb).forall { x => x._1 == x._2 }
+    aaa.zip(ccc).forall { x => x._1 == x._2 }
+  }
+
   protected def computeSizes: Array[Int] = array.map(_.size)
 
   protected def computeArray: Array[BitSet] = {
-    val result = Array.fill(nItems)(BitSet())
+    val result = Array.fill(nFeatures)(BitSet())
     var j = 0
     while (j < nFeatures) {
       val bs = result(j)
@@ -208,7 +237,6 @@ object FeatureAllocation {
 
   def apply(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length
-    if ( rows < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
     if ( rows == 0 ) return new FeatureAllocationEmpty(rows)
     val cols = matrix(0).length
     if ( ! matrix.forall(_.length == cols) ) throw new IllegalArgumentException("Number of features must be at least 1.")
@@ -216,6 +244,29 @@ object FeatureAllocation {
     if ( ! matrix.forall(_.forall(x => ( x == 0.0 ) || ( x == 1.0 ))) ) throw new IllegalArgumentException("Elements should be either 0 or 1.")
     new FeatureAllocationWithMatrix(matrix)
   }
+
+  def apply(fa: FeatureAllocation): FeatureAllocation = {
+    fa match {
+      case e: FeatureAllocationEmpty => new FeatureAllocationEmpty(e.nFeatures)
+      case e: FeatureAllocationWithMatrix => new FeatureAllocationWithMatrix(e.matrix.map(_.clone))
+      case e: FeatureAllocationWithArray => new FeatureAllocationWithArray(e.nItems, e.array.map(_.clone))
+      case e: FeatureAllocationWithArrayAndSizes => new FeatureAllocationWithArrayAndSizes(e.nItems, e.array.map(_.clone), e.sizes.clone)
+      case e: FeatureAllocationWithAll => new FeatureAllocationWithAll(e.matrix.map(_.clone), e.array.map(_.clone), e.sizes.clone)
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    // val m = Array(Array[Double](0,1,0,1,1,1,0,1,0,0,1,1),Array[Double](1,1,1,0,0,1,1,1,1,1,0,0),Array[Double](1,1,1,0,1,0,0,0,0,0,0,0),Array[Double](0,0,0,1,0,1,1,1,0,1,0,1),Array[Double](0,0,0,1,0,0,1,0,1,0,1,1))
+    val m = Array(Array[Double](0,1,0,1),Array[Double](1,1,1,0),Array[Double](1,1,1,0),Array[Double](0,0,0,1),Array[Double](0,0,0,1))
+    val fa = FeatureAllocation(m)
+    println()
+    println("-- original ---")
+    println(fa)
+    println("--")
+    println(fa.enumerateCombinationsFor(3).mkString("\n\n"))
+    println(fa.enumerateCombinationsFor(3).length)
+  }
+
 
 }
 
