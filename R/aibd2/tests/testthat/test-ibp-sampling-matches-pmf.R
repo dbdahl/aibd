@@ -3,15 +3,16 @@ context("ibp-sampling-matches-pmf")
 # skip("ibp-sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence") {
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"
+#  implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"
   mass <- 1.0
+  nItems <- 6  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
   dist <- ibp(mass, nItems)
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1
+  Z <- matrix(c(1,0,1,1,0,1,1,1,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=4)
   Z <- matrix(c(1,0,1,1,0,1),byrow=TRUE,nrow=nItems,ncol=2)
-  Z <- Z[order(Z %*% c(2,1)),c(2,1)]
   Ztruth <- Z
   W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
@@ -72,9 +73,9 @@ test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consis
   engine("scala", FALSE)
 })
 
-test_that("Sampling from LGLFM with IBP prior using psuedo Gibbs sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "pseudoGibbs")
-})
+#test_that("Sampling from LGLFM with IBP prior using psuedo Gibbs sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+#  engine("scala", FALSE, TRUE, "pseudoGibbs")
+#})
 
 test_that("Sampling from LGLFM with IBP prior using independence sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   engine("scala", FALSE, TRUE, "independence")
@@ -83,6 +84,10 @@ test_that("Sampling from LGLFM with IBP prior using independence sampler in MCMC
 test_that("Sampling from LGLFM with IBP prior using neighborhood sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   engine("scala", FALSE, TRUE, "viaNeighborhoods")
 })
+
+#test_that("Sampling from LGLFM with IBP prior using neighborhood sampler 2 in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+#  engine("scala", FALSE, TRUE, "viaNeighborhoods2")
+#})
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
   engine("R", TRUE)

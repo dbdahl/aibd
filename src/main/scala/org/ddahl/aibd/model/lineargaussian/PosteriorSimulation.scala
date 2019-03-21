@@ -9,35 +9,35 @@ import org.ddahl.aibd.TimeMonitor
 object PosteriorSimulation {
 
   def updateFeatureAllocationViaNeighborhoods(Z: Matrix, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Array[Matrix] = {
-    val tm = TimeMonitor()
-    val tm3 = TimeMonitor()
     val nItems = lglfm.N
-    var state = Z
+    var state: FeatureAllocation = if ( Z == null ) FeatureAllocation(nItems) else FeatureAllocation(getData(Z))
+    val tmAll = TimeMonitor()
+    val tmPrior = TimeMonitor()
+    val tmLikelihood = TimeMonitor()
+    val tmEnumeration = TimeMonitor()
     val nIterations = thin*nSamples
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
-    val results = Array.ofDim[Matrix](nSamples)
+    val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
-    tm {
+    tmAll {
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
-        val (singletons, existing) = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)
-        val proposals = if (existing == null) Array(singletons)
-        else tm3 { FeatureAllocationUtilities.enumerateCombinationsFor(i, singletons, existing) }
-        val logWeights = proposals.map(Z => (Z, FeatureAllocationDistributions.logProbabilityIBP(Z,nItems,mass) + lglfm.logLikelihood(Z)))
+        val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
+        val logWeights = proposals.map(fa => (fa, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(fa,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(fa.matrix)) } ) )
         state = rdg.nextItem(logWeights, onLogScale = true)._1
-        state = FeatureAllocationUtilities.partitionBySingletonsOf(i, state)._2
+        state = state.partitionBySingletonsOf(i)._2
         val featureWithOnlyI = Array.ofDim[Double](nItems)
         featureWithOnlyI(i) = 1.0
         @scala.annotation.tailrec
-        def engine(weights: List[(Matrix, Double)], max: Double): List[(Matrix, Double)] = {
-          val newCumState = weights.head._1 | featureWithOnlyI
-          val newLogWeight = FeatureAllocationDistributions.logProbabilityIBP(newCumState,nItems,mass) + lglfm.logLikelihood(newCumState)
+        def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
+          val newCumState = weights.head._1.add(i)
+          val newLogWeight = tmPrior { FeatureAllocationDistributions.logProbabilityIBP(newCumState,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(newCumState.matrix)) }
           val expanded = (newCumState, newLogWeight) :: weights
           if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
           else engine(expanded, if (newLogWeight > max) newLogWeight else max)
         }
 
-        val setup = (state, FeatureAllocationDistributions.logProbabilityIBP(state,nItems,mass) + lglfm.logLikelihood(state)) :: Nil
+        val setup = (state, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(state,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(state.matrix)) } ) :: Nil
         val weights = engine(setup, Double.NegativeInfinity).toIndexedSeq
         state = rdg.nextItem(weights, onLogScale = true)._1
       }
@@ -45,10 +45,12 @@ object PosteriorSimulation {
       b += 1
     }
     }
+    println(tmAll)
+    println(tmLikelihood)
     println(lglfm.tm)
-    println(tm3)
-    println(tm)
-    results
+    println(tmPrior)
+    println(tmEnumeration)
+    results.map(fa => wrap(fa.matrix))
   }
 
 }

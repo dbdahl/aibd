@@ -100,6 +100,6 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     } else if ( samplingMethod == "gibbs" ) {
       s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
     } else stop("Unrecgonized value for 'samplingMethod'.")
-    if ( ! is.list(newZs) ) scalaPull(newZs,"featureAllocation",s) else newZs
+    if ( ! is.list(newZs) ) scalaPull(newZs,"featureAllocation") else newZs
   } else stop("Unsupported 'implementation' argument.")
 }
