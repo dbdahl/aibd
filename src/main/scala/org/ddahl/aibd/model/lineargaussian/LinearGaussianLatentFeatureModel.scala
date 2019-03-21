@@ -3,7 +3,6 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.matrix._
 import org.apache.commons.math3.linear.CholeskyDecomposition
 import org.apache.commons.math3.util.FastMath.log
-import org.ddahl.aibd.TimeMonitor
 
 class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix, val d: Double) {
   val K = if ( Z == null ) 0 else Z.cols
@@ -34,10 +33,8 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
 
   def logLikelihood(lcs: Array[LikelihoodComponents]): Array[Double] = lcs.map(logLikelihood)
 
-  val tm = TimeMonitor()
-
   def logLikelihood(Z: Matrix): Double = {
-    tm { logLikelihood(computeLikelihoodComponents(Z)) }
+    logLikelihood(computeLikelihoodComponents(Z))
   }
 
   def logLikelihood(Zs: Array[Matrix]): Array[Double] = logLikelihood(computeLikelihoodComponents(Zs))
