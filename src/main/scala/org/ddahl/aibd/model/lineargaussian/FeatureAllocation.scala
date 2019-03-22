@@ -156,7 +156,7 @@ sealed trait FeatureAllocation {
 
   def enumerateCombinationsFor(i: Int): Array[FeatureAllocation] = {   // Careful, this results in tons of shared mutable instances.
     val (singletons, existing) = partitionBySingletonsOf(i)
-    val a = existing.array.groupBy(identity).mapValues(_.size)
+    val a = existing.remove(i).array.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
       val off = x._1
       val on  = x._1 + i  // Leads to a clone, unlike the "add" method.
