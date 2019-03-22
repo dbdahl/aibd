@@ -247,7 +247,7 @@ object FeatureAllocation {
 
   def apply(fa: FeatureAllocation): FeatureAllocation = {
     fa match {
-      case e: FeatureAllocationEmpty => new FeatureAllocationEmpty(e.nFeatures)
+      case e: FeatureAllocationEmpty => new FeatureAllocationEmpty(e.nItems)
       case e: FeatureAllocationWithMatrix => new FeatureAllocationWithMatrix(e.matrix.map(_.clone))
       case e: FeatureAllocationWithArray => new FeatureAllocationWithArray(e.nItems, e.array.map(_.clone))
       case e: FeatureAllocationWithArrayAndSizes => new FeatureAllocationWithArrayAndSizes(e.nItems, e.array.map(_.clone), e.sizes.clone)
