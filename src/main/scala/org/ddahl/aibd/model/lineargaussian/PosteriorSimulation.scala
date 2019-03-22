@@ -21,9 +21,8 @@ object PosteriorSimulation {
     var b = 1
     tmAll {
     while (b <= nIterations) {
+      println(""+b+" "+state.nFeatures)
       for (i <- 0 until nItems) {
-        println(""+b+" "+i+" "+state.nFeatures)
-        state.check()
         val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
         val logWeights = proposals.map(fa => (fa, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(fa,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(fa.matrix)) } ) )
         state = rdg.nextItem(logWeights, onLogScale = true)._1
@@ -31,7 +30,6 @@ object PosteriorSimulation {
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
           val newCumState = FeatureAllocation(weights.head._1).add(i)
-          newCumState.check()
           val newLogWeight = tmPrior { FeatureAllocationDistributions.logProbabilityIBP(newCumState,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(newCumState.matrix)) }
           val expanded = (newCumState, newLogWeight) :: weights
           if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
