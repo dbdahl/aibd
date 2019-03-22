@@ -11,12 +11,13 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1
-  Z <- matrix(c(1,0,1,1,0,1,1,1,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=4)
+  Z <- matrix(c(1,0,1,1,0,1,1,0,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=4)
   Z <- matrix(c(1,0,1,1,0,1),byrow=TRUE,nrow=nItems,ncol=2)
   Ztruth <- Z
   W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
   X <- Z %*% W + e
+  nSamples <- 10000
   nSamples <- 100000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   Zlist <- if ( constructiveMethod ) {
@@ -50,6 +51,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   both$upper <- qbeta(1-(1-confidenceLevel)/2,alpha+both$freq,beta+nSamples-both$freq)
   both$hits <- apply(cbind(both$lower - both$prob,both$upper - both$prob),1,prod)<0
   coverage <- mean(both$hits)
+  coverage
   z <- ( coverage - confidenceLevel ) / sqrt( confidenceLevel * (1-confidenceLevel) / nrow(both) )
   expect_gt( z, qnorm(0.001) )
 }
