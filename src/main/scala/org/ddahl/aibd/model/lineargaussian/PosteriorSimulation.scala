@@ -8,7 +8,7 @@ import org.ddahl.aibd.TimeMonitor
 
 object PosteriorSimulation {
 
-  def updateFeatureAllocationViaNeighborhoods(Z: Matrix, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Array[Matrix] = {
+  def updateFeatureAllocationViaNeighborhoods(Z: Matrix, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, width: Int, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double = 1000): Array[Matrix] = {
     val nItems = lglfm.N
     var state: FeatureAllocation = if ( Z == null ) FeatureAllocation(nItems) else FeatureAllocation(getData(Z))
     val tmAll = TimeMonitor()
@@ -16,6 +16,11 @@ object PosteriorSimulation {
     val tmLikelihood = TimeMonitor()
     val tmEnumeration = TimeMonitor()
     val nIterations = thin*nSamples
+    val rate = if ( width <= 0 ) 1
+    else {
+      print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
+      nSamples / width
+    }
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
@@ -38,10 +43,15 @@ object PosteriorSimulation {
         val weights = engine(setup, Double.NegativeInfinity).toIndexedSeq
         state = rdg.nextItem(weights, onLogScale = true)._1
       }
-      if (b % thin == 0) results((b - 1) / thin) = state
+      if (b % thin == 0) {
+        val index = (b-1)/thin
+        results(index) = state
+        if ( ( width > 0 ) && ( index % rate == 0 ) ) print("*")
+      }
       b += 1
     }
     }
+    if ( width > 0 ) println("]")
     println(tmAll)
     println(tmLikelihood)
     println(tmPrior)
