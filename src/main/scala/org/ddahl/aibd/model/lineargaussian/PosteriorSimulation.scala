@@ -22,6 +22,7 @@ object PosteriorSimulation {
     tmAll {
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
+        println(""+b+" "+i+" "+state.nFeatures)
         state.check()
         val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
         val logWeights = proposals.map(fa => (fa, tmPrior { FeatureAllocationDistributions.logProbabilityIBP(fa,mass) } + tmLikelihood { lglfm.logLikelihood(wrap(fa.matrix)) } ) )
@@ -46,7 +47,6 @@ object PosteriorSimulation {
     }
     println(tmAll)
     println(tmLikelihood)
-    println(lglfm.tm)
     println(tmPrior)
     println(tmEnumeration)
     results.map(fa => wrap(fa.matrix))
