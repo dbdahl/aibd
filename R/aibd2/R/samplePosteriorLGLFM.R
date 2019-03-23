@@ -90,8 +90,8 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
       s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
     } else if ( samplingMethod == "viaNeighborhoods2" ) {
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$wrap(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), newFeaturesTruncationDivisor)
-      ref <- s(newZsRef,N) ^ 'newZsRef.map { Z => if ( Z == null ) Array.ofDim[Double](N,0) else getData(Z) }'
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), newFeaturesTruncationDivisor)
+      ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
       scalaPull(ref,"arrayOfMatrices")
     } else if ( samplingMethod == "bert" ) {
       s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)

@@ -33,11 +33,13 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
 
   def logLikelihood(lcs: Array[LikelihoodComponents]): Array[Double] = lcs.map(logLikelihood)
 
-  def logLikelihood(Z: Matrix): Double = {
-    logLikelihood(computeLikelihoodComponents(Z))
-  }
+  def logLikelihood(Z: Matrix): Double = logLikelihood(computeLikelihoodComponents(Z))
 
   def logLikelihood(Zs: Array[Matrix]): Array[Double] = logLikelihood(computeLikelihoodComponents(Zs))
+
+  def logLikelihood(featureAllocation: FeatureAllocation): Double = logLikelihood(computeLikelihoodComponents(featureAllocation))
+
+  def logLikelihood(featureAllocations: Array[FeatureAllocation]): Array[Double] = logLikelihood(computeLikelihoodComponents(featureAllocations))
 
   def computeLikelihoodComponents(Z: Matrix): LikelihoodComponents = {
     if ( Z == null ) new LikelihoodComponents(null, null, null, 0.0) else {
@@ -51,7 +53,13 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     }
   }
 
+  def computeLikelihoodComponents(featureAllocation: FeatureAllocation): LikelihoodComponents = {
+    computeLikelihoodComponents(wrap(featureAllocation.matrix))
+  }
+
   def computeLikelihoodComponents(Zs: Array[Matrix]): Array[LikelihoodComponents] = Zs.map(computeLikelihoodComponents)
+
+  def computeLikelihoodComponents(featureAllocations: Array[FeatureAllocation]): Array[LikelihoodComponents] = featureAllocations.map(computeLikelihoodComponents)
 
   private def update(M: Matrix, d: Double, z: Array[Double], add: Boolean): (Matrix, Double) = {
     val sign= if (add) 1 else -1

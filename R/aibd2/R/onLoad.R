@@ -9,6 +9,7 @@
       import org.ddahl.aibd.model.lineargaussian.LinearGaussianSamplingModel
       import org.ddahl.aibd.model.lineargaussian.{LinearGaussianLatentFeatureModel => LGLFM}
       import org.ddahl.aibd.model.lineargaussian.{FeatureAllocationUtilities => FAU}
+      import org.ddahl.aibd.model.lineargaussian.{FeatureAllocation => FA}
       import org.ddahl.aibd.model.lineargaussian.PosteriorSimulation
       import org.ddahl.matrix._
       import org.ddahl.sdols.featureallocation.FeatureAllocation

@@ -5,7 +5,7 @@ context("ibp-sampling-matches-pmf")
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence") {
 #  implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"
   mass <- 1.0
-  nItems <- 6  # Should be a multiple of 3
+  nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
   dist <- ibp(mass, nItems)
   sigx <- 0.1
@@ -17,7 +17,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
   X <- Z %*% W + e
-  nSamples <- 10000
+  nSamples <- 100
   nSamples <- 100000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   Zlist <- if ( constructiveMethod ) {
