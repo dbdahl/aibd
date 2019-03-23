@@ -1,5 +1,7 @@
 package org.ddahl.aibd.model.lineargaussian
 
+import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
+import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import scala.collection.mutable.BitSet
 
 sealed trait FeatureAllocation {
@@ -182,6 +184,12 @@ sealed trait FeatureAllocation {
         new FeatureAllocationWithMatrixAndArray(mat, arr)
       }
     }
+  }
+
+  def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
+    FeatureAllocationAlternative(nItems, array.map { f =>
+      FeatureAlternative(f.toArray:_*)
+    }:_*)
   }
 
 }

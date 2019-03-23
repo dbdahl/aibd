@@ -50,7 +50,7 @@
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="independence", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE) {
-  if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
+  if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
   if ( missing(sdX) ) sdX <- 1/sqrt(precisionX)
@@ -64,6 +64,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   storage.mode(X) <- "double"
   implementation <- toupper(implementation)
   if ( implementation == "R" ) {
+    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for the R implementation.")
     Zs <- vector(nSamples %/% thin, mode="list")
     for (b in 1:(thin*nSamples)) {
       Z <- collapsedGibbsLinModelSamplerSS(Z,sdX,sdW,distribution$mass,X)[[1]]
@@ -76,13 +77,16 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
+      if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for this sampling method.")
+      logPrior <- s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass)
       storage.mode(featureAllocation) <- "double"
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), logPrior, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
       ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
       scalaPull(ref,"arrayOfMatrices")
     } else {
+      if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for this sampling method.")
       dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
       fa <- scalaPush(featureAllocation,"featureAllocation",s)
       logLike <- if ( D == 0 ) {

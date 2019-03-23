@@ -3,11 +3,23 @@ package org.ddahl.aibd.model.lineargaussian
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
-import org.ddahl.aibd.TimeMonitor
+import org.ddahl.aibd.{AttractionIndianBuffetDistribution, Permutation, Similarity, TimeMonitor}
 
 object PosteriorSimulation {
 
-  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
+  def mkLogPriorProbabilityIBP(mass: Double): (Int, FeatureAllocation) => Double = (i: Int, fa: FeatureAllocation) => {
+    FeatureAllocationDistributions.logProbabilityIBP(fa, mass)
+  }
+
+  def mkLogPriorProbabilityAIBD(mass: Double, permutation: Permutation, similarity: Similarity): (Int, FeatureAllocation) => Double = {
+    val aibd = AttractionIndianBuffetDistribution(mass, permutation, similarity)
+    (i: Int, fa: FeatureAllocation) => {
+      val faa = fa.convertToAlternativeImplementation
+      aibd.logDensityStartingFromIndex(i, faa, false)
+    }
+  }
+
+  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, logPriorProbability: (Int, FeatureAllocation) => Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
@@ -22,11 +34,11 @@ object PosteriorSimulation {
       if ( r == 0 ) (nSamples, 1) else (progressWidth, r)
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
-    def logPosterior1(fa: FeatureAllocation): (FeatureAllocation, Double) = {
-      (fa, FeatureAllocationDistributions.logProbabilityIBP(fa,mass) + lglfm.logLikelihood(fa))
+    def logPosterior1(i: Int, fa: FeatureAllocation): (FeatureAllocation, Double) = {
+      (fa, logPriorProbability(i, fa) + lglfm.logLikelihood(fa))
     }
     def logPosterior2(i: Int, fa: FeatureAllocation, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
-      (fa, FeatureAllocationDistributions.logProbabilityIBP(fa,mass) + lglfm.logLikelihood(lglfm.addFeaturesFor(i,lc,fa.matrix(i))))
+      (fa, logPriorProbability(i, fa) + lglfm.logLikelihood(lglfm.addFeaturesFor(i,lc,fa.matrix(i))))
     }
     val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
@@ -43,7 +55,7 @@ object PosteriorSimulation {
           }
         } else {
           tmPosterior1 {
-            if (parallel) proposals.par.map(logPosterior1).toArray else proposals.map(logPosterior1)
+            if (parallel) proposals.par.map(logPosterior1(i,_)).toArray else proposals.map(logPosterior1(i,_))
           }
         }
         state = rdg.nextItem(logWeights, onLogScale = true)._1
@@ -51,12 +63,12 @@ object PosteriorSimulation {
         @scala.annotation.tailrec
         def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
           val newCumState = FeatureAllocation(weights.head._1).add(i)
-          val newLogWeight = logPosterior1(newCumState)._2
+          val newLogWeight = logPosterior1(i,newCumState)._2
           val expanded = (newCumState, newLogWeight) :: weights
           if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
           else engine(expanded, if (newLogWeight > max) newLogWeight else max)
         }
-        val weights = tmPosterior2 { engine(logPosterior1(state) :: Nil, Double.NegativeInfinity).toIndexedSeq }
+        val weights = tmPosterior2 { engine(logPosterior1(i,state) :: Nil, Double.NegativeInfinity).toIndexedSeq }
         state = rdg.nextItem(weights, onLogScale = true)._1
       }
       if (b % thin == 0) {
