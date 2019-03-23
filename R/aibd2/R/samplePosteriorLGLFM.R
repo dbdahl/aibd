@@ -71,35 +71,37 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     }
     Zs
   } else if ( implementation == "SCALA" ) {
-    dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
-    fa <- scalaPush(featureAllocation,"featureAllocation",s)
     nSamples <- as.integer(nSamples[1])
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
-    logLike <- if ( D == 0 ) {
-      s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-    } else {
-      s(X, precisionX, precisionW, parallel) ^ '
-        (fa: FeatureAllocation[Null]) => LinearGaussianSamplingModel(X).logLikelihood(fa, precisionX, precisionW, parallel)
-      '
-    }
-    newZs <- if ( samplingMethod == "pseudoGibbs" ) {
-      s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-    } else if ( samplingMethod == "viaNeighborhoods" ) {
-      s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-    } else if ( samplingMethod == "viaNeighborhoods2" ) {
+    if ( samplingMethod == "viaNeighborhoods2" ) {
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
       newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), newFeaturesTruncationDivisor)
       ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
       scalaPull(ref,"arrayOfMatrices")
-    } else if ( samplingMethod == "bert" ) {
-      s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-    } else if ( samplingMethod == "independence" ) {
-      s$MCMCSamplers.updateFeatureAllocationIndependence(fa, dist, logLike, nSamples, thin, s$rdg())
-    } else if ( samplingMethod == "gibbs" ) {
-      s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
-    } else stop("Unrecgonized value for 'samplingMethod'.")
-    if ( ! is.list(newZs) ) scalaPull(newZs,"featureAllocation") else newZs
+    } else {
+      dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
+      fa <- scalaPush(featureAllocation,"featureAllocation",s)
+      logLike <- if ( D == 0 ) {
+        s ^ '(fa: FeatureAllocation[Null]) => 0.0'
+      } else {
+        s(X, precisionX, precisionW, parallel) ^ '
+          (fa: FeatureAllocation[Null]) => LinearGaussianSamplingModel(X).logLikelihood(fa, precisionX, precisionW, parallel)
+        '
+      }
+      newZs <- if ( samplingMethod == "pseudoGibbs" ) {
+        s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+      } else if ( samplingMethod == "viaNeighborhoods" ) {
+        s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+      } else if ( samplingMethod == "bert" ) {
+        s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
+      } else if ( samplingMethod == "independence" ) {
+        s$MCMCSamplers.updateFeatureAllocationIndependence(fa, dist, logLike, nSamples, thin, s$rdg())
+      } else if ( samplingMethod == "gibbs" ) {
+        s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
+      } else stop("Unrecgonized value for 'samplingMethod'.")
+      scalaPull(newZs,"featureAllocation")
+    }
   } else stop("Unsupported 'implementation' argument.")
 }

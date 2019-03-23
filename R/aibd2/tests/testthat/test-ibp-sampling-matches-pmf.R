@@ -87,9 +87,9 @@ test_that("Sampling from LGLFM with IBP prior using neighborhood sampler in MCMC
   engine("scala", FALSE, TRUE, "viaNeighborhoods")
 })
 
-#test_that("Sampling from LGLFM with IBP prior using neighborhood sampler 2 in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-#  engine("scala", FALSE, TRUE, "viaNeighborhoods2")
-#})
+test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2")
+})
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
   engine("R", TRUE)
