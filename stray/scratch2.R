@@ -1,43 +1,22 @@
-library(rscala)
 library(aibd2)
-
-s <- aibd2:::s
-s * 3
-
-Z <- matrix(c(1,0,0,0,0,0,1,1,0,0,1,1),nrow=4)
-fa <- scalaPush(Z,"featureAllocation",s)
-l <- s$MCMCSamplers.allPossibleConfigurationsAmongExistingKeepingSingletons(0L, fa)
-
-fas <- scalaPull(l,"featureAllocation")
-
-fas[[1]]
-
-m <- s$FAU.arrays2Matrix(fas[[1]])
-a <- s$FAU.matrix2Arrays(m)
-identical(fas[[1]],a)
-all.equal(fas[[1]],a)
-
-
 
 mass <- 1.0
 sigx <- 0.1
 sigw <- 1.0
-dimW <- 3
-nItems <- 2048  # Should be a multiple of 4
-nItems <- 512  # Should be a multiple of 4
-Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
-Z <- Z[order(Z %*% c(2,1)),c(2,1)]
-Zm <- s$wrap(Z)
-Ztruth <- Z
+nItems <- 512
+nItems <- 50
+
+nFeatures <- 10
+Z <- matrix(rbinom(nItems*nFeatures,size=1,prob=0.2),nrow=nItems)
+
+dimW <- 48
 W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
-lglfm <- s$LGLFM.usingStandardDeviations(s$wrap(X),sigx,sigw)
 
-library(microbenchmark)
-microbenchmark(
-lglfm$logLikelihood(Zm),
-logLikelihoodLGLFM(Z,X,sdX=sigx,sdW=sigw,implementation="scala"),
-logLikelihoodLGLFM(Z,X,sdX=sigx,sdW=sigw,implementation="R"),
-times=100)
+dist <- ibp(1.0,nItems)
 
+nSamples <- 10
+Zs <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation = "scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+all.equal(Zs[[1]],Zs[[10]])

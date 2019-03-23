@@ -7,7 +7,7 @@ import org.ddahl.aibd.TimeMonitor
 
 object PosteriorSimulation {
 
-  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, width: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
+  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, mass: Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
@@ -16,11 +16,12 @@ object PosteriorSimulation {
     val tmPosterior2 = TimeMonitor()
     val tmEnumeration = TimeMonitor()
     val nIterations = thin*nSamples
-    val rate = if ( width <= 0 ) 1
+    val (width,rate) = if ( progressWidth <= 0 ) (0,1)
     else {
-      print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
-      nSamples / width
+      val r = nSamples / progressWidth
+      if ( r == 0 ) (nSamples, 1) else (progressWidth, r)
     }
+    if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
     def logPosterior1(fa: FeatureAllocation): (FeatureAllocation, Double) = {
       (fa, FeatureAllocationDistributions.logProbabilityIBP(fa,mass) + lglfm.logLikelihood(fa))
     }

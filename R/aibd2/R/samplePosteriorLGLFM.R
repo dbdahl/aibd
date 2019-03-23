@@ -76,6 +76,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
+      storage.mode(featureAllocation) <- "double"
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
       newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
