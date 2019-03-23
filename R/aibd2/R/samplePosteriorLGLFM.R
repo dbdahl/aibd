@@ -77,7 +77,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), parallel, newFeaturesTruncationDivisor)
       ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
       scalaPull(ref,"arrayOfMatrices")
     } else {
