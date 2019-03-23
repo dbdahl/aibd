@@ -68,26 +68,35 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
   }
 
   def dropFeaturesFor(i: Int, lc: LikelihoodComponents): LikelihoodComponents = {
-    val Z = lc.Z.copy
-    val zOld = Z(i,::)
-    Z(i,::) = Array.ofDim[Double](lc.K)
-    val (m,d) = update(lc.M, lc.d, zOld, false)
-    new LikelihoodComponents(Z, Z.t, m, d)
+    if ( lc.Z == null ) lc
+    else {
+      val Z = lc.Z.copy
+      val zOld = Z(i, ::)
+      Z(i, ::) = Array.ofDim[Double](lc.K)
+      val (m, d) = update(lc.M, lc.d, zOld, false)
+      new LikelihoodComponents(Z, Z.t, m, d)
+    }
   }
 
   def addFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
-    val Z = lc.Z.copy
-    // assert(Z(i,::).forall(_ == 0.0))
-    Z(i,::) = z
-    val (m,d) = update(lc.M, lc.d, z, true)
-    new LikelihoodComponents(Z, Z.t, m, d)
+    if ( lc.Z == null ) computeLikelihoodComponents(wrap(z))
+    else {
+      val Z = lc.Z.copy
+      // assert(Z(i,::).forall(_ == 0.0))
+      Z(i, ::) = z
+      val (m, d) = update(lc.M, lc.d, z, true)
+      new LikelihoodComponents(Z, Z.t, m, d)
+    }
   }
 
   def dropAndAddFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
-    val newLC = dropFeaturesFor(i, lc)
-    newLC.Z(i,::) = z
-    val (m,d) = update(newLC.M, newLC.d, z, true)
-    new LikelihoodComponents(newLC.Z, newLC.Z.t, m, d)
+    if ( lc.Z == null ) computeLikelihoodComponents(wrap(z))
+    else {
+      val newLC = dropFeaturesFor(i, lc)
+      newLC.Z(i, ::) = z
+      val (m, d) = update(newLC.M, newLC.d, z, true)
+      new LikelihoodComponents(newLC.Z, newLC.Z.t, m, d)
+    }
   }
 
 }

@@ -49,7 +49,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="independence", implementation="R", nSamples=1L, thin=1L, parallel=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="independence", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE) {
   if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently implemented. Please change the implemention to 'scala'.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -76,8 +76,9 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
+      rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), parallel, newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), distribution$mass, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
       ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
       scalaPull(ref,"arrayOfMatrices")
     } else {

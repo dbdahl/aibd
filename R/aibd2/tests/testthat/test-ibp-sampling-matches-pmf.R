@@ -2,8 +2,8 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence") {
-#  implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence", rankOneUpdates=FALSE) {
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
@@ -11,6 +11,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1
+  Z <- matrix(c(1,0,1,1,0,1,1,0,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=16)
   Z <- matrix(c(1,0,1,1,0,1,1,0,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=4)
   Z <- matrix(c(1,0,1,1,0,1),byrow=TRUE,nrow=nItems,ncol=2)
   Ztruth <- Z
@@ -25,7 +26,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod, parallel=FALSE)
+    samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod, parallel=FALSE, rankOneUpdates=rankOneUpdates)
   }
   freq <- table(sapply(Zlist, function(Z) aibd2:::featureAllocation2Id(Z)))
   sampled <- as.data.frame(freq)
@@ -88,7 +89,11 @@ test_that("Sampling from LGLFM with IBP prior using neighborhood sampler in MCMC
 })
 
 test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2")
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE)
+})
+
+test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2", TRUE)
 })
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
