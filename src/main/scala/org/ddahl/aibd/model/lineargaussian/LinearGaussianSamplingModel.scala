@@ -2,6 +2,8 @@ package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.aibd._
 import org.ddahl.aibd.parameter.{IndependentNormalsParameterDistribution, MultivariateNormalParameterDistribution}
+import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
+import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import org.ddahl.commonsmath._
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath._
@@ -22,11 +24,11 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
   private val const = -N * Dhalf * log(2 * math.Pi)
   private val XtXtrace = (Xt * X).getTrace
 
-  def logLikelihood(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): Array[Double] = {
+  def logLikelihood(precision: Array[Double], fas: Seq[FeatureAllocationAlternative[Vector[Double]]]): Array[Double] = {
     precision.zip(fas).par.map(x => logLikelihood(x._1, x._2)).toArray
   }
 
-  def logLikelihood(fa: FeatureAllocation[Null], precisionX: Double, precisionW: Double, parallel: Boolean): Double = {
+  def logLikelihood(fa: FeatureAllocationAlternative[Null], precisionX: Double, precisionW: Double, parallel: Boolean): Double = {
     if (fa.nItems != nItems) throw new IllegalArgumentException("Feature allocation has " + fa.nItems + " items, but " + nItems + " were expected.")
     val K = fa.nFeatures
     if (K == 0) {
@@ -39,24 +41,24 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     }
   }
 
-  def logLikelihood(fa: Array[FeatureAllocation[Null]], precisionX: Double, precisionW: Double, parallel: Boolean): Array[Double] = if (parallel) {
+  def logLikelihood(fa: Array[FeatureAllocationAlternative[Null]], precisionX: Double, precisionW: Double, parallel: Boolean): Array[Double] = if (parallel) {
     fa.par.map(logLikelihood(_, precisionX, precisionW, false)).toArray
   } else {
     fa.map(logLikelihood(_, precisionX, precisionW, false))
   }
 
-  def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]]): (Double, FeatureAllocation[Vector[Double]]) = {
+  def maximumLikelihoodEstimate(precision: Array[Double], fas: Seq[FeatureAllocationAlternative[Vector[Double]]]): (Double, FeatureAllocationAlternative[Vector[Double]]) = {
     precision.zip(fas).par.maxBy(x => logLikelihood(x._1, x._2))
   }
 
-  def maximumAPosterioriEstimate(precision: Array[Double], fas: Seq[FeatureAllocation[Vector[Double]]], featureAllocationDistribution: FeatureAllocationDistribution[Vector[Double]]) = {
+  def maximumAPosterioriEstimate(precision: Array[Double], fas: Seq[FeatureAllocationAlternative[Vector[Double]]], featureAllocationDistribution: FeatureAllocationDistribution[Vector[Double]]) = {
     // val parameterPrior = featureAllocationDistribution.parameterDistribution
     precision.zip(fas).par.maxBy(x => {
       logLikelihood(x._1, x._2) + featureAllocationDistribution.logDensityWithParameters(x._2, false)
     })
   }
 
-  def logLikelihood(precision: Double, fa: FeatureAllocation[Vector[Double]]): Double = {
+  def logLikelihood(precision: Double, fa: FeatureAllocationAlternative[Vector[Double]]): Double = {
     logLikelihood(precision, LinearGaussianSamplingModel.mean(fa, nResponses))
   }
 
@@ -81,9 +83,9 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     sum
   }
 
-  def mkLogLikelihood(precision: Double): (Int, FeatureAllocation[Vector[Double]]) => Double = logLikelihood(_, precision, _)
+  def mkLogLikelihood(precision: Double): (Int, FeatureAllocationAlternative[Vector[Double]]) => Double = logLikelihood(_, precision, _)
 
-  def logLikelihood(i: Int, precision: Double, fa: FeatureAllocation[Vector[Double]]): Double = {
+  def logLikelihood(i: Int, precision: Double, fa: FeatureAllocationAlternative[Vector[Double]]): Double = {
     timer {
       logLikelihood(i, precision, LinearGaussianSamplingModel.mean(i, fa, nResponses))
     }
@@ -104,13 +106,13 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     sum
   }
 
-  def updatePrecision(fa: FeatureAllocation[Vector[Double]], rdg: RandomDataGenerator, shape: Double, rate: Double): Double = {
+  def updatePrecision(fa: FeatureAllocationAlternative[Vector[Double]], rdg: RandomDataGenerator, shape: Double, rate: Double): Double = {
     val newShape = shape + nItems * nResponses / 2.0
     val newRate = rate + 0.5 * sse(LinearGaussianSamplingModel.mean(fa, nResponses))
     rdg.nextGamma(newShape, 1.0 / newRate)
   }
 
-  def updateCoefficients(fa: FeatureAllocation[Vector[Double]], rdg: RandomDataGenerator, precision: Double, parameterPrior: IndependentNormalsParameterDistribution): FeatureAllocation[Vector[Double]] = {
+  def updateCoefficients(fa: FeatureAllocationAlternative[Vector[Double]], rdg: RandomDataGenerator, precision: Double, parameterPrior: IndependentNormalsParameterDistribution): FeatureAllocationAlternative[Vector[Double]] = {
     val priorPrecisionTimesMean = Array.tabulate(nResponses) { i => parameterPrior.precision(i) * parameterPrior.mean(i) }
     var faCurrent = fa
     for (fCurrent <- faCurrent) {
@@ -135,7 +137,7 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     faCurrent
   }
 
-  def updateCoefficients(fa: FeatureAllocation[Vector[Double]], rdg: RandomDataGenerator, precision: Double, parameterPrior: MultivariateNormalParameterDistribution): FeatureAllocation[Vector[Double]] = {
+  def updateCoefficients(fa: FeatureAllocationAlternative[Vector[Double]], rdg: RandomDataGenerator, precision: Double, parameterPrior: MultivariateNormalParameterDistribution): FeatureAllocationAlternative[Vector[Double]] = {
     val priorPrecisionTimesMean = parameterPrior.precisionMatrix * parameterPrior.meanMatrix
     val precisionMatrix = precision *: MatrixFactory.identity(nResponses)
     val zero = MatrixFactory(nResponses, 1)
@@ -164,7 +166,7 @@ object LinearGaussianSamplingModel {
 
   private final val logNormalizingConstant = -0.5 * log(2 * PI)
 
-  def sse(response: Array[Array[Double]], fa: FeatureAllocation[Vector[Double]]): Double = {
+  def sse(response: Array[Array[Double]], fa: FeatureAllocationAlternative[Vector[Double]]): Double = {
     apply(response).sse(mean(fa, response(0).length))
   }
 
@@ -172,7 +174,7 @@ object LinearGaussianSamplingModel {
     new LinearGaussianSamplingModel(response.map(_.clone))
   }
 
-  def mean(fa: FeatureAllocation[Vector[Double]], nResponses: Int): Array[Array[Double]] = {
+  def mean(fa: FeatureAllocationAlternative[Vector[Double]], nResponses: Int): Array[Array[Double]] = {
     val mean = Array.ofDim[Double](fa.nItems, nResponses)
     val nFeatures = fa.nFeatures
     val features = fa.toVector
@@ -196,7 +198,7 @@ object LinearGaussianSamplingModel {
     mean
   }
 
-  def mean(i: Int, fa: FeatureAllocation[Vector[Double]], nResponses: Int): Array[Double] = {
+  def mean(i: Int, fa: FeatureAllocationAlternative[Vector[Double]], nResponses: Int): Array[Double] = {
     val mean = new Array[Double](nResponses)
     val nFeatures = fa.nFeatures
     val features = fa.toVector
@@ -216,7 +218,7 @@ object LinearGaussianSamplingModel {
     mean
   }
 
-  def sample(precision: Double, fa: FeatureAllocation[Vector[Double]], M: Int, rdg: RandomDataGenerator): Array[Array[Double]] = {
+  def sample(precision: Double, fa: FeatureAllocationAlternative[Vector[Double]], M: Int, rdg: RandomDataGenerator): Array[Array[Double]] = {
     val sd = 1 / math.sqrt(precision)
     val result = Array.ofDim[Double](fa.nItems, M)
     for (i <- 0 until fa.nItems) {
@@ -233,7 +235,7 @@ object LinearGaussianSamplingModel {
     result
   }
 
-  def sample(nSamples: Int, state: Option[(FeatureAllocation[Vector[Double]], Double, FeatureAllocationDistribution[Vector[Double]])], samplingModel: LinearGaussianSamplingModel, maxNewFeatures: Int, precisionShape: Double, precisionRate: Double, featureAllocationModel: FeatureAllocationDistribution[Vector[Double]], rdg: RandomDataGenerator, progressCallback: Int => Unit) = {
+  def sample(nSamples: Int, state: Option[(FeatureAllocationAlternative[Vector[Double]], Double, FeatureAllocationDistribution[Vector[Double]])], samplingModel: LinearGaussianSamplingModel, maxNewFeatures: Int, precisionShape: Double, precisionRate: Double, featureAllocationModel: FeatureAllocationDistribution[Vector[Double]], rdg: RandomDataGenerator, progressCallback: Int => Unit) = {
     var (fa, precision, faDistribution) = if (state.isDefined) state.get
     else (featureAllocationModel.sample(rdg), precisionShape / precisionRate, featureAllocationModel)
     val monitorFAExisting = MCMCAcceptanceMonitor2()
@@ -276,7 +278,7 @@ object LinearGaussianSamplingModel {
       }
       faDistribution = aibd
     }
-    val fas = Array.ofDim[FeatureAllocation[Vector[Double]]](nSamples)
+    val fas = Array.ofDim[FeatureAllocationAlternative[Vector[Double]]](nSamples)
     val precisions = Array.ofDim[Double](nSamples)
     val nFeatures = Array.ofDim[Int](nSamples)
     var i = 0
