@@ -1,0 +1,7 @@
+#!/bin/bash
+
+R CMD BATCH --no-restore --no-readline demo.R &
+tail --pid=$! -f demo.Rout
+echo "Copying objects..."
+cp .RData RData-$(date +"%Y-%m-%d-%H-%M-%S")
+echo "Done."

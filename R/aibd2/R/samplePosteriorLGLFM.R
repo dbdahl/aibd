@@ -77,8 +77,11 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
-      if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for this sampling method.")
-      logPrior <- s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass)
+      logPrior <- if ( inherits(distribution,"ibpFADistribution") ) {
+        s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass)
+      } else if ( inherits(distribution,"aibdFADistribution") ) {
+        s$PosteriorSimulation.mkLogPriorProbabilityAIBD(distribution$mass, s$Permutation(distribution$permutation-1L), s$Similarity(distribution$similarity))
+      } else stop(paste0("Unrecognized prior distribution: ",distribution))
       storage.mode(featureAllocation) <- "double"
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)

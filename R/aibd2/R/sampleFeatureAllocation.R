@@ -46,7 +46,7 @@ sampleFeatureAllocation <- function(nSamples, distribution, implementation="R") 
       s$AttractionIndianBuffetDistribution(alpha,permutation,similarity)
     } else stop("Unsupported distribution.")
     nSamples <- as.integer(nSamples)
-    rdg <- s$.new_RDG()
+    rdg <- s$rdg()
     samples <- s(dist,nSamples,rdg) ^ 'List.fill(nSamples) { dist.sample(rdg) }'
     scalaPull(samples, "featureAllocation")
   } else stop("Unsupported 'implementation' argument.")
