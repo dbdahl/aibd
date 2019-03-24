@@ -1,13 +1,17 @@
 set.seed(74927)
 library(aibd2)
 
-pdf("plots.pdf",width=6,height=4)
+stamp <- Sys.getenv("stamp")
+
+pdf(paste0(stamp,".pdf"),width=6,height=4)
 
 mass <- 1.5
 sigx <- 3.0
 sigw <- 1.0
-nItems <- 20
+nItems <- as.integer(Sys.getenv("nItems"))
+
 nSamples <- 1000
+nSamples <- as.integer(Sys.getenv("nSamples")) 
 
 distances <- as.matrix(dist(scale(USArrests)))
 which <- sample(1:nrow(distances),nItems)
@@ -35,7 +39,6 @@ samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, sampling
 
 samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
 
-
 library(sdols)
 epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD)
 epamIBP  <- expectedPairwiseAllocationMatrix(samplesIBP)
@@ -50,4 +53,5 @@ salso(epamAIBD, structure = "featureAllocation")
 salso(epamIBP,  structure = "featureAllocation")
 
 dev.off()
+save.image(file=paste0(stamp,".RData"))
 

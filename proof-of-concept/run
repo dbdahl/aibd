@@ -1,7 +1,9 @@
 #!/bin/bash
 
-R CMD BATCH --no-restore --no-readline demo.R &
-tail --pid=$! -f demo.Rout
-echo "Copying objects..."
-cp .RData RData-$(date +"%Y-%m-%d-%H-%M-%S")
-echo "Done."
+export nItems=$1
+export nSamples=$2
+export stamp=out.$nItems.$nSamples.$(date +"%Y-%m-%d-%H-%M-%S")
+
+R CMD BATCH --no-restore --no-save --no-readline script.R $stamp.out &
+tail --pid=$! -F $stamp.out
+

@@ -46,16 +46,16 @@ object PosteriorSimulation {
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
         val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
-        val logWeights = if ( rankOneUpdates ) {
-          if ( proposals.isEmpty ) Array[(FeatureAllocation,Double)]()
-          else {
-            val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
-            val lc2 = lglfm.dropFeaturesFor(i,lc1)
-            if ( parallel ) proposals.par.map(logPosterior2(i,_,lc2)).toArray else proposals.map(logPosterior2(i,_,lc2))
-          }
-        } else {
-          tmPosterior1 {
-            if (parallel) proposals.par.map(logPosterior1(i,_)).toArray else proposals.map(logPosterior1(i,_))
+        val logWeights = tmPosterior1 {
+          if (rankOneUpdates) {
+            if (proposals.isEmpty) Array[(FeatureAllocation, Double)]()
+            else {
+              val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
+              val lc2 = lglfm.dropFeaturesFor(i, lc1)
+              if (parallel) proposals.par.map(logPosterior2(i, _, lc2)).toArray else proposals.map(logPosterior2(i, _, lc2))
+            }
+          } else {
+            if (parallel) proposals.par.map(logPosterior1(i, _)).toArray else proposals.map(logPosterior1(i, _))
           }
         }
         state = rdg.nextItem(logWeights, onLogScale = true)._1
@@ -80,12 +80,12 @@ object PosteriorSimulation {
     }
     }
     if ( width > 0 ) println("]")
-    println("Parallel:         "+parallel)
-    println("Rank-one updates: "+rankOneUpdates)
-    println(tmAll)
-    println(tmPosterior1)
-    println(tmPosterior2)
-    println(tmEnumeration)
+    println("Parallel:           "+parallel)
+    println("Rank-one updates:   "+rankOneUpdates)
+    println("Main lapse:         "+tmAll)
+    println("Combinatoric lapse: "+tmPosterior1)
+    println("Singleton lapse:    "+tmPosterior2)
+    println("Enumeration lapse;  "+tmEnumeration)
     results
   }
 
