@@ -1,0 +1,133 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> set.seed(74927)
+> library(aibd2)
+Warning message:
+package ‘aibd2’ was built under R version 3.5.3 
+> 
+> stamp <- Sys.getenv("stamp")
+> 
+> pdf(paste0(stamp,".pdf"),width=6,height=4)
+> 
+> mass <- 1.5
+> sigx <- 3.0
+> sigw <- 1.0
+> nItems <- as.integer(Sys.getenv("nItems"))
+> 
+> nSamples <- 1000
+> nSamples <- as.integer(Sys.getenv("nSamples")) 
+> 
+> distances <- as.matrix(dist(scale(USArrests)))
+> which <- sample(1:nrow(distances),nItems)
+> distances <- distances[which,which]
+> 
+> temperature <- 4
+> similarity <- 1/as.matrix(distances)^temperature
+> simVector <- as.vector(similarity)
+> simVector <- simVector[!is.infinite(simVector)]
+> plot(simVector,type="h")
+> 
+> distIBP <- ibp(mass,nItems)
+> distAIBD <- aibd(mass,1:nItems,similarity)
+> 
+> Z <- sampleFeatureAllocation(1, distAIBD, "scala")[[1]]
+> dim(Z)
+[1] 10  4
+> 
+> dimW <- 32
+> W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+> 
+> e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
+> X <- Z %*% W + e
+> 
+> samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+[                                                                                                    ]****************************************************************************************************]
+Parallel:           true
+Rank-one updates:   true
+Main lapse:         1 invocations in 44.1934 seconds
+Combinatoric lapse: 10000 invocations in 30.2154 seconds
+Singleton lapse:    10000 invocations in 11.7502 seconds
+Enumeration lapse;  10000 invocations in 1.6587 seconds
+> 
+> samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+[                                                                                                    ]****************************************************************************************************]
+Parallel:           true
+Rank-one updates:   true
+Main lapse:         1 invocations in 29.6710 seconds
+Combinatoric lapse: 10000 invocations in 21.0494 seconds
+Singleton lapse:    10000 invocations in 5.5249 seconds
+Enumeration lapse;  10000 invocations in 2.5859 seconds
+> 
+> library(sdols)
+Warning message:
+package ‘sdols’ was built under R version 3.5.3 
+> epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD)
+> epamIBP  <- expectedPairwiseAllocationMatrix(samplesIBP)
+> 
+> plot(as.vector(epamAIBD),as.vector(as.matrix(distances)), main="AIBD")
+> cor(as.vector(epamAIBD),as.vector(as.matrix(distances)))
+[1] -0.61361
+> 
+> plot(as.vector(epamIBP),as.vector(as.matrix(distances)), main="IBP")
+> cor(as.vector(epamIBP),as.vector(as.matrix(distances)))
+[1] -0.337237
+> 
+> salso(epamAIBD, structure = "featureAllocation")
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9]
+ [1,]    1    1    0    0    0    0    0    0    0
+ [2,]    1    0    1    1    0    0    0    0    0
+ [3,]    1    0    0    0    1    0    0    0    0
+ [4,]    1    0    1    0    0    0    0    0    0
+ [5,]    1    0    0    0    0    1    0    0    0
+ [6,]    1    0    0    1    0    0    1    0    0
+ [7,]    1    0    0    0    1    0    0    0    0
+ [8,]    1    0    0    1    0    1    0    0    0
+ [9,]    1    0    0    0    0    0    0    1    0
+[10,]    1    0    0    1    0    0    0    0    1
+attr(,"nScans")
+[1] -1
+attr(,"nCandidates")
+[1] 120
+> salso(epamIBP,  structure = "featureAllocation")
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9]
+ [1,]    1    0    0    0    0    0    0    0    0
+ [2,]    1    1    1    0    0    0    0    0    0
+ [3,]    1    0    0    1    0    0    0    0    0
+ [4,]    1    1    0    0    1    0    0    0    0
+ [5,]    1    0    0    0    0    1    0    0    0
+ [6,]    1    0    1    0    0    0    1    0    0
+ [7,]    1    1    0    0    0    0    0    1    0
+ [8,]    1    1    0    0    0    0    1    0    0
+ [9,]    1    0    0    0    0    0    0    0    1
+[10,]    1    1    0    0    0    1    0    0    0
+attr(,"nScans")
+[1] -1
+attr(,"nCandidates")
+[1] 120
+> 
+> dev.off()
+null device 
+          1 
+> save.image(file=paste0(stamp,".RData"))
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 11.888   0.656  94.847 
