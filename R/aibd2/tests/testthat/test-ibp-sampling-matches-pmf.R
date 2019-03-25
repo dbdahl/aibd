@@ -3,6 +3,7 @@ context("ibp-sampling-matches-pmf")
 # skip("ibp-sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence", rankOneUpdates=FALSE) {
+  # set.seed(234234)
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3

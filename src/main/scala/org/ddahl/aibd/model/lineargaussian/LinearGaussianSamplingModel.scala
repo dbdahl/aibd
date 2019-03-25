@@ -3,7 +3,6 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.aibd._
 import org.ddahl.aibd.parameter.{IndependentNormalsParameterDistribution, MultivariateNormalParameterDistribution}
 import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
-import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import org.ddahl.commonsmath._
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath._
