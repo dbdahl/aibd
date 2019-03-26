@@ -1,0 +1,198 @@
+
+R version 3.5.2 (2018-12-20) -- "Eggshell Igloo"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> set.seed(74927)
+> library(aibd2)
+> 
+> # Sys.setenv(nItems="20")
+> # Sys.setenv(nSamples="100")
+> # Sys.setenv(stamp="trashmeout")
+> 
+> stamp <- Sys.getenv("stamp")
+> stamp
+[1] "out.40.1000.2019-03-25-22-16-07"
+> 
+> pdf(paste0(stamp,".pdf"),width=6,height=4)
+> 
+> mass <- 1.5
+> sigx <- 3.0
+> sigw <- 1.0
+> nItems <- as.integer(Sys.getenv("nItems"))
+> nItems
+[1] 40
+> 
+> nSamples <- as.integer(Sys.getenv("nSamples"))
+> nSamples
+[1] 1000
+> 
+> distances <- as.matrix(dist(scale(USArrests)))
+> which <- sample(1:nrow(distances),nItems)
+> distances <- distances[which,which]
+> 
+> temperature <- 4
+> similarity <- 1/as.matrix(distances)^temperature
+> simVector <- as.vector(similarity)
+> simVector <- simVector[!is.infinite(simVector)]
+> plot(simVector,type="h")
+> 
+> distIBP <- ibp(mass,nItems)
+> distAIBD <- aibd(mass,1:nItems,similarity)
+> 
+> Z <- sampleFeatureAllocation(1, distAIBD, "scala")[[1]]
+> dim(Z)
+[1] 40  8
+> 
+> dimW <- 32
+> W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+> 
+> e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
+> X <- Z %*% W + e
+> 
+> samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+[                                                                                                    ]****************************************************************************************************]
+Parallel:           true
+Rank-one updates:   true
+Main lapse:         1 invocations in 557.8712 seconds
+Combinatoric lapse: 40000 invocations in 520.9078 seconds
+Singleton lapse:    40000 invocations in 18.5850 seconds
+Enumeration lapse;  40000 invocations in 15.7777 seconds
+> 
+> samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+[                                                                                                    ]****************************************************************************************************]
+Parallel:           true
+Rank-one updates:   true
+Main lapse:         1 invocations in 379.5290 seconds
+Combinatoric lapse: 40000 invocations in 347.2351 seconds
+Singleton lapse:    40000 invocations in 12.4566 seconds
+Enumeration lapse;  40000 invocations in 16.7317 seconds
+> 
+> library(sdols)
+> epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD)
+> epamIBP  <- expectedPairwiseAllocationMatrix(samplesIBP)
+> 
+> plot(as.vector(epamAIBD),as.vector(as.matrix(distances)), main="AIBD")
+> cor(as.vector(epamAIBD),as.vector(as.matrix(distances)))
+[1] -0.314812
+> 
+> plot(as.vector(epamIBP),as.vector(as.matrix(distances)), main="IBP")
+> cor(as.vector(epamIBP),as.vector(as.matrix(distances)))
+[1] -0.09448252
+> 
+> salso(epamAIBD, structure = "featureAllocation")
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+ [1,]    1    0    0    0    0    0    0    0    0     0
+ [2,]    0    1    1    1    0    0    0    0    0     0
+ [3,]    1    1    0    0    0    0    0    0    0     0
+ [4,]    1    0    0    0    0    0    0    0    0     0
+ [5,]    0    0    1    0    0    0    0    0    0     0
+ [6,]    0    0    0    1    0    0    0    0    0     0
+ [7,]    1    0    0    0    1    0    0    0    0     0
+ [8,]    0    0    1    0    0    0    0    0    0     0
+ [9,]    0    0    0    0    0    1    0    0    0     0
+[10,]    0    0    0    1    0    0    0    0    0     0
+[11,]    1    0    1    0    0    0    0    0    0     0
+[12,]    0    0    0    0    0    0    1    0    0     0
+[13,]    1    0    0    1    0    0    0    0    0     0
+[14,]    1    0    0    1    0    0    0    1    0     0
+[15,]    0    0    0    0    0    0    0    0    0     0
+[16,]    0    0    0    0    0    0    0    0    1     0
+[17,]    1    0    0    0    0    0    0    0    0     0
+[18,]    0    0    1    0    0    0    0    0    0     0
+[19,]    1    0    0    0    0    0    0    0    0     0
+[20,]    1    0    0    0    0    1    0    0    0     0
+[21,]    0    0    1    0    0    0    0    0    0     0
+[22,]    1    0    1    0    0    0    0    0    0     0
+[23,]    0    0    0    0    0    0    0    0    0     0
+[24,]    1    0    0    0    0    0    0    0    0     0
+[25,]    0    0    0    0    0    0    0    0    0     0
+[26,]    1    0    1    0    0    0    0    0    0     0
+[27,]    0    0    1    0    0    0    0    0    0     1
+[28,]    0    0    0    1    0    0    0    0    0     1
+[29,]    0    0    0    0    0    0    0    1    0     0
+[30,]    1    0    1    0    0    0    0    0    0     0
+[31,]    0    0    1    0    0    0    0    0    0     0
+[32,]    0    0    1    0    0    0    0    0    0     0
+[33,]    0    0    0    0    0    0    0    0    0     0
+[34,]    0    0    0    0    0    0    0    1    0     0
+[35,]    1    0    0    0    0    0    0    1    0     1
+[36,]    1    0    1    0    0    0    0    0    0     0
+[37,]    1    0    0    0    0    0    0    0    0     0
+[38,]    1    0    0    0    0    0    0    0    0     0
+[39,]    1    0    0    0    0    0    0    0    0     0
+[40,]    0    0    1    1    0    0    0    0    0     0
+attr(,"nScans")
+[1] -1
+attr(,"nCandidates")
+[1] 104
+> salso(epamIBP,  structure = "featureAllocation")
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+ [1,]    1    1    0    0    0    0    0    0    0     0
+ [2,]    0    0    1    1    0    0    0    0    0     0
+ [3,]    0    0    1    0    0    0    0    0    0     0
+ [4,]    0    0    1    0    1    0    0    0    0     0
+ [5,]    1    0    0    0    0    0    0    0    0     0
+ [6,]    0    0    0    1    0    0    0    0    0     0
+ [7,]    0    0    1    0    0    0    0    0    0     0
+ [8,]    0    0    1    0    0    0    0    0    0     0
+ [9,]    0    0    0    0    0    0    0    0    0     0
+[10,]    0    0    0    0    0    0    0    0    0     0
+[11,]    0    0    1    0    0    1    0    0    0     0
+[12,]    0    0    0    0    0    0    1    0    0     0
+[13,]    1    0    1    0    0    0    0    0    0     0
+[14,]    1    0    1    0    0    0    0    0    0     0
+[15,]    0    0    0    0    0    0    0    0    0     0
+[16,]    0    0    0    0    0    0    0    1    0     0
+[17,]    0    0    1    0    0    0    0    0    0     0
+[18,]    0    0    1    0    0    0    0    0    0     0
+[19,]    0    0    1    0    0    0    0    0    0     0
+[20,]    0    0    1    0    0    0    0    0    0     0
+[21,]    0    0    1    0    0    0    0    0    0     0
+[22,]    0    1    1    0    0    0    0    0    0     0
+[23,]    0    0    0    0    0    0    0    0    0     0
+[24,]    0    0    1    0    0    0    0    0    0     0
+[25,]    0    0    0    0    1    0    0    0    0     0
+[26,]    0    0    1    0    0    0    0    0    0     0
+[27,]    0    0    1    0    0    0    0    0    0     0
+[28,]    0    0    1    0    0    0    0    0    0     0
+[29,]    0    0    1    0    0    0    0    0    1     0
+[30,]    0    1    1    0    0    0    0    0    0     0
+[31,]    0    1    0    0    0    0    0    0    0     0
+[32,]    0    0    0    0    0    1    0    0    0     0
+[33,]    0    0    0    0    0    0    0    0    0     0
+[34,]    0    0    0    0    0    0    0    0    0     1
+[35,]    1    0    1    0    0    0    0    0    0     1
+[36,]    0    1    1    0    0    0    0    0    0     0
+[37,]    0    0    1    0    0    0    0    0    0     0
+[38,]    0    0    1    0    0    0    0    0    0     0
+[39,]    0    0    1    0    0    0    0    0    0     0
+[40,]    0    0    1    0    0    0    0    0    0     0
+attr(,"nScans")
+[1] -1
+attr(,"nCandidates")
+[1] 104
+> 
+> dev.off()
+null device 
+          1 
+> save.image(file=paste0(stamp,".RData"))
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.420   0.034 960.238 
