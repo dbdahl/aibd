@@ -80,9 +80,9 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
       logPrior <- if ( inherits(distribution,"ibpFADistribution") ) {
         s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass)
       } else if ( inherits(distribution,"aibdFADistribution") ) {
-        newImpl <- Sys.getenv("DBD_AIBD_OLDIMPLEMENTATION") != "FALSE"
+        newImpl <- toupper(Sys.getenv("DBD_AIBD_FORCEOLD")) != "TRUE"
         if ( ! newImpl ) {
-          cat("WARNING:  Using old implementation of AIBD!\n")
+          cat("WARNING from R:  Using old Scala implementation of AIBD!\n")
           s$PosteriorSimulation.mkLogPriorProbabilityAIBD(distribution$mass, s$Permutation(distribution$permutation-1L), s$Similarity(distribution$similarity))
         } else s$PosteriorSimulation.mkLogPriorProbabilityAIBD(distribution$mass, distribution$permutation-1L, distribution$similarity)
       } else stop(paste0("Unrecognized prior distribution: ",distribution))

@@ -34,21 +34,13 @@ object PosteriorSimulation {
     val invertedPermutation = new Array[Int](permutation.length)
     for (i <- permutation.indices) invertedPermutation(permutation(i)) = i
     val logMass = log(mass)
-//// Get rid of all these comments
-    //val aibd = AttractionIndianBuffetDistribution(mass, Permutation(permutation), Similarity(similarity))
     (i: Int, fa: FeatureAllocation) => {
-      //val faa = fa.convertToAlternativeImplementation
-      //val result1 = aibd.logDensityStartingFromIndex(0, faa, false)
-      //val result2 = FeatureAllocationDistributions.logProbabilityAIBD(i, fa, mass, logMass, permutation, invertedPermutation, similarity)
-      //if ( math.abs( 2*(result1 - result2) / ( result1 + result2 ) ) > 0.00001 ) {
-      //  println("\n"+fa+"\n"+result1+" "+result2)
-      //}
-      //result1
       FeatureAllocationDistributions.logProbabilityAIBD(i, fa, mass, logMass, permutation, invertedPermutation, similarity)
     }
   }
 
   def mkLogPriorProbabilityAIBD(mass: Double, permutation: Permutation, similarity: Similarity): (Int, FeatureAllocation) => Double = {
+    println("WARNING from Scala: Using the old Scala implementation of AIBD!")
     val aibd = AttractionIndianBuffetDistribution(mass, permutation, similarity)
     (i: Int, fa: FeatureAllocation) => {
       val faa = fa.convertToAlternativeImplementation

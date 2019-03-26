@@ -9,7 +9,6 @@ object FeatureAllocationDistributions {
 
   def logProbabilityAIBD(i: Int, fa: FeatureAllocation, mass: Double, logMass: Double, permutation: Array[Int], invertedPermutation: Array[Int], similarity: Array[Array[Double]]): Double = {
     var index = invertedPermutation(i)
-index = 0  // Fix this!!!
     val state = fa.remove(permutation.drop(index), true)
     var sum = 0.0
     while ( index < fa.nItems ) {
