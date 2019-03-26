@@ -7,10 +7,46 @@ import scala.collection.mutable.BitSet
 
 object FeatureAllocationDistributions {
 
-  def logProbabilityIBP(fa: FeatureAllocation, mass: Double): Double = {
+  def logProbabilityAIBD(i: Int, fa: FeatureAllocation, mass: Double, logMass: Double, permutation: Array[Int], invertedPermutation: Array[Int], similarity: Array[Array[Double]]): Double = {
+    var index = invertedPermutation(i)
+index = 0  // Fix this!!!
+    val state = fa.remove(permutation.drop(index), true)
+    var sum = 0.0
+    while ( index < fa.nItems ) {
+      val ii = permutation(index)
+      val divisor = (0 until index).foldLeft(0.0) { (s,index2) => s + similarity(ii)(permutation(index2)) }
+      var newFeatureCount = 0
+      var j = 0
+      while ( j < fa.nFeatures ) {
+        if ( state.sizes(j) == 0 ) {
+          if ( fa.array(j)(ii) ) {
+            state.mutateAdd(ii,j)
+            newFeatureCount += 1
+          } else {
+            // Nothing to do
+          }
+        } else {
+          val p = index.toDouble / (index + 1) * state.array(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii)(iPrime) } / divisor
+          if ( fa.array(j)(ii) ) {
+            sum += log(p)
+            state.mutateAdd(ii,j)
+          } else {
+            sum += log(1-p)
+          }
+        }
+        j += 1
+      }
+      sum += newFeatureCount * ( logMass - logOnInt(index+1) ) - mass/(index+1) // - logFactorial(newFeatureCount)
+      index += 1
+    }
+    sum -= computeRegardingTies(fa)
+    sum
+  }
+
+  def logProbabilityIBP(fa: FeatureAllocation, mass: Double, logMass: Double): Double = {
     val const1 = -mass * harmonicNumber(fa.nItems)
     if ( fa.nFeatures == 0 ) return const1
-    val const2 = log(mass) - logFactorial(fa.nItems)
+    val const2 = logMass - logFactorial(fa.nItems)
     var sum = const1 + fa.nFeatures * const2
     //sum -= computeRegardingTiesSlow(fa)
     sum -= computeRegardingTies(fa)

@@ -15,7 +15,17 @@ sealed trait FeatureAllocation {
   protected var matrixIsCached: Boolean = false
 
   override def toString(): String = {
-    if ( nItems == 0 ) "" else matrix.map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
+    if (nItems == 0) "" else matrix.map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
+  }
+
+  override def equals(that: Any): Boolean = {
+    that match {
+      case that: FeatureAllocation => ( that.nItems == this.nItems ) &&
+                                      ( that.nFeatures == this.nFeatures ) &&
+                                      that.sizes.zip(this.sizes).forall(x => x._1 == x._2) &&
+                                      that.array.zip(this.array).forall(x => x._1 == x._2)
+      case _ => false
+    }
   }
 
   def check(): Unit = {
@@ -121,6 +131,8 @@ sealed trait FeatureAllocation {
     result
   }
 
+  def featuresOf(i: Array[Int]): Array[Array[Int]] = i.map(featuresOf)
+
   def add(i: Int): FeatureAllocation = {
     val newArray = array :+ BitSet(i)  // Shallow copy
     val newSizes = sizes :+ 1
@@ -147,14 +159,24 @@ sealed trait FeatureAllocation {
     }
   }
 
+  def mutateAdd(i: Int, j: Int): Unit = {
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
+    if ( ! array(j)(i) ) {
+      array(j).add(i)  // Mutates
+      sizes(j) += 1
+      if ( matrixIsCached ) matrix(i)(j) = 1.0
+    }
+  }
+
   def remove(i: Int): FeatureAllocation = remove(Array(i), false)
 
-  def remove(i: Int, keepEmptyFeatures: Boolean): FeatureAllocation = remove(Array(i), keepEmptyFeatures)
+  def remove(i: Int, cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = remove(Array(i), cloneAndKeepEmptyFeatures)
 
   def remove(i: Array[Int]): FeatureAllocation = remove(i, false)
 
-  def remove(i: Array[Int], keepEmptyFeatures: Boolean): FeatureAllocation = {
-    val newArray = array.clone  // Shallow copy
+  def remove(i: Array[Int], cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = {
+    val newArray = if ( cloneAndKeepEmptyFeatures ) array.map(_.clone) else array.clone
     val newSizes = sizes.clone
     var nToDelete = 0
     var iii = 0
@@ -164,15 +186,15 @@ sealed trait FeatureAllocation {
       var j = 0
       while (j < nFeatures) {
         if ( ( newSizes(j) > 0 ) && array(j)(ii) ) {
+          if ( cloneAndKeepEmptyFeatures ) newArray(j).remove(ii) else newArray(j) = newArray(j) - ii
           newSizes(j) -= 1
-          newArray(j) = newArray(j) - ii  // Clones
           if (newSizes(j) == 0) nToDelete += 1
         }
         j += 1
       }
       iii += 1
     }
-    if ( ( !keepEmptyFeatures ) && ( nToDelete > 0 ) ) {
+    if ( ( !cloneAndKeepEmptyFeatures ) && ( nToDelete > 0 ) ) {
       val newArray2 = new Array[BitSet](nFeatures - nToDelete)
       val newSizes2 = new Array[Int](nFeatures - nToDelete)
       var j = 0
@@ -189,7 +211,7 @@ sealed trait FeatureAllocation {
       new FeatureAllocationWithArrayAndSizes(nItems, newArray2, newSizes2)
     } else {
       if ( matrixIsCached ) {
-        val newMatrix = matrix.clone  // Shallow copy
+        val newMatrix = if ( cloneAndKeepEmptyFeatures ) matrix.map(_.clone) else matrix.clone
         i.foreach { newMatrix(_) = new Array[Double](nFeatures) }
         new FeatureAllocationWithAll(newMatrix, newArray, newSizes)
       } else {
@@ -331,6 +353,8 @@ object FeatureAllocation {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
     new FeatureAllocationEmpty(nItems)
   }
+
+  def apply(matrix: Array[Array[Int]]): FeatureAllocation = apply(matrix.map(_.map(_.toDouble)))
 
   def apply(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length

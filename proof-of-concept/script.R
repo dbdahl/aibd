@@ -1,7 +1,12 @@
 set.seed(74927)
 library(aibd2)
 
+# Sys.setenv(nItems="20")
+# Sys.setenv(nSamples="100")
+# Sys.setenv(stamp="trashmeout")
+
 stamp <- Sys.getenv("stamp")
+stamp
 
 pdf(paste0(stamp,".pdf"),width=6,height=4)
 
@@ -9,9 +14,10 @@ mass <- 1.5
 sigx <- 3.0
 sigw <- 1.0
 nItems <- as.integer(Sys.getenv("nItems"))
+nItems
 
-nSamples <- 1000
-nSamples <- as.integer(Sys.getenv("nSamples")) 
+nSamples <- as.integer(Sys.getenv("nSamples"))
+nSamples
 
 distances <- as.matrix(dist(scale(USArrests)))
 which <- sample(1:nrow(distances),nItems)
