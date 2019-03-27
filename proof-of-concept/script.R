@@ -23,10 +23,11 @@ distances <- as.matrix(dist(scale(USArrests)))
 which <- sample(1:nrow(distances),nItems)
 distances <- distances[which,which]
 
-temperature <- 4
+temperature <- 5
 similarity <- 1/as.matrix(distances)^temperature
 simVector <- as.vector(similarity)
 simVector <- simVector[!is.infinite(simVector)]
+summary(simVector)
 plot(simVector,type="h")
 
 distIBP <- ibp(mass,nItems)
@@ -49,11 +50,17 @@ library(sdols)
 epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD)
 epamIBP  <- expectedPairwiseAllocationMatrix(samplesIBP)
 
-plot(as.vector(epamAIBD),as.vector(as.matrix(distances)), main="AIBD")
-cor(as.vector(epamAIBD),as.vector(as.matrix(distances)))
+vecDistances <- as.vector(as.matrix(distances))
+sel <- vecDistances != 0.0
+vecDistances <- vecDistances[sel]
 
-plot(as.vector(epamIBP),as.vector(as.matrix(distances)), main="IBP")
-cor(as.vector(epamIBP),as.vector(as.matrix(distances)))
+plot(as.vector(epamAIBD)[sel],vecDistances, main="AIBD")
+cor(as.vector(epamAIBD)[sel],vecDistances,method="spearman")
+scatter.smooth(as.vector(epamAIBD)[sel],vecDistances, main="AIBD",lpars=list(col="red",lwd=3))
+
+plot(as.vector(epamIBP)[sel],vecDistances, main="IBP")
+cor(as.vector(epamIBP)[sel],vecDistances,method="spearman")
+scatter.smooth(as.vector(epamIBP)[sel],vecDistances, main="IBP",lpars=list(col="red",lwd=3))
 
 salso(epamAIBD, structure = "featureAllocation")
 salso(epamIBP,  structure = "featureAllocation")

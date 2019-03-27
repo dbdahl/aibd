@@ -19,10 +19,14 @@ Type 'q()' to quit R.
 
 > set.seed(74927)
 > library(aibd2)
-Warning message:
-package ‘aibd2’ was built under R version 3.5.3 
+> 
+> # Sys.setenv(nItems="20")
+> # Sys.setenv(nSamples="100")
+> # Sys.setenv(stamp="trashmeout")
 > 
 > stamp <- Sys.getenv("stamp")
+> stamp
+[1] "out.10.100.2019-03-26-09-21-04"
 > 
 > pdf(paste0(stamp,".pdf"),width=6,height=4)
 > 
@@ -30,9 +34,12 @@ package ‘aibd2’ was built under R version 3.5.3
 > sigx <- 3.0
 > sigw <- 1.0
 > nItems <- as.integer(Sys.getenv("nItems"))
+> nItems
+[1] 10
 > 
-> nSamples <- 1000
-> nSamples <- as.integer(Sys.getenv("nSamples")) 
+> nSamples <- as.integer(Sys.getenv("nSamples"))
+> nSamples
+[1] 100
 > 
 > distances <- as.matrix(dist(scale(USArrests)))
 > which <- sample(1:nrow(distances),nItems)
@@ -57,54 +64,58 @@ package ‘aibd2’ was built under R version 3.5.3
 > e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 > X <- Z %*% W + e
 > 
-> samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+> samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=FALSE, rankOneUpdates=TRUE)
 [                                                                                                    ]****************************************************************************************************]
-Parallel:           true
+Parallel:           false
 Rank-one updates:   true
-Main lapse:         1 invocations in 44.1934 seconds
-Combinatoric lapse: 10000 invocations in 30.2154 seconds
-Singleton lapse:    10000 invocations in 11.7502 seconds
-Enumeration lapse;  10000 invocations in 1.6587 seconds
+Main lapse:         1 invocations in 4.6654 seconds
+Combinatoric lapse: 1000 invocations in 4.1776 seconds
+Singleton lapse:    1000 invocations in 0.2468 seconds
+Prior:              100675 invocations in 1.2526 seconds
+Likelihood:         101675 invocations in 3.1047 seconds
+Enumeration lapse:  1000 invocations in 0.1530 seconds
+Note that prior and likelihood timings are only meaningful if parallel == false.
 > 
-> samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+> samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=FALSE, rankOneUpdates=TRUE)
 [                                                                                                    ]****************************************************************************************************]
-Parallel:           true
+Parallel:           false
 Rank-one updates:   true
-Main lapse:         1 invocations in 29.6710 seconds
-Combinatoric lapse: 10000 invocations in 21.0494 seconds
-Singleton lapse:    10000 invocations in 5.5249 seconds
-Enumeration lapse;  10000 invocations in 2.5859 seconds
+Main lapse:         1 invocations in 2.2885 seconds
+Combinatoric lapse: 1000 invocations in 2.0199 seconds
+Singleton lapse:    1000 invocations in 0.1706 seconds
+Prior:              74392 invocations in 0.1962 seconds
+Likelihood:         75392 invocations in 1.9627 seconds
+Enumeration lapse:  1000 invocations in 0.0646 seconds
+Note that prior and likelihood timings are only meaningful if parallel == false.
 > 
 > library(sdols)
-Warning message:
-package ‘sdols’ was built under R version 3.5.3 
 > epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD)
 > epamIBP  <- expectedPairwiseAllocationMatrix(samplesIBP)
 > 
 > plot(as.vector(epamAIBD),as.vector(as.matrix(distances)), main="AIBD")
 > cor(as.vector(epamAIBD),as.vector(as.matrix(distances)))
-[1] -0.61361
+[1] -0.6336877
 > 
 > plot(as.vector(epamIBP),as.vector(as.matrix(distances)), main="IBP")
 > cor(as.vector(epamIBP),as.vector(as.matrix(distances)))
-[1] -0.337237
+[1] -0.3273159
 > 
 > salso(epamAIBD, structure = "featureAllocation")
-      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9]
- [1,]    1    1    0    0    0    0    0    0    0
- [2,]    1    0    1    1    0    0    0    0    0
- [3,]    1    0    0    0    1    0    0    0    0
- [4,]    1    0    1    0    0    0    0    0    0
- [5,]    1    0    0    0    0    1    0    0    0
- [6,]    1    0    0    1    0    0    1    0    0
- [7,]    1    0    0    0    1    0    0    0    0
- [8,]    1    0    0    1    0    1    0    0    0
- [9,]    1    0    0    0    0    0    0    1    0
-[10,]    1    0    0    1    0    0    0    0    1
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8]
+ [1,]    1    1    0    0    0    0    0    0
+ [2,]    1    0    1    1    0    0    0    0
+ [3,]    1    0    0    0    1    0    0    0
+ [4,]    1    0    1    0    0    0    0    0
+ [5,]    1    0    1    0    0    0    0    0
+ [6,]    1    0    0    1    0    1    0    0
+ [7,]    1    0    0    0    1    0    0    0
+ [8,]    1    0    1    0    0    1    0    0
+ [9,]    1    0    0    0    0    0    1    0
+[10,]    1    0    0    1    0    0    0    1
 attr(,"nScans")
 [1] -1
 attr(,"nCandidates")
-[1] 120
+[1] 100
 > salso(epamIBP,  structure = "featureAllocation")
       [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9]
  [1,]    1    0    0    0    0    0    0    0    0
@@ -112,15 +123,15 @@ attr(,"nCandidates")
  [3,]    1    0    0    1    0    0    0    0    0
  [4,]    1    1    0    0    1    0    0    0    0
  [5,]    1    0    0    0    0    1    0    0    0
- [6,]    1    0    1    0    0    0    1    0    0
- [7,]    1    1    0    0    0    0    0    1    0
+ [6,]    1    0    0    0    0    0    1    0    0
+ [7,]    1    1    0    0    0    0    0    0    0
  [8,]    1    1    0    0    0    0    1    0    0
- [9,]    1    0    0    0    0    0    0    0    1
-[10,]    1    1    0    0    0    1    0    0    0
+ [9,]    1    0    0    0    0    0    0    1    0
+[10,]    1    1    0    0    0    0    0    0    1
 attr(,"nScans")
 [1] -1
 attr(,"nCandidates")
-[1] 120
+[1] 100
 > 
 > dev.off()
 null device 
@@ -130,4 +141,4 @@ null device
 > 
 > proc.time()
    user  system elapsed 
- 11.888   0.656  94.847 
+  0.248   0.049  23.050 

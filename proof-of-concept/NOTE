@@ -1,4 +1,0 @@
-
-source("https://dahl.byu.edu/latest/sdols")
-R CMD INSTALL aibd2_0.1.0.tar.gz
-

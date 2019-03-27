@@ -8,7 +8,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
-  dist <- if ( useIBP ) ibp(mass, nItems) else aibd(mass, 1:nItems, 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),])))^2
+  dist <- if ( useIBP ) ibp(mass, nItems) else aibd(mass, 1:nItems, 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1

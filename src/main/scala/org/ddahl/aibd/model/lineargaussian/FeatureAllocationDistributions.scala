@@ -21,22 +21,18 @@ object FeatureAllocationDistributions {
           if ( fa.array(j)(ii) ) {
             state.mutateAdd(ii,j)
             newFeatureCount += 1
-          } else {
-            // Nothing to do
           }
         } else {
           val p = index.toDouble / (index + 1) * state.array(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii)(iPrime) } / divisor
           if ( fa.array(j)(ii) ) {
-            sum += log(p)
             state.mutateAdd(ii,j)
-          } else {
-            sum += log(1-p)
-          }
+            sum += log(p)
+          } else sum += log(1-p)
         }
         j += 1
       }
-      sum += newFeatureCount * ( logMass - logOnInt(index+1) ) - mass/(index+1) // - logFactorial(newFeatureCount)
       index += 1
+      sum += newFeatureCount * ( logMass - logOnInt(index) ) - mass/index
     }
     sum -= computeRegardingTies(fa)
     sum
@@ -47,7 +43,6 @@ object FeatureAllocationDistributions {
     if ( fa.nFeatures == 0 ) return const1
     val const2 = logMass - logFactorial(fa.nItems)
     var sum = const1 + fa.nFeatures * const2
-    //sum -= computeRegardingTiesSlow(fa)
     sum -= computeRegardingTies(fa)
     sum += fa.sizes.foldLeft(0.0) { (s, mk) =>
       s + logFactorial(fa.nItems - mk) + logFactorial(mk - 1)
