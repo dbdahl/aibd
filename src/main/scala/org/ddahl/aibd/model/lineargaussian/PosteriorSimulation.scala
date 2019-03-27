@@ -53,6 +53,8 @@ object PosteriorSimulation {
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
     val tmAll = TimeMonitor()
+    val tmPrior = TimeMonitor()
+    val tmLikelihood = TimeMonitor()
     val tmPosterior1 = TimeMonitor()
     val tmPosterior2 = TimeMonitor()
     val tmEnumeration = TimeMonitor()
@@ -64,10 +66,10 @@ object PosteriorSimulation {
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
     def logPosterior1(i: Int, fa: FeatureAllocation): (FeatureAllocation, Double) = {
-      (fa, logPriorProbability(i, fa) + lglfm.logLikelihood(fa))
+      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(fa) } )
     }
     def logPosterior2(i: Int, fa: FeatureAllocation, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
-      (fa, logPriorProbability(i, fa) + lglfm.logLikelihood(lglfm.addFeaturesFor(i,lc,fa.matrix(i))))
+      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(lglfm.addFeaturesFor(i,lc,fa.matrix(i))) } )
     }
     val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
@@ -79,7 +81,7 @@ object PosteriorSimulation {
           if (rankOneUpdates) {
             if (proposals.isEmpty) Array[(FeatureAllocation, Double)]()
             else {
-              val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
+              val lc1 = tmLikelihood { lglfm.computeLikelihoodComponents(proposals.head) }
               val lc2 = lglfm.dropFeaturesFor(i, lc1)
               if (parallel) proposals.par.map(logPosterior2(i, _, lc2)).toArray else proposals.map(logPosterior2(i, _, lc2))
             }
@@ -114,7 +116,10 @@ object PosteriorSimulation {
     println("Main lapse:         "+tmAll)
     println("Combinatoric lapse: "+tmPosterior1)
     println("Singleton lapse:    "+tmPosterior2)
-    println("Enumeration lapse;  "+tmEnumeration)
+    println("Prior:              "+tmPrior)
+    println("Likelihood:         "+tmLikelihood)
+    println("Enumeration lapse:  "+tmEnumeration)
+    println("Note that prior and likelihood timings are only meaningful if parallel == false.")
     results
   }
 
