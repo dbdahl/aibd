@@ -3,8 +3,6 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.aibd.Utils._
 import org.apache.commons.math3.util.FastMath.log
 
-import scala.collection.mutable.BitSet
-
 object FeatureAllocationDistributions {
 
   def logProbabilityAIBD(i: Int, fa: FeatureAllocation, mass: Double, logMass: Double, permutation: Array[Int], invertedPermutation: Array[Int], similarity: Array[Array[Double]]): Double = {
@@ -71,7 +69,7 @@ object FeatureAllocationDistributions {
     sum
   }
 
-  def compare(x: (BitSet,Int), y: (BitSet, Int)): Int = {
+  def compare(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Int = {
     if ( x._2 < y._2 ) return -1
     else if ( x._2 > y._2 ) return 1
     else {
@@ -89,7 +87,7 @@ object FeatureAllocationDistributions {
     }
   }
 
-  def lessThan(x: (BitSet,Int), y: (BitSet, Int)): Boolean = compare(x,y) <= 0
+  def lessThan(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Boolean = compare(x,y) <= 0
 
 }
 
