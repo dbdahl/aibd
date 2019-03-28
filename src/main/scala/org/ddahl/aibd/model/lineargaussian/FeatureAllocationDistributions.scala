@@ -15,7 +15,7 @@ object FeatureAllocationDistributions {
       var newFeatureCount = 0
       var j = 0
       while ( j < fa.nFeatures ) {
-        if ( state.sizes(j) == 0 ) {
+        if ( state.isEmpty(j) ) {
           if ( fa.features(j)(ii) ) {
             state.mutateAdd(ii,j)
             newFeatureCount += 1

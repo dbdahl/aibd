@@ -87,6 +87,8 @@ sealed trait FeatureAllocation {
     result
   }
 
+  def isEmpty(j: Int): Boolean = sizes(j) == 0
+
   def matrixRow(i: Int): Array[Double] = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
     if ( matrixIsCached ) matrix(i) else Array.tabulate(nFeatures) { j => if ( features(j)(i) ) 1.0 else 0.0 }
