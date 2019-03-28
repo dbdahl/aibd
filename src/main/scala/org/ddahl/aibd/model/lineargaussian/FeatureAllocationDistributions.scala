@@ -18,13 +18,13 @@ object FeatureAllocationDistributions {
       var j = 0
       while ( j < fa.nFeatures ) {
         if ( state.sizes(j) == 0 ) {
-          if ( fa.array(j)(ii) ) {
+          if ( fa.features(j)(ii) ) {
             state.mutateAdd(ii,j)
             newFeatureCount += 1
           }
         } else {
           val p = index.toDouble / (index + 1) * state.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii)(iPrime) } / divisor
-          if ( fa.array(j)(ii) ) {
+          if ( fa.features(j)(ii) ) {
             state.mutateAdd(ii,j)
             sum += log(p)
           } else sum += log(1-p)
@@ -51,11 +51,11 @@ object FeatureAllocationDistributions {
   }
 
   def computeRegardingTiesSlow(fa: FeatureAllocation): Double = {
-    fa.array.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
+    fa.features.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
   }
 
   def computeRegardingTies(fa: FeatureAllocation): Double = {
-    val aa = fa.array.zip(fa.sizes).sortWith(lessThan)
+    val aa = fa.features.zip(fa.sizes).sortWith(lessThan)
     var sum = 0.0
     var run = 1
     var j = 1
