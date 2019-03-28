@@ -10,6 +10,7 @@ sealed trait FeatureAllocation {
   val nFeatures: Int
   val sizes: Array[Int]
   val array: Array[BitSet]
+  val featuresAsList: Array[List[Int]]
   val matrix: Array[Array[Double]]
 
   protected var matrixIsCached: Boolean = false
@@ -71,6 +72,8 @@ sealed trait FeatureAllocation {
     }
     result
   }
+
+  protected def computeFeaturesAsList: Array[List[Int]] = array.map(_.toList)
 
   protected def computeMatrix: Array[Array[Double]] = {
     matrixIsCached = true
@@ -163,8 +166,9 @@ sealed trait FeatureAllocation {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
     if ( ! array(j)(i) ) {
-      array(j).add(i)  // Mutates
       sizes(j) += 1
+      featuresAsList(j) = i :: featuresAsList(j)  // Lazy, so must be before next line!
+      array(j).add(i)                             // Mutates
       if ( matrixIsCached ) matrix(i)(j) = 1.0
     }
   }
@@ -300,6 +304,7 @@ sealed class FeatureAllocationEmpty private[lineargaussian] (val nItems: Int) ex
   val nFeatures = 0
   val sizes = Array[Int]()
   val array = Array[BitSet]()
+  lazy val featuresAsList = computeFeaturesAsList
   val matrix = Array.ofDim[Double](nItems,0)
   matrixIsCached = true
 
@@ -311,6 +316,7 @@ sealed class FeatureAllocationWithMatrix private[lineargaussian] (val matrix: Ar
   val nFeatures = matrix(0).length
   lazy val sizes = computeSizes
   lazy val array = computeArray
+  lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }
@@ -319,6 +325,7 @@ sealed class FeatureAllocationWithArray private[lineargaussian] (val nItems: Int
 
   val nFeatures = array.length
   lazy val sizes = computeSizes
+  lazy val featuresAsList = computeFeaturesAsList
   lazy val matrix = computeMatrix
 
 }
@@ -326,6 +333,7 @@ sealed class FeatureAllocationWithArray private[lineargaussian] (val nItems: Int
 sealed class FeatureAllocationWithArrayAndSizes private[lineargaussian] (val nItems: Int, val array: Array[BitSet], val sizes: Array[Int]) extends FeatureAllocation {
 
   val nFeatures = array.length
+  lazy val featuresAsList = computeFeaturesAsList
   lazy val matrix = computeMatrix
 
 }
@@ -335,6 +343,7 @@ sealed class FeatureAllocationWithMatrixAndArray private[lineargaussian] (val ma
   val nItems = matrix.length
   val nFeatures = array.length
   lazy val sizes = computeSizes
+  lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }
@@ -343,6 +352,7 @@ sealed class FeatureAllocationWithAll private[lineargaussian] (val matrix: Array
 
   val nItems = matrix.length
   val nFeatures = array.length
+  lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }

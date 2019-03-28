@@ -23,7 +23,7 @@ object FeatureAllocationDistributions {
             newFeatureCount += 1
           }
         } else {
-          val p = index.toDouble / (index + 1) * state.array(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii)(iPrime) } / divisor
+          val p = index.toDouble / (index + 1) * state.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii)(iPrime) } / divisor
           if ( fa.array(j)(ii) ) {
             state.mutateAdd(ii,j)
             sum += log(p)
