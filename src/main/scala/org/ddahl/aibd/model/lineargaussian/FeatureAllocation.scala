@@ -1,5 +1,6 @@
 package org.ddahl.aibd.model.lineargaussian
 
+import org.ddahl.aibd.Utils.logFactorial
 import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
 import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import scala.collection.mutable.BitSet
@@ -21,10 +22,10 @@ sealed trait FeatureAllocation {
 
   override def equals(that: Any): Boolean = {
     that match {
-      case that: FeatureAllocation => ( that.nItems == this.nItems ) &&
-                                      ( that.nFeatures == this.nFeatures ) &&
-                                      that.sizes.zip(this.sizes).forall(x => x._1 == x._2) &&
-                                      that.features.zip(this.features).forall(x => x._1 == x._2)
+      case that: FeatureAllocation => (that.nItems == this.nItems) &&
+        (that.nFeatures == this.nFeatures) &&
+        that.sizes.zip(this.sizes).forall(x => x._1 == x._2) &&
+        that.features.zip(this.features).forall(x => x._1 == x._2)
       case _ => false
     }
   }
@@ -33,7 +34,7 @@ sealed trait FeatureAllocation {
     assert(nItems == matrix.length)
     assert(nFeatures == features.length)
     assert(nFeatures == sizes.length)
-    assert( ( nFeatures == 0 ) || ( nFeatures == matrix(0).length ) )
+    assert((nFeatures == 0) || (nFeatures == matrix(0).length))
     val that1 = FeatureAllocation(matrix)
     val that2 = new FeatureAllocationWithArray(nItems, features.map(_.clone))
     val that3 = new FeatureAllocationWithArrayAndSizes(nItems, features.map(_.clone), sizes.clone)
@@ -168,7 +169,7 @@ sealed trait FeatureAllocation {
     if ( ! features(j)(i) ) {
       sizes(j) += 1
       featuresAsList(j) = i :: featuresAsList(j)  // Lazy, so must be before next line!
-      features(j).add(i)                             // Mutates
+      features(j).add(i)                          // Mutates
       if ( matrixIsCached ) matrix(i)(j) = 1.0
     }
   }
@@ -290,6 +291,47 @@ sealed trait FeatureAllocation {
       }
     }
   }
+
+  def computeRegardingTiesSlow(fa: FeatureAllocation): Double = {
+    fa.features.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
+  }
+
+  def computeRegardingTies: Double = {
+    val aa = features.zip(sizes).sortWith(lessThan)
+    var sum = 0.0
+    var run = 1
+    var j = 1
+    while ( j < aa.length ) {
+      if ( compare(aa(j-1),aa(j)) == 0 ) run += 1
+      else {
+        sum += logFactorial(run)
+        run = 1
+      }
+      j += 1
+    }
+    sum += logFactorial(run)
+    sum
+  }
+
+  private def compare(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Int = {
+    if ( x._2 < y._2 ) return -1
+    else if ( x._2 > y._2 ) return 1
+    else {
+      val xi = x._1.iterator
+      val yi = y._1.iterator
+      while (xi.hasNext && yi.hasNext) {
+        val xn = xi.next()
+        val yn = yi.next()
+        if (xn < yn) return -1
+        if (xn > yn) return 1
+      }
+      if (xi.hasNext) return 1
+      if (yi.hasNext) return -1
+      0
+    }
+  }
+
+  private def lessThan(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Boolean = compare(x,y) <= 0
 
   def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
     FeatureAllocationAlternative(nItems, features.map { f =>
