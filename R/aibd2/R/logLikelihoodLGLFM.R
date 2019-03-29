@@ -18,8 +18,6 @@
 #'   if \code{precisionW} is missing.
 #' @param implementation Either "R" or "scala", to indicate the implementation
 #'   to use.
-#' @param parallel Should parallel computations be employeed for the Scala
-#'   implementation?
 #'
 #' @return A numeric vector giving the log of the likelihood.
 #' @export
@@ -38,7 +36,7 @@
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw, implementation="scala")
 #'
-logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="R", parallel=FALSE) {
+logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="scala") {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
