@@ -69,7 +69,7 @@ object PosteriorSimulation {
       (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(fa) } )
     }
     def logPosterior2(i: Int, fa: FeatureAllocation, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
-      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(lglfm.addFeaturesFor(i,lc,fa.matrix(i))) } )
+      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(lglfm.allocateFeaturesFor(i,lc,fa.matrix(i))) } )
     }
     val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
@@ -82,7 +82,7 @@ object PosteriorSimulation {
             if (proposals.isEmpty) Array[(FeatureAllocation, Double)]()
             else {
               val lc1 = tmLikelihood { lglfm.computeLikelihoodComponents(proposals.head) }
-              val lc2 = lglfm.dropFeaturesFor(i, lc1)
+              val lc2 = lglfm.deallocateFeaturesFor(i, lc1)
               if (parallel) proposals.par.map(logPosterior2(i, _, lc2)).toArray else proposals.map(logPosterior2(i, _, lc2))
             }
           } else {

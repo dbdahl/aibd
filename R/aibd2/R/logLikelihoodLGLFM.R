@@ -68,9 +68,5 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX
   } else if ( implementation == "SCALA" ) {
     m <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
     m$logLikelihood(s(arr=scalaPush(featureAllocation,"arrayOfMatrices",s)) ^ 'arr.map(wrap)')
-  } else if ( implementation == "SCALA-OLD" ) {
-    fa <- scalaPush(featureAllocation,"featureAllocation",s)
-    m <- s$LinearGaussianSamplingModel(X)
-    m$logLikelihood(fa, precisionX, precisionW, parallel)
   } else stop("Unsupported 'implementation' argument.")
 }

@@ -53,8 +53,12 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     }
   }
 
+  def computeLikelihoodComponents(Z: Array[Array[Double]]): LikelihoodComponents = computeLikelihoodComponents(wrap(Z))
+
+  def computeLikelihoodComponents(Z: Array[Array[Int]]): LikelihoodComponents = computeLikelihoodComponents(Z.map(_.map(_.toDouble)))
+
   def computeLikelihoodComponents(featureAllocation: FeatureAllocation): LikelihoodComponents = {
-    computeLikelihoodComponents(wrap(featureAllocation.matrix))
+    computeLikelihoodComponents(featureAllocation.matrix)
   }
 
   def computeLikelihoodComponents(Zs: Array[Matrix]): Array[LikelihoodComponents] = Zs.map(computeLikelihoodComponents)
@@ -67,7 +71,7 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     (M - M * z ** z * M / (zMz + sign), d * ( 1 + sign * zMz ))
   }
 
-  def dropFeaturesFor(i: Int, lc: LikelihoodComponents): LikelihoodComponents = {
+  def deallocateFeaturesFor(i: Int, lc: LikelihoodComponents): LikelihoodComponents = {
     if ( lc.Z == null ) lc
     else {
       val Z = lc.Z.copy
@@ -78,7 +82,7 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     }
   }
 
-  def addFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
+  def allocateFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     if ( lc.Z == null ) computeLikelihoodComponents(wrap(z))
     else {
       val Z = lc.Z.copy
@@ -89,10 +93,10 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
     }
   }
 
-  def dropAndAddFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
+  def reallocateFeaturesFor(i: Int, lc: LikelihoodComponents, z: Array[Double]): LikelihoodComponents = {
     if ( lc.Z == null ) computeLikelihoodComponents(wrap(z))
     else {
-      val newLC = dropFeaturesFor(i, lc)
+      val newLC = deallocateFeaturesFor(i, lc)
       newLC.Z(i, ::) = z
       val (m, d) = update(newLC.M, newLC.d, z, true)
       new LikelihoodComponents(newLC.Z, newLC.Z.t, m, d)
