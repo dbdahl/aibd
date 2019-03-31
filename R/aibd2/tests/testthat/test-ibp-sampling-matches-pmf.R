@@ -2,7 +2,7 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="independence", rankOneUpdates=FALSE, useIBP=TRUE) {
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", rankOneUpdates=FALSE, useIBP=TRUE) {
   # set.seed(234234)
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; useIBP=FALSE
   mass <- 1.0
@@ -38,7 +38,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   probs <- if ( posteriorSimulation ) {
     exp(logPosteriorLGLFM(Zall, dist, X, sdX=sigx, sdW=sigw, implementation=implementation))
   } else {
-    prFeatureAllocation(Zall, dist, log=FALSE, lof=TRUE, implementation=implementation)
+    exp(logProbabilityFeatureAllocation(Zall, dist, implementation=implementation))
   }
   probs <- probs/sum(probs)
   names <- sapply(Zall, function(Z) aibd2:::featureAllocation2Id(Z))
@@ -75,18 +75,6 @@ test_that("Sampling from IBP using constructive definition (from Scala) gives a 
 
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
   engine("scala", FALSE)
-})
-
-#test_that("Sampling from LGLFM with IBP prior using psuedo Gibbs sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-#  engine("scala", FALSE, TRUE, "pseudoGibbs")
-#})
-
-test_that("Sampling from LGLFM with IBP prior using independence sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "independence")
-})
-
-test_that("Sampling from LGLFM with IBP prior using neighborhood sampler in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods")
 })
 
 test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {

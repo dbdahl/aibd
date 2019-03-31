@@ -7,8 +7,8 @@ test_that("R and Scala give the same values for PMF", {
   nItems <- 4
   maxNFeatures <- 4
   samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromR     <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="R")
-  probsFromScala <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="scala")
+  probsFromR     <- logProbabilityFeatureAllocation(samples, ibp(mass, nItems), implementation="R")
+  probsFromScala <- logProbabilityFeatureAllocation(samples, ibp(mass, nItems), implementation="scala")
   expect_equal(probsFromR, probsFromScala)
 })
 
@@ -17,6 +17,6 @@ test_that("PMF (almost) sums to one.", {
   nItems <- 3
   maxNFeatures <- 6
   samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromScala <- prFeatureAllocation(samples, ibp(mass, nItems), log=FALSE, lof=TRUE, implementation="scala")
-  expect_gte(sum(probsFromScala), 0.9996)
+  probs <- exp(logProbabilityFeatureAllocation(samples, ibp(mass, nItems)))
+  expect_gte(sum(probs), 0.9996)
 })

@@ -1,16 +1,13 @@
-#' Evaluation of a Probabilty Mass Function of a Feature Allocation Distribution
+#' Evaluation of a Log Probabilty Mass Function of a Feature Allocation Distribution
 #'
-#' This function evaluates the probability mass function of a feature allocation matrix or a list
-#' of feature allocations for the supplied distribution.
+#' This function evaluates the log of the probability mass function of a feature allocation
+#' matrix or a list of feature allocations for the supplied distribution.
 #'
 #' @param featureAllocation An N-by-K binary feature allocation matrix, or a list of such matrices.
 #' @param distribution A feature allocation distribution.
-#' @param log Should results be given on the log scale? (FALSE by default)
-#' @param lof Should the probability be given on the left ordered form feature allocation?
 #' @param implementation Either "R" or "scala", to indicate the implementation to use.
-#' @param parallel Should parallel computations be employeed for the Scala implementation?
 #'
-#' @return The probability (or log of the probability) of the given feature allocation.
+#' @return The log probability of the feature allocation under the supplied distribution.
 #' @export
 #'
 #' @examples
@@ -29,20 +26,21 @@
 #' Z3 <- Z2
 #' Z3[3,2] <- 0
 #'
-#' prFeatureAllocation(Z00, d1) == prFeatureAllocation(Z0, d1)
-#' prFeatureAllocation(Z2, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d1, log=TRUE, lof=FALSE)
-#' prFeatureAllocation(Z3, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d1, log=TRUE, lof=FALSE)
+#' all.equal(logProbabilityFeatureAllocation(Z0, d1), logProbabilityFeatureAllocation(Z0, d1,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z1, d1), logProbabilityFeatureAllocation(Z1, d1,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z2, d1), logProbabilityFeatureAllocation(Z2, d1,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z3, d1), logProbabilityFeatureAllocation(Z3, d1,"R"))
 #'
-#' prFeatureAllocation(Z00, d2, implementation="scala") ==
-#'   prFeatureAllocation(Z0, d2, implementation="scala")
-#' prFeatureAllocation(Z2, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z2, d1, log=TRUE, lof=FALSE)
-#' prFeatureAllocation(Z3, d1, log=TRUE, lof=TRUE) == prFeatureAllocation(Z3, d1, log=TRUE, lof=FALSE)
+#' all.equal(logProbabilityFeatureAllocation(Z0, d2), logProbabilityFeatureAllocation(Z0, d2,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z1, d2), logProbabilityFeatureAllocation(Z1, d2,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z2, d2), logProbabilityFeatureAllocation(Z2, d2,"R"))
+#' all.equal(logProbabilityFeatureAllocation(Z3, d2), logProbabilityFeatureAllocation(Z3, d2,"R"))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd2:::s)
 #' }
 #'
-prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=TRUE ,implementation='R', parallel=FALSE){
+logProbabilityFeatureAllocation <- function(featureAllocation, distribution, implementation="scala") {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   N <- if ( is.list(featureAllocation) ) {
     Ns <- sapply(featureAllocation, function(x) nrow(x))
@@ -52,10 +50,10 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
   if ( N != distribution$nItems ) stop("Number of rows in feature allocation does not match given distribution.")
   implementation <- toupper(implementation)
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(x) prFeatureAllocation(x, distribution, log, lof, implementation, parallel)))
+    return(sapply(featureAllocation, function(x) logProbabilityFeatureAllocation(x, distribution, implementation)))
   }
-  alpha <- distribution$mass
-  lpmf <- if ( implementation == "R" ) {
+  if ( implementation == "R" ) {
+    alpha <- distribution$mass
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
     lof_Z <- toLof(featureAllocation, nums=binary_nums)
     HN <- sum(1/1:N)
@@ -83,7 +81,7 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
         }
       }
     }
-
+    lof <- TRUE
     if (lof){
       khfac <- sum(lfactorial(table(binary_nums))) # Lof combinatorics
       -khfac + K*log(alpha) - alpha * HN - sum(xi*log(1:N)) + tot.prod
@@ -91,17 +89,13 @@ prFeatureAllocation <- function(featureAllocation, distribution, log=FALSE, lof=
       K*log(alpha) - alpha * HN - sum(xi*log(1:N)+lfactorial(xi)) + tot.prod
     }
   } else if ( implementation == "SCALA" ) {
-    if ( ! lof ) stop("Only left-ordered-form is currently supported for the Scala implementation.")
-    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(alpha,N)
+    featureAllocation <- if ( ! is.list(featureAllocation) ) list(featureAllocation) else featureAllocation
+    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
     else if ( inherits(distribution,"aibdFADistribution") ) {
       permutation <- s$Permutation(distribution$permutation-1L)
       similarity <- s$Similarity(distribution$similarity)
-      s$AttractionIndianBuffetDistribution(alpha,permutation,similarity)
+      s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
     } else stop("Unsupported distribution.")
-    fa <- scalaPush(featureAllocation,"featureAllocation",s)
-    dist$logDensity(fa, parallel)
+    dist$logProbability(scalaPush(featureAllocation, "arrayOfMatrices", s))
   }
-
-  if (log) lpmf else exp(lpmf)
 }
-

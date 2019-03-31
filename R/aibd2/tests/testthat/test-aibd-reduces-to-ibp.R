@@ -12,12 +12,12 @@ d2 <- aibd(mass,1:nItems,matrix(1,nrow=nItems,ncol=nItems))
 
 test_that("IBP and AIBD are the same when the distances are equal (using Scala).", {
   expect_equal(
-    prFeatureAllocation(samples,d1,implementation="scala"),
-    prFeatureAllocation(samples,d2,implementation="scala"))
+    logProbabilityFeatureAllocation(samples,d1,implementation="scala"),
+    logProbabilityFeatureAllocation(samples,d2,implementation="scala"))
 })
 
 test_that("IBP and AIBD are the same when the distances are equal (using R).", {
   expect_equal(
-    prFeatureAllocation(samples,d1,implementation="R"),
-    prFeatureAllocation(samples,d2,implementation="R"))
+    logProbabilityFeatureAllocation(samples,d1,implementation="R"),
+    logProbabilityFeatureAllocation(samples,d2,implementation="R"))
 })

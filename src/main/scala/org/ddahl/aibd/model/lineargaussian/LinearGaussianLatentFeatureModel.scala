@@ -8,7 +8,7 @@ class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matri
   val K = if ( Z == null ) 0 else Z.cols
 }
 
-class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: Double, val precisionW: Double) {
+class LinearGaussianLatentFeatureModel protected (val X: Matrix, val precisionX: Double, val precisionW: Double) {
 
   val N = X.rows
   val D = X.cols
@@ -37,6 +37,10 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
 
   def logLikelihood(Zs: Array[Matrix]): Array[Double] = logLikelihood(computeLikelihoodComponents(Zs))
 
+  def logLikelihood(Z: Array[Array[Double]]): Double = logLikelihood(computeLikelihoodComponents(Z))
+
+  def logLikelihood(Zs: Array[Array[Array[Double]]]): Array[Double] = logLikelihood(computeLikelihoodComponents(Zs))
+
   def logLikelihood(featureAllocation: FeatureAllocation): Double = logLikelihood(computeLikelihoodComponents(featureAllocation))
 
   def logLikelihood(featureAllocations: Array[FeatureAllocation]): Array[Double] = logLikelihood(computeLikelihoodComponents(featureAllocations))
@@ -62,6 +66,8 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
   }
 
   def computeLikelihoodComponents(Zs: Array[Matrix]): Array[LikelihoodComponents] = Zs.map(computeLikelihoodComponents)
+
+  def computeLikelihoodComponents(Zs: Array[Array[Array[Double]]]): Array[LikelihoodComponents] = Zs.map(computeLikelihoodComponents)
 
   def computeLikelihoodComponents(featureAllocations: Array[FeatureAllocation]): Array[LikelihoodComponents] = featureAllocations.map(computeLikelihoodComponents)
 
@@ -105,6 +111,12 @@ class LinearGaussianLatentFeatureModel private (val X: Matrix, val precisionX: D
 
 }
 
+class DisabledLinearGaussianLatentFeatureModel(override val N: Int) extends LinearGaussianLatentFeatureModel(wrap(Array(Array(Double.NaN))),1,1) {
+
+  override val D = 0
+  override def logLikelihood(lc: LikelihoodComponents): Double = 0.0
+
+}
 
 object LinearGaussianLatentFeatureModel {
 
@@ -113,23 +125,25 @@ object LinearGaussianLatentFeatureModel {
   }
 
   def usingStandardDeviations(X: Matrix, standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
+    usingPrecisions(X, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
   }
 
   def usingVariances(X: Matrix, varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X, 1/varianceX, 1/varianceW)
+    usingPrecisions(X, 1/varianceX, 1/varianceW)
   }
 
   def usingPrecisions(X: Array[Array[Double]], precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
-    usingPrecisions(wrap(X), precisionX, precisionW)
+    val m = wrap(X)
+    if ( m != null ) usingPrecisions(m, precisionX, precisionW)
+    else new DisabledLinearGaussianLatentFeatureModel(X.length)
   }
 
   def usingStandardDeviations(X: Array[Array[Double]], standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
-    usingStandardDeviations(wrap(X), standardDeviationX, standardDeviationW)
+    usingPrecisions(X, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
   }
 
   def usingVariances(X: Array[Array[Double]], varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
-    usingVariances(wrap(X), varianceX, varianceW)
+    usingPrecisions(X, 1/varianceX, 1/varianceW)
   }
 
 }

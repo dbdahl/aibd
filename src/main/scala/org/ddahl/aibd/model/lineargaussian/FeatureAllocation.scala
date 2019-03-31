@@ -180,15 +180,13 @@ sealed trait FeatureAllocation {
 
   def remove(i: Int, cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = remove(Array(i), cloneAndKeepEmptyFeatures)
 
-  def remove(i: Array[Int]): FeatureAllocation = remove(i, false)
+  def remove(i: Iterable[Int]): FeatureAllocation = remove(i, false)
 
-  def remove(i: Array[Int], cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = {
+  def remove(i: Iterable[Int], cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = {
     val newArray = if ( cloneAndKeepEmptyFeatures ) features.map(_.clone) else features.clone
     val newSizes = sizes.clone
     var nToDelete = 0
-    var iii = 0
-    while ( iii < i.length ) {
-      val ii = i(iii)
+    for ( ii <- i ) {
       if ( ( ii < 0 ) || ( ii >= nItems ) ) throw new IllegalArgumentException("Item index "+ii+" is out of bounds [0"+(nItems-1)+"].")
       var j = 0
       while (j < nFeatures) {
@@ -199,7 +197,6 @@ sealed trait FeatureAllocation {
         }
         j += 1
       }
-      iii += 1
     }
     if ( ( !cloneAndKeepEmptyFeatures ) && ( nToDelete > 0 ) ) {
       val newArray2 = new Array[BitSet](nFeatures - nToDelete)
@@ -414,9 +411,13 @@ object FeatureAllocation {
     val rows = matrix.length
     if ( rows == 0 ) return new FeatureAllocationEmpty(rows)
     val cols = matrix(0).length
-    if ( ! matrix.forall(_.length == cols) ) throw new IllegalArgumentException("Number of features must be at least 1.")
+    if ( ! matrix.forall(_.length == cols) ) throw new IllegalArgumentException("Number of features is not consistent.")
     if (cols == 0) return new FeatureAllocationEmpty(rows)
     if ( ! matrix.forall(_.forall(x => ( x == 0.0 ) || ( x == 1.0 ))) ) throw new IllegalArgumentException("Elements should be either 0 or 1.")
+    val allColumnsNonempty = (0 until cols).forall { j =>
+      (0 until rows).exists{ i => matrix(i)(j) == 1.0 }
+    }
+    if ( ! allColumnsNonempty) throw new IllegalArgumentException("Empty features are not permitted.")
     new FeatureAllocationWithMatrix(matrix)
   }
 
@@ -429,6 +430,10 @@ object FeatureAllocation {
       case e: FeatureAllocationWithMatrixAndArray => new FeatureAllocationWithMatrixAndArray(e.matrix.clone, e.features.clone)
       case e: FeatureAllocationWithAll => new FeatureAllocationWithAll(e.matrix.clone, e.features.clone, e.sizes.clone)
     }
+  }
+
+  def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {
+    apply(faa.toMatrix)
   }
 
 }

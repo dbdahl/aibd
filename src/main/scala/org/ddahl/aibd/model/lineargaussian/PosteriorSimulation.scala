@@ -3,45 +3,23 @@ package org.ddahl.aibd.model.lineargaussian
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
-import org.ddahl.aibd.{AttractionIndianBuffetDistribution, Permutation, Similarity, TimeMonitor}
+import org.ddahl.aibd.{Permutation, Similarity, TimeMonitor, AttractionIndianBuffetDistribution => AttractionIndianBuffetDistributionAlternative}
 
 object PosteriorSimulation {
 
-  def mkLogPriorProbabilityIBP(mass: Double): (Int, FeatureAllocation) => Double = (i: Int, fa: FeatureAllocation) => {
-    FeatureAllocationDistributions.logProbabilityIBP(fa, mass, log(mass))
+  def mkLogPriorProbabilityIBP(mass: Double, nItems: Int): (Int, FeatureAllocation) => Double = {
+    val ibp = IndianBuffetProcess(mass, nItems)
+    ibp.logProbability(_, _)
   }
 
   def mkLogPriorProbabilityAIBD(mass: Double, permutation: Array[Int], similarity: Array[Array[Double]]): (Int, FeatureAllocation) => Double = {
-    locally {
-      // Permutation check
-      val p = permutation.sorted
-      var i = 0
-      while (i < p.length) {
-        if (p(i) != i) throw new IllegalArgumentException("Not a valid permutation.")
-        i += 1
-      }
-      // Similarity check
-      if ( similarity.length != permutation.length ) throw new IllegalArgumentException("Inconsistent dimensions.")
-      if ( ! similarity.forall(_.length == permutation.length) ) throw new IllegalArgumentException("Inconsistent dimensions.")
-      for (i <- similarity.indices) {
-        for (j <- 0 until i) {
-          val sij = similarity(i)(j)
-          if ( sij == Double.PositiveInfinity || sij == Double.NaN || sij <= 0.0) throw new IllegalArgumentException("Similarities must be finite positive numbers.")
-          if ( sij != sij ) throw new IllegalArgumentException("Similarities must be symmetric.")
-        }
-      }
-    }
-    val invertedPermutation = new Array[Int](permutation.length)
-    for (i <- permutation.indices) invertedPermutation(permutation(i)) = i
-    val logMass = log(mass)
-    (i: Int, fa: FeatureAllocation) => {
-      FeatureAllocationDistributions.logProbabilityAIBD(i, fa, mass, logMass, permutation, invertedPermutation, similarity)
-    }
+    val aibd = AttractionIndianBuffetDistribution(mass, Permutation(permutation), Similarity(similarity))
+    aibd.logProbability(_, _)
   }
 
-  def mkLogPriorProbabilityAIBD(mass: Double, permutation: Permutation, similarity: Similarity): (Int, FeatureAllocation) => Double = {
+  def mkLogPriorProbabilityAIBD2(mass: Double, permutation: Permutation, similarity: Similarity): (Int, FeatureAllocation) => Double = {
     println("WARNING from Scala: Using the old Scala implementation of AIBD!")
-    val aibd = AttractionIndianBuffetDistribution(mass, permutation, similarity)
+    val aibd = AttractionIndianBuffetDistributionAlternative(mass, permutation, similarity)
     (i: Int, fa: FeatureAllocation) => {
       val faa = fa.convertToAlternativeImplementation
       aibd.logDensityStartingFromIndex(i, faa, false)

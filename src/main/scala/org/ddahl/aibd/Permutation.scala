@@ -14,6 +14,8 @@ class Permutation private (private val x: Array[Int], val nPerShuffle: Int) exte
 
   def apply(index: Int): Int = x(index)
 
+  override def drop(n: Int) = x.drop(n)
+
   lazy val inverse: Permutation = {
     val y = new Array[Int](nItems)
     for (i <- x.indices) y(x(i)) = i

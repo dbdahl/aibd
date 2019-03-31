@@ -15,8 +15,8 @@ ibp2 <- ibp(mass, nItems)
 # and then aggregates the enumerated space into a distribution of the number of features for each cusotmer.
 max_F <- 8
 enum <- enumerateFeatureAllocations(nItems, max_F)
-prEnumAibd <- prFeatureAllocation(enum, aibd2, implementation='scala')
-prEnumIbp <- prFeatureAllocation(enum, ibp2, implementation='scala')
+prEnumAibd <- exp(logProbabilityFeatureAllocation(enum, aibd2, implementation='scala'))
+prEnumIbp <- exp(logProbabilityFeatureAllocation(enum, ibp2, implementation='scala'))
 row.feat <- t(sapply(enum, rowSums))
 results <- cbind.data.frame(rep(1:nItems, rep(nrow(row.feat),nItems)), as.vector(row.feat),
                             rep(prEnumAibd,nItems), rep(prEnumIbp,nItems))

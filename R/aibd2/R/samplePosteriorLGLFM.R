@@ -22,6 +22,9 @@
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
+#' @param parallel Should computations be done in parallel?
+#' @param rankOneUpdates Should rank one updates for the inverse and determinant
+#'   be used? In some cases, this may be faster.
 #' @inheritParams logPosteriorLGLFM
 #'
 #' @export
@@ -39,17 +42,17 @@
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
 #' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                               implementation="scala", nSamples=10000, thin=10)
+#'                               implementation="scala", nSamples=1000, thin=1)
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
 #' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                               implementation="scala", nSamples=10000, thin=10)
+#'                               implementation="scala", nSamples=1000, thin=1)
 #'
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(Zlist)
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="independence", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -78,7 +81,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
       logPrior <- if ( inherits(distribution,"ibpFADistribution") ) {
-        s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass)
+        s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass,distribution$nItems)
       } else if ( inherits(distribution,"aibdFADistribution") ) {
         newImpl <- toupper(Sys.getenv("DBD_AIBD_FORCEOLD")) != "TRUE"
         if ( ! newImpl ) {
@@ -88,11 +91,11 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
       } else stop(paste0("Unrecognized prior distribution: ",distribution))
       storage.mode(featureAllocation) <- "double"
       rankOneUpdates <- as.logical(rankOneUpdates[1])
-      lglfm <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionW)
+      lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
       newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), logPrior, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
-      ref <- s(newZsRef,N) ^ 'newZsRef.map(_.matrix)'
-      scalaPull(ref,"arrayOfMatrices")
+      scalaPull(s(newZsRef) ^ 'newZsRef.map(_.matrix)', "arrayOfMatrices")
     } else {
+      stop("This has been disabled and needs to be removed.")
       if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for this sampling method.")
       dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
       fa <- scalaPush(featureAllocation,"featureAllocation",s)

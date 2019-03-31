@@ -10,8 +10,8 @@ test_that("R and Scala give the same values for AIBD PMF", {
   similarity <- exp(-1.0*dist(scale(data)))
   d2 <- aibd(mass,1:nItems,similarity)
   samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromR     <- prFeatureAllocation(samples, d2, log=FALSE, lof=TRUE, implementation="R")
-  probsFromScala <- prFeatureAllocation(samples, d2, log=FALSE, lof=TRUE, implementation="scala")
+  probsFromR     <- logProbabilityFeatureAllocation(samples, d2, implementation="R")
+  probsFromScala <- logProbabilityFeatureAllocation(samples, d2, implementation="scala")
   expect_equal(probsFromR, probsFromScala)
 })
 
@@ -23,6 +23,6 @@ test_that("AIBD PMF (almost) sums to one.", {
   d2 <- aibd(mass,1:nItems,similarity)
   maxNFeatures <- 6
   samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
-  probsFromScala <- prFeatureAllocation(samples, d2, log=FALSE, lof=TRUE, implementation="scala")
-  expect_gte(sum(probsFromScala), 0.9992)
+  probs <- exp(logProbabilityFeatureAllocation(samples, d2))
+  expect_gte(sum(probs), 0.9992)
 })
