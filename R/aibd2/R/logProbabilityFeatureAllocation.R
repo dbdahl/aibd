@@ -90,12 +90,7 @@ logProbabilityFeatureAllocation <- function(featureAllocation, distribution, imp
     }
   } else if ( implementation == "SCALA" ) {
     featureAllocation <- if ( ! is.list(featureAllocation) ) list(featureAllocation) else featureAllocation
-    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
-    else if ( inherits(distribution,"aibdFADistribution") ) {
-      permutation <- s$Permutation(distribution$permutation-1L)
-      similarity <- s$Similarity(distribution$similarity)
-      s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
-    } else stop("Unsupported distribution.")
+    dist <- featureAllocationDistributionToReference(distribution)
     dist$logProbability(scalaPush(featureAllocation, "arrayOfMatrices", s))
   }
 }

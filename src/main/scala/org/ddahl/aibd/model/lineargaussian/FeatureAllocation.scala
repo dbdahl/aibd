@@ -1,8 +1,8 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import org.ddahl.aibd.Utils.logFactorial
 import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
 import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
+import org.ddahl.aibd.Utils.logFactorial
 import scala.collection.mutable.BitSet
 
 sealed trait FeatureAllocation {

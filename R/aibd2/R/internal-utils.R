@@ -9,3 +9,12 @@ id2FeatureAllocation <- function(id, nItems) {
   cells <- as.numeric(strsplit(id,",")[[1]])
   sapply(cells,function(cell) as.integer(intToBits(cell)))[1:nItems,]
 }
+
+featureAllocationDistributionToReference <- function(distribution) {
+  dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
+  else if ( inherits(distribution,"aibdFADistribution") ) {
+    permutation <- s$Permutation(distribution$permutation-1L)
+    similarity <- s$Similarity(distribution$similarity)
+    s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
+  } else stop("Unsupported distribution.")
+}

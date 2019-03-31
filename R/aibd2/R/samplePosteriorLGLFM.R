@@ -80,19 +80,11 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
-      logPrior <- if ( inherits(distribution,"ibpFADistribution") ) {
-        s$PosteriorSimulation.mkLogPriorProbabilityIBP(distribution$mass,distribution$nItems)
-      } else if ( inherits(distribution,"aibdFADistribution") ) {
-        newImpl <- toupper(Sys.getenv("DBD_AIBD_FORCEOLD")) != "TRUE"
-        if ( ! newImpl ) {
-          cat("WARNING from R:  Using old Scala implementation of AIBD!\n")
-          s$PosteriorSimulation.mkLogPriorProbabilityAIBD(distribution$mass, s$Permutation(distribution$permutation-1L), s$Similarity(distribution$similarity))
-        } else s$PosteriorSimulation.mkLogPriorProbabilityAIBD(distribution$mass, distribution$permutation-1L, distribution$similarity)
-      } else stop(paste0("Unrecognized prior distribution: ",distribution))
+      dist <- featureAllocationDistributionToReference(distribution)
       storage.mode(featureAllocation) <- "double"
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), logPrior, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), dist, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
       scalaPull(s(newZsRef) ^ 'newZsRef.map(_.matrix)', "arrayOfMatrices")
     } else {
       stop("This has been disabled and needs to be removed.")

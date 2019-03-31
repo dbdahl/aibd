@@ -1,32 +1,13 @@
 package org.ddahl.aibd.model.lineargaussian
 
+import org.ddahl.aibd.TimeMonitor
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
-import org.ddahl.aibd.{Permutation, Similarity, TimeMonitor, AttractionIndianBuffetDistribution => AttractionIndianBuffetDistributionAlternative}
 
 object PosteriorSimulation {
 
-  def mkLogPriorProbabilityIBP(mass: Double, nItems: Int): (Int, FeatureAllocation) => Double = {
-    val ibp = IndianBuffetProcess(mass, nItems)
-    ibp.logProbability(_, _)
-  }
-
-  def mkLogPriorProbabilityAIBD(mass: Double, permutation: Array[Int], similarity: Array[Array[Double]]): (Int, FeatureAllocation) => Double = {
-    val aibd = AttractionIndianBuffetDistribution(mass, Permutation(permutation), Similarity(similarity))
-    aibd.logProbability(_, _)
-  }
-
-  def mkLogPriorProbabilityAIBD2(mass: Double, permutation: Permutation, similarity: Similarity): (Int, FeatureAllocation) => Double = {
-    println("WARNING from Scala: Using the old Scala implementation of AIBD!")
-    val aibd = AttractionIndianBuffetDistributionAlternative(mass, permutation, similarity)
-    (i: Int, fa: FeatureAllocation) => {
-      val faa = fa.convertToAlternativeImplementation
-      aibd.logDensityStartingFromIndex(i, faa, false)
-    }
-  }
-
-  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, logPriorProbability: (Int, FeatureAllocation) => Double, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
+  def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
@@ -44,10 +25,10 @@ object PosteriorSimulation {
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
     def logPosterior1(i: Int, fa: FeatureAllocation): (FeatureAllocation, Double) = {
-      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(fa) } )
+      (fa, tmPrior { featureAllocationPrior.logProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(fa) } )
     }
     def logPosterior2(i: Int, fa: FeatureAllocation, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
-      (fa, tmPrior { logPriorProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(lglfm.allocateFeaturesFor(i,lc,fa.matrix(i))) } )
+      (fa, tmPrior { featureAllocationPrior.logProbability(i, fa) } + tmLikelihood { lglfm.logLikelihood(lglfm.allocateFeaturesFor(i,lc,fa.matrix(i))) } )
     }
     val results = Array.ofDim[FeatureAllocation](nSamples)
     var b = 1
@@ -102,3 +83,4 @@ object PosteriorSimulation {
   }
 
 }
+
