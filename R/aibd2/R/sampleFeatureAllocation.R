@@ -38,12 +38,7 @@ sampleFeatureAllocation <- function(nSamples, distribution, implementation="R") 
     }
     listOfZ
   } else if ( implementation == "SCALA" ) {
-    dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
-    else if ( inherits(distribution,"aibdFADistribution") ) {
-      permutation <- s$Permutation(distribution$permutation-1L)
-      similarity <- s$Similarity(distribution$similarity)
-      s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
-    } else stop("Unsupported distribution.")
+    dist <- featureAllocationDistributionToReference(distribution)
     samples <- dist$sample(s$rdg(), as.integer(nSamples[1]))
     scalaPull(s(samples) ^ 'samples.map(_.matrix)', "arrayOfMatrices")
   } else stop("Unsupported 'implementation' argument.")

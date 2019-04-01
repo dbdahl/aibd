@@ -1,6 +1,13 @@
 library(aibd2)
 
 mass <- 1.0
+nItems <- 100
+dist <- ibp(mass,nItems)
+Zs <- sampleFeatureAllocation(100000, dist, "scala")
+
+
+
+mass <- 1.0
 sigx <- 0.1
 sigw <- 1.0
 nItems <- 512

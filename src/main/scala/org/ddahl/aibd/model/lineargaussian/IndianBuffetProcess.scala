@@ -1,6 +1,5 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import org.ddahl.aibd.{IndianBuffetProcess => IndianBuffetProcessAlternative}
 import org.ddahl.aibd.Utils.{harmonicNumber, logFactorial}
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
@@ -22,8 +21,24 @@ class IndianBuffetProcess private (val mass: Double, val nItems: Int) extends Fe
   }
 
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
-    val ibp = IndianBuffetProcessAlternative(mass, nItems)
-    FeatureAllocation.convertFromAlternativeImplementation(ibp.sample(rdg))
+    val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
+    val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
+    val nFeatures = nNewFeaturesCumulant(nItems)
+    val fa = FeatureAllocation(nItems, nFeatures)
+    var i = 0
+    while (i < nItems) {
+      var j = 0
+      while (j < nNewFeaturesCumulant(i)) {
+        if ( rdg.nextUniform(0.0,1.0) <= fa.sizes(j).toDouble / (i+1) ) fa.mutateAdd(i,j)
+        j += 1
+      }
+      while (j < nNewFeaturesCumulant(i+1) ) {
+        fa.mutateAdd(i,j)
+        j += 1
+      }
+      i += 1
+    }
+    fa
   }
 
 }

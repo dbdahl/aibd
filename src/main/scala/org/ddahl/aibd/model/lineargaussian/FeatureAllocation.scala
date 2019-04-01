@@ -90,18 +90,18 @@ sealed trait FeatureAllocation {
   def isEmpty(j: Int): Boolean = sizes(j) == 0
 
   def matrixRow(i: Int): Array[Double] = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     if ( matrixIsCached ) matrix(i) else Array.tabulate(nFeatures) { j => if ( features(j)(i) ) 1.0 else 0.0 }
   }
 
   def matrixColumn(j: Int): Array[Double] = {
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     val f = features(j)
     Array.tabulate(nItems) { i => if ( f(i) ) 1.0 else 0.0 }
   }
 
   def itemsOf(j: Int): Array[Int] = {
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     val f = features(j)
     val result = new Array[Int](sizes(j))
     var ii = 0
@@ -117,7 +117,7 @@ sealed trait FeatureAllocation {
   }
 
   def featuresOf(i: Int): Array[Int] = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     var list = List[Int]()
     var size = 0
     var j = 0
@@ -146,8 +146,8 @@ sealed trait FeatureAllocation {
   }
 
   def add(i: Int, j: Int): FeatureAllocation = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( features(j)(i) ) this
     else {
       val newArray = features.clone  // Shallow copy
@@ -166,11 +166,11 @@ sealed trait FeatureAllocation {
   }
 
   def mutateAdd(i: Int, j: Int): Unit = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0"+(nFeatures-1)+"].")
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( ! features(j)(i) ) {
       sizes(j) += 1
-      featuresAsList(j) = i :: featuresAsList(j)  // Lazy, so must be before next line!
+      featuresAsList(j) = i :: featuresAsList(j)  // Could be lazy, so must be before next line!
       features(j).add(i)                          // Mutates
       if ( matrixIsCached ) matrix(i)(j) = 1.0
     }
@@ -225,13 +225,14 @@ sealed trait FeatureAllocation {
   }
 
   def matrixWithout(i: Int): Array[Array[Double]] = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0"+(nItems-1)+"].")
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     val newMatrix = matrix.clone  // Shallow copy
     newMatrix(i) = new Array[Double](nFeatures)
     newMatrix
   }
 
   def partitionBySingletonsOf(i: Int): (FeatureAllocation, FeatureAllocation) = {
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     var sum = 0
     val sel = Array.tabulate(nFeatures) { j =>
       val result = ( sizes(j) == 1 ) && features(j)(i)
@@ -340,7 +341,7 @@ sealed trait FeatureAllocation {
 
 }
 
-sealed class FeatureAllocationEmpty private[lineargaussian] (override val nItems: Int) extends FeatureAllocation {
+sealed class FeatureAllocationNone private[lineargaussian](override val nItems: Int) extends FeatureAllocation {
 
   override val nFeatures = 0
   override val sizes = Array[Int]()
@@ -398,21 +399,37 @@ sealed class FeatureAllocationWithAll private[lineargaussian] (override val matr
 
 }
 
+sealed class FeatureAllocationEmpty private[lineargaussian] (override val nItems: Int, override val nFeatures: Int) extends FeatureAllocation {
+
+  override val sizes = Array.ofDim[Int](nFeatures)
+  override val features = Array.fill(nFeatures)(BitSet())
+  override val featuresAsList = Array.fill(nFeatures)(List[Int]())
+  override val matrix = Array.ofDim[Double](nItems,nFeatures)
+  matrixIsCached = true
+
+}
+
 object FeatureAllocation {
 
   def apply(nItems: Int): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
-    new FeatureAllocationEmpty(nItems)
+    new FeatureAllocationNone(nItems)
+  }
+
+  def apply(nItems: Int, nFeatures: Int): FeatureAllocation = {
+    if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
+    if ( nFeatures < 0 ) throw new IllegalArgumentException("Number of features must be at least 0.")
+    new FeatureAllocationEmpty(nItems,nFeatures)
   }
 
   def apply(matrix: Array[Array[Int]]): FeatureAllocation = apply(matrix.map(_.map(_.toDouble)))
 
   def apply(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length
-    if ( rows == 0 ) return new FeatureAllocationEmpty(rows)
+    if ( rows == 0 ) return new FeatureAllocationNone(rows)
     val cols = matrix(0).length
     if ( ! matrix.forall(_.length == cols) ) throw new IllegalArgumentException("Number of features is not consistent.")
-    if (cols == 0) return new FeatureAllocationEmpty(rows)
+    if (cols == 0) return new FeatureAllocationNone(rows)
     if ( ! matrix.forall(_.forall(x => ( x == 0.0 ) || ( x == 1.0 ))) ) throw new IllegalArgumentException("Elements should be either 0 or 1.")
     val allColumnsNonempty = (0 until cols).forall { j =>
       (0 until rows).exists{ i => matrix(i)(j) == 1.0 }
@@ -423,12 +440,13 @@ object FeatureAllocation {
 
   def apply(fa: FeatureAllocation): FeatureAllocation = {  // Shallow clones
     fa match {
-      case e: FeatureAllocationEmpty => new FeatureAllocationEmpty(e.nItems)
+      case e: FeatureAllocationNone => new FeatureAllocationNone(e.nItems)
       case e: FeatureAllocationWithMatrix => new FeatureAllocationWithMatrix(e.matrix.clone)
       case e: FeatureAllocationWithArray => new FeatureAllocationWithArray(e.nItems, e.features.clone)
       case e: FeatureAllocationWithArrayAndSizes => new FeatureAllocationWithArrayAndSizes(e.nItems, e.features.clone, e.sizes.clone)
       case e: FeatureAllocationWithMatrixAndArray => new FeatureAllocationWithMatrixAndArray(e.matrix.clone, e.features.clone)
       case e: FeatureAllocationWithAll => new FeatureAllocationWithAll(e.matrix.clone, e.features.clone, e.sizes.clone)
+      case e: FeatureAllocationEmpty => throw new IllegalArgumentException("This subtype cannot be shallow copied.")
     }
   }
 
