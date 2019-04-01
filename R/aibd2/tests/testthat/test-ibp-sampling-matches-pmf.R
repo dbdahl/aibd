@@ -73,6 +73,10 @@ test_that("Sampling from IBP using constructive definition (from Scala) gives a 
   engine("scala", TRUE)
 })
 
+test_that("Sampling from AIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
+  engine("scala", TRUE, useIBP = FALSE)
+})
+
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
   engine("scala", FALSE)
 })

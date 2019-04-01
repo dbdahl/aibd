@@ -1,6 +1,5 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import org.ddahl.aibd.{AttractionIndianBuffetDistribution => AttractionIndianBuffetDistributionAlternative}
 import org.ddahl.aibd.{Permutation, Similarity}
 import org.ddahl.aibd.Utils.logOnInt
 import org.apache.commons.math3.random.RandomDataGenerator
@@ -43,8 +42,27 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
   }
 
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
-    val aibd = AttractionIndianBuffetDistributionAlternative(mass, permutation, similarity)
-    FeatureAllocation.convertFromAlternativeImplementation(aibd.sample(rdg))
+    val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
+    val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
+    val nFeatures = nNewFeaturesCumulant(nItems)
+    val fa = FeatureAllocation(nItems, nFeatures)
+    var index = 0
+    while (index < nItems) {
+      val ii = permutation(index)
+      val divisor = (0 until index).foldLeft(0.0) { (s,iPrime) => s + similarity(ii,permutation(iPrime)) }
+      var j = 0
+      while (j < nNewFeaturesCumulant(index)) {
+        val p = index.toDouble / (index + 1) * fa.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
+        if ( rdg.nextUniform(0.0,1.0) <= p ) fa.mutateAdd(ii,j)
+        j += 1
+      }
+      while (j < nNewFeaturesCumulant(index+1) ) {
+        fa.mutateAdd(index,j)
+        j += 1
+      }
+      index += 1
+    }
+    fa
   }
 
 }
