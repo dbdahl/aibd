@@ -1,6 +1,6 @@
 #!/bin/bash
 
-maxNFeatures=4
+maxNFeatures=6
 dir=distribution
 mkdir -p out
 
