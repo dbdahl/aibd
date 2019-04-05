@@ -2,6 +2,9 @@ package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.aibd._
 import org.ddahl.aibd.parameter.{IndependentNormalsParameterDistribution, MultivariateNormalParameterDistribution}
+import org.ddahl.aibd.{FeatureAllocationDistribution => FeatureAllocationDistributionAlternative}
+import org.ddahl.aibd.{IndianBuffetProcess => IndianBuffetProcessAlternative}
+import org.ddahl.aibd.{AttractionIndianBuffetDistribution => AttractionIndianBuffetDistributionAlternative}
 import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
 import org.ddahl.commonsmath._
 import org.apache.commons.math3.random.RandomDataGenerator
@@ -50,7 +53,7 @@ class LinearGaussianSamplingModel private(private val response: Array[Array[Doub
     precision.zip(fas).par.maxBy(x => logLikelihood(x._1, x._2))
   }
 
-  def maximumAPosterioriEstimate(precision: Array[Double], fas: Seq[FeatureAllocationAlternative[Vector[Double]]], featureAllocationDistribution: FeatureAllocationDistribution[Vector[Double]]) = {
+  def maximumAPosterioriEstimate(precision: Array[Double], fas: Seq[FeatureAllocationAlternative[Vector[Double]]], featureAllocationDistribution: FeatureAllocationDistributionAlternative[Vector[Double]]) = {
     // val parameterPrior = featureAllocationDistribution.parameterDistribution
     precision.zip(fas).par.maxBy(x => {
       logLikelihood(x._1, x._2) + featureAllocationDistribution.logDensityWithParameters(x._2, false)
@@ -234,7 +237,7 @@ object LinearGaussianSamplingModel {
     result
   }
 
-  def sample(nSamples: Int, state: Option[(FeatureAllocationAlternative[Vector[Double]], Double, FeatureAllocationDistribution[Vector[Double]])], samplingModel: LinearGaussianSamplingModel, maxNewFeatures: Int, precisionShape: Double, precisionRate: Double, featureAllocationModel: FeatureAllocationDistribution[Vector[Double]], rdg: RandomDataGenerator, progressCallback: Int => Unit) = {
+  def sample(nSamples: Int, state: Option[(FeatureAllocationAlternative[Vector[Double]], Double, FeatureAllocationDistributionAlternative[Vector[Double]])], samplingModel: LinearGaussianSamplingModel, maxNewFeatures: Int, precisionShape: Double, precisionRate: Double, featureAllocationModel: FeatureAllocationDistributionAlternative[Vector[Double]], rdg: RandomDataGenerator, progressCallback: Int => Unit) = {
     var (fa, precision, faDistribution) = if (state.isDefined) state.get
     else (featureAllocationModel.sample(rdg), precisionShape / precisionRate, featureAllocationModel)
     val monitorFAExisting = MCMCAcceptanceMonitor2()
@@ -252,14 +255,14 @@ object LinearGaussianSamplingModel {
           fa = samplingModel.updateCoefficients(fa, rdg, precision, pd)
       }
     }
-    if (faDistribution.isInstanceOf[IndianBuffetProcess[Vector[Double]]]) {
-      val ibp = faDistribution.asInstanceOf[IndianBuffetProcess[Vector[Double]]]
+    if (faDistribution.isInstanceOf[IndianBuffetProcessAlternative[Vector[Double]]]) {
+      val ibp = faDistribution.asInstanceOf[IndianBuffetProcessAlternative[Vector[Double]]]
       sweeper.add("allocation", 1) {
         fa = MCMCSamplers.updateFeatureAllocationIBP(1, fa, ibp, samplingModel.mkLogLikelihood(precision), maxNewFeatures, rdg)
       }
     }
-    else if (faDistribution.isInstanceOf[AttractionIndianBuffetDistribution[Vector[Double]]]) {
-      var aibd = faDistribution.asInstanceOf[AttractionIndianBuffetDistribution[Vector[Double]]]
+    else if (faDistribution.isInstanceOf[AttractionIndianBuffetDistributionAlternative[Vector[Double]]]) {
+      var aibd = faDistribution.asInstanceOf[AttractionIndianBuffetDistributionAlternative[Vector[Double]]]
       sweeper.add("allocation", 1) {
         fa = monitorFAExisting {
           MCMCSamplers.updateFeatureAllocationNeighborhoods(1, (x: Int) => x, fa, aibd, samplingModel.mkLogLikelihood(precision), rdg, false)
