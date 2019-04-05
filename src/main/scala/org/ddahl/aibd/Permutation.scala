@@ -57,8 +57,8 @@ object Permutation {
 
   def random(nItems: Int, rdg: RandomDataGenerator): Permutation = new Permutation(rdg.nextPermutation(nItems, nItems), nItems)
 
-  def enumerate(nItems: Int): Vector[Permutation] = {
-    Array.tabulate(nItems)(identity).permutations.map(new Permutation(_,nItems)).toVector
+  def enumerate(nItems: Int): Array[Permutation] = {
+    Array.tabulate(nItems)(identity).permutations.map(new Permutation(_,nItems)).toArray
   }
 
 }

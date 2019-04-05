@@ -35,7 +35,7 @@ object PosteriorSimulation {
     tmAll {
     while (b <= nIterations) {
       for (i <- 0 until nItems) {
-        val proposals = tmEnumeration { state.enumerateCombinationsFor(i) }
+        val proposals = tmEnumeration { state.enumerateFor(i) }
         val logWeights = tmPosterior1 {
           if (rankOneUpdates) {
             if (proposals.isEmpty) Array[(FeatureAllocation, Double)]()

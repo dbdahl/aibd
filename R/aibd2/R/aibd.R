@@ -25,9 +25,12 @@
 aibd <- function(mass, permutation, similarity) {
   if ( missing(mass) || is.null(mass) || any(is.na(mass)) || any(is.nan(mass)) || !is.numeric(mass) || ( length(mass) != 1 ) ) stop("'mass' is misspecified.")
   mass <- as.double(mass)
-  if ( missing(permutation) || is.null(permutation) || any(is.na(permutation)) || any(is.nan(permutation)) || !is.numeric(permutation) ) stop("'permutation' is misspecified.")
-  permutation <- as.integer(permutation)
-  if ( ( min(permutation) < 1 ) || ( max(permutation) > length(permutation) ) || ( length(unique(permutation)) != length(permutation) ) ) stop("'permutation' is misspecified.")
+  if ( missing(permutation) ) permutation <- NULL
+  if ( ! is.null(permutation) ) {
+    if ( any(is.na(permutation)) || any(is.nan(permutation)) || !is.numeric(permutation) ) stop("'permutation' is misspecified.")
+    permutation <- as.integer(permutation)
+    if ( ( min(permutation) < 1 ) || ( max(permutation) > length(permutation) ) || ( length(unique(permutation)) != length(permutation) ) ) stop("'permutation' is misspecified.")
+  }
   if ( missing(similarity) || is.null(similarity) || any(is.na(similarity)) || any(is.nan(similarity)) || !is.numeric(similarity) ) stop("'similarity' is misspecified.")
   if ( inherits(similarity,"dist") ) similarity <- as.matrix(similarity)
   else if ( is.matrix(similarity) ) {

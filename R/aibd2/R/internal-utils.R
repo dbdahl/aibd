@@ -13,8 +13,12 @@ id2FeatureAllocation <- function(id, nItems) {
 featureAllocationDistributionToReference <- function(distribution) {
   dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
   else if ( inherits(distribution,"aibdFADistribution") ) {
-    permutation <- s$Permutation(distribution$permutation-1L)
     similarity <- s$Similarity(distribution$similarity)
-    s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
+    if ( is.null(distribution$permutation) ) {
+      s$MarginalizedAttractionIndianBuffetDistribution(distribution$mass,similarity)
+    } else {
+      permutation <- s$Permutation(distribution$permutation-1L)
+      s$AttractionIndianBuffetDistribution(distribution$mass,permutation,similarity)
+    }
   } else stop("Unsupported distribution.")
 }

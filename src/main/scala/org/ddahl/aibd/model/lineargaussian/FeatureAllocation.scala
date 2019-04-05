@@ -231,6 +231,30 @@ sealed trait FeatureAllocation {
     newMatrix
   }
 
+  def pairwiseAllocationMatrix: Array[Array[Int]] = {
+    val result = Array.ofDim[Int](nItems,nItems)
+    for ( k <- 0 until nFeatures ) {
+      var i = 0
+      var hits = 0
+      while ( hits < sizes(k) ) {
+        if ( features(k).contains(i) ) {
+          result(i)(i) += 1
+          hits += 1
+          var j = i + 1
+          while ( j < nItems ) {
+            if ( features(k).contains(j) ) {
+              result(i)(j) += 1
+              result(j)(i) += 1
+            }
+            j += 1
+          }
+        }
+        i += 1
+      }
+    }
+    result
+  }
+
   def partitionBySingletonsOf(i: Int): (FeatureAllocation, FeatureAllocation) = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     var sum = 0
@@ -261,7 +285,7 @@ sealed trait FeatureAllocation {
     (new FeatureAllocationWithArrayAndSizes(nItems,leftArray,leftSizes), new FeatureAllocationWithArrayAndSizes(nItems,rightArray,rightSizes))
   }
 
-  def enumerateCombinationsFor(i: Int): Array[FeatureAllocation] = {   // Careful, this results in tons of shared mutable instances.
+  def enumerateFor(i: Int): Array[FeatureAllocation] = {   // Careful, this results in tons of shared mutable instances.
     val (singletons, existing) = partitionBySingletonsOf(i)
     val a = existing.remove(i).features.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
@@ -448,6 +472,20 @@ object FeatureAllocation {
       case e: FeatureAllocationWithAll => new FeatureAllocationWithAll(e.matrix.clone, e.features.clone, e.sizes.clone)
       case e: FeatureAllocationEmpty => throw new IllegalArgumentException("This subtype cannot be shallow copied.")
     }
+  }
+
+  def enumerate(nItems: Int, maxNFeatures: Int): Array[FeatureAllocation] = {
+    import scala.collection.parallel.mutable.ParArray
+    def engine(i: Int, fa: FeatureAllocation): ParArray[FeatureAllocation] = {
+      var state = fa
+      var bag = state.enumerateFor(i).par
+      for ( k <- state.nFeatures until maxNFeatures ) {
+        state = state.add(i)
+        bag ++= state.enumerateFor(i)
+      }
+      if ( i < nItems-1 ) bag.flatMap(fa => engine(i+1, fa)) else bag
+    }
+    engine(0,apply(nItems)).toArray
   }
 
   def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {

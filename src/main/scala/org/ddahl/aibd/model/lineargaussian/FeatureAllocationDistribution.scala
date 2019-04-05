@@ -40,5 +40,21 @@ trait FeatureAllocationDistribution {
     }
   }
 
+  def expectedPairwiseAllocationMatrix(maxNFeatures: Int): Array[Array[Double]] = {
+    import org.ddahl.matrix._
+    import org.apache.commons.math3.util.FastMath.exp
+    val expectation = FeatureAllocation.enumerate(nItems, maxNFeatures).foldLeft(matrixOfDim(nItems, nItems)) { (sum,fa) =>
+      sum add ( exp(logProbability(fa)) * wrap(fa.pairwiseAllocationMatrix) )
+    }
+    expectation.getData()
+  }
+
+  def sum(maxNFeatures: Int): Double = {
+    import org.apache.commons.math3.util.FastMath.exp
+    FeatureAllocation.enumerate(nItems, maxNFeatures).foldLeft(0.0) { (sum,fa) =>
+      sum + exp(logProbability(fa))
+    }
+  }
+
 }
 

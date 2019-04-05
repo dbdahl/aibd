@@ -16,6 +16,11 @@ object matrix {
     else new org.apache.commons.math3.linear.Array2DRowRealMatrix(X,false)
   }
 
+  def wrap(X: Array[Array[Int]]): Matrix = {
+    if ( ( X.length == 0 ) || ( X(0).length == 0 ) ) null
+    else new org.apache.commons.math3.linear.Array2DRowRealMatrix(X.map(_.map(_.toDouble)),false)
+  }
+
   def wrap(x: Array[Double]): Matrix = {
     if ( ( x.length == 0 ) ) null
     else new org.apache.commons.math3.linear.Array2DRowRealMatrix(x)

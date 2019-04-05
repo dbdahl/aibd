@@ -6,7 +6,7 @@
   scalaLazy(function(s) {
     s + '
       import org.ddahl.aibd.{Permutation, Similarity, IndianBuffetProcess => IndianBuffetProcessAlternative, AttractionIndianBuffetDistribution => AttractionIndianBuffetDistributionAlternative}
-      import org.ddahl.aibd.model.lineargaussian.{IndianBuffetProcess, AttractionIndianBuffetDistribution}
+      import org.ddahl.aibd.model.lineargaussian.{IndianBuffetProcess, AttractionIndianBuffetDistribution, MarginalizedAttractionIndianBuffetDistribution}
       import org.ddahl.aibd.model.lineargaussian.LinearGaussianSamplingModel
       import org.ddahl.aibd.model.lineargaussian.{LinearGaussianLatentFeatureModel => LGLFM}
       import org.ddahl.aibd.model.lineargaussian.{FeatureAllocation => FA}

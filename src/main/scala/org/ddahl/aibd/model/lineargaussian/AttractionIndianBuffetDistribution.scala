@@ -7,16 +7,16 @@ import org.apache.commons.math3.util.FastMath.log
 
 class AttractionIndianBuffetDistribution private (val mass: Double, val permutation: Permutation, val similarity: Similarity) extends FeatureAllocationDistribution {
 
-  val nItems = permutation.nItems
+  val nItems = similarity.nItems
   val logMass = log(mass)
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = {
-    var index = permutation.inverse(i)
+    var index = i
     val state = fa.remove(permutation.drop(index), true)
     var sum = 0.0
     while ( index < fa.nItems ) {
       val ii = permutation(index)
-      val divisor = (0 until index).foldLeft(0.0) { (s,iPrime) => s + similarity(ii,permutation(iPrime)) }
+      val divisor = (0 until index).foldLeft(0.0) { (s,indexPrime) => s + similarity(ii,permutation(indexPrime)) }
       var newFeatureCount = 0
       var j = 0
       while ( j < fa.nFeatures ) {
@@ -26,7 +26,7 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
             newFeatureCount += 1
           }
         } else {
-          val p = index.toDouble / (index + 1) * state.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
+          val p = index / (index + 1.0) * state.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
           if ( fa.features(j)(ii) ) {
             state.mutateAdd(ii,j)
             sum += log(p)
@@ -71,6 +71,7 @@ object AttractionIndianBuffetDistribution {
 
   def apply(mass: Double, permutation: Permutation, similarity: Similarity): AttractionIndianBuffetDistribution = {
     if ( mass <= 0.0 ) throw new IllegalArgumentException("'mass' must be positive.")
+    if ( permutation.nItems != similarity.nItems ) throw new IllegalArgumentException("Inconsistent number of items.")
     new AttractionIndianBuffetDistribution(mass, permutation, similarity)
   }
 
