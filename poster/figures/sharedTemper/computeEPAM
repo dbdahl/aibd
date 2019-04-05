@@ -1,0 +1,30 @@
+#!/usr/bin/env Rscript
+
+library(aibd2)
+
+outdir <- "epam"
+dir.create(outdir,showWarnings=FALSE)
+
+args <- commandArgs(TRUE)
+maxNItems <- as.integer(args[1])
+infile <- args[2]
+outfile <- paste0(file.path(outdir,paste0(basename(args[2]))))
+
+if ( file.exists(outfile) ) {
+  cat("Skipping since '",outfile,"' already exists.\n",sep="")
+  q()
+}
+
+dist <- readRDS(infile)
+epam <- expectedPairwiseAllocationMatrix(dist,maxNItems)
+dimnames(epam) <- list(dist$labels, dist$labels)
+attr(epam,"maxNItems") <- maxNItems
+saveRDS(epam, outfile)
+epam
+
+cat("\n---------\n")
+date()
+cat("Host: ")
+system2("hostname")
+sessionInfo()
+proc.time()

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+maxNFeatures=4
+dir=distributions
+mkdir -p out
+
+for i in $dir/*.rds
+do
+  echo ./computeEPAM $maxNFeatures $i '>' out/$(basename $i .rds).out
+done
+
