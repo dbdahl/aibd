@@ -1,16 +1,16 @@
 set.seed(74927)
 library(aibd2)
 
-Sys.setenv(nItems="2")
-Sys.setenv(nSamples="100")
-Sys.setenv(stamp="trashmeout")
+# Sys.setenv(nItems="20")
+# Sys.setenv(nSamples="100")
+# Sys.setenv(stamp="trashmeout")
 
 stamp <- Sys.getenv("stamp")
 stamp
 
 pdf(paste0(stamp,".pdf"),width=6,height=4)
 
-mass <- 1.0
+mass <- 1.5
 sigx <- 3.0
 sigw <- 1.0
 nItems <- as.integer(Sys.getenv("nItems"))
@@ -33,13 +33,6 @@ plot(simVector,type="h")
 distIBP <- ibp(mass,nItems)
 distAIBD <- aibd(mass,1:nItems,similarity)
 distMAIBD <- aibd(mass,NULL,similarity)
-
-library(rscala)
-s <- aibd2:::s
-ref <- aibd2:::featureAllocationDistributionToReference(distMAIBD)
-ref$sum(6L)
-ref$expectedPairwiseAllocationMatrix(6L)
-
 
 Z <- sampleFeatureAllocation(1, distAIBD, "scala")[[1]]
 dim(Z)
