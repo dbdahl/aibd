@@ -11,7 +11,7 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
   val logMass = log(mass)
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = {
-    var index = i
+    var index = permutation.inverse(i)
     val state = fa.remove(permutation.drop(index), true)
     var sum = 0.0
     while ( index < fa.nItems ) {
@@ -41,6 +41,8 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
     sum
   }
 
+  def logProbability(fa: FeatureAllocation): Double = logProbability(permutation(0), fa)
+
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
     val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
     val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
@@ -49,15 +51,15 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
     var index = 0
     while (index < nItems) {
       val ii = permutation(index)
-      val divisor = (0 until index).foldLeft(0.0) { (s,iPrime) => s + similarity(ii,permutation(iPrime)) }
+      val divisor = (0 until index).foldLeft(0.0) { (s,indexPrime) => s + similarity(ii,permutation(indexPrime)) }
       var j = 0
       while (j < nNewFeaturesCumulant(index)) {
-        val p = index.toDouble / (index + 1) * fa.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
+        val p = index / (index + 1.0) * fa.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
         if ( rdg.nextUniform(0.0,1.0) <= p ) fa.mutateAdd(ii,j)
         j += 1
       }
       while (j < nNewFeaturesCumulant(index+1) ) {
-        fa.mutateAdd(index,j)
+        fa.mutateAdd(ii,j)
         j += 1
       }
       index += 1

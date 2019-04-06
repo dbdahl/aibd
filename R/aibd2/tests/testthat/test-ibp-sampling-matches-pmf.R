@@ -2,13 +2,20 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", rankOneUpdates=FALSE, useIBP=TRUE) {
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", rankOneUpdates=FALSE, distr="IBP") {
   # set.seed(234234)
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; useIBP=FALSE
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; distr="IBP"
+  # implementation="scala"; constructiveMethod=TRUE; posteriorSimulation=FALSE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; distr="AIBD"
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
-  dist <- if ( useIBP ) ibp(mass, nItems) else aibd(mass, 1:nItems, 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
+  dist <- if ( distr == "IBP" ) {
+    ibp(mass, nItems)
+  } else if ( distr == "AIBD" ) {
+    aibd(mass, sample(1:nItems), 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
+  } else if ( distr == "MAIBD" ) {
+    aibd(mass, NULL, 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
+  } else stop("Unrecognized distribution.")
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1
@@ -74,7 +81,11 @@ test_that("Sampling from IBP using constructive definition (from Scala) gives a 
 })
 
 test_that("Sampling from AIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
-  engine("scala", TRUE, useIBP = FALSE)
+  engine("scala", TRUE, distr = "AIBD")
+})
+
+test_that("Sampling from MAIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
+  engine("scala", TRUE, distr = "MAIBD")
 })
 
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
@@ -86,7 +97,11 @@ test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FA
 })
 
 test_that("Sampling from LGLFM with AIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE, FALSE)
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE, "AIBD")
+})
+
+test_that("Sampling from LGLFM with MAIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE, "MAIBD")
 })
 
 test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {

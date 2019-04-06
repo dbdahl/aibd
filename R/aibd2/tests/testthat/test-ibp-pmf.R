@@ -2,7 +2,7 @@ context("ibp-pmf")
 
 # skip("ibp-pmf")
 
-test_that("R and Scala give the same values for PMF", {
+test_that("R and Scala give the same values for IBP PMF", {
   mass <- 1.0
   nItems <- 4
   maxNFeatures <- 4
@@ -12,7 +12,7 @@ test_that("R and Scala give the same values for PMF", {
   expect_equal(probsFromR, probsFromScala)
 })
 
-test_that("PMF (almost) sums to one.", {
+test_that("IBP PMF (almost) sums to one.", {
   mass <- 0.7
   nItems <- 3
   maxNFeatures <- 6
