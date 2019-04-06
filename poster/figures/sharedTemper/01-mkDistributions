@@ -15,9 +15,16 @@ saveRDS(distIBP, paste0("ibp-",mass,".rds"))
 states <- c("New Hampshire","Iowa","Wisconsin","California","Nevada")
 data <- USArrests[states,]
 dist <- as.matrix(dist(scale(data)))
-for ( temperature in c(0,1,2,5,10) ) {
+
+for ( temperature in c(0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 3, 4, 5, 7, 10) ) {
   similarity <- exp(-temperature*dist)
   distMAIBD <- aibd(mass,NULL,similarity)
-  saveRDS(distMAIBD, paste0("maibd-",mass,"-",temperature,".rds"))
+  saveRDS(distMAIBD, paste0("maibd-exp-",mass,"-",temperature,".rds"))
+}
+
+for ( temperature in c(0, 0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 3, 4, 5, 7, 10) ) {
+  similarity <- 1/dist^temperature
+  distMAIBD <- aibd(mass,NULL,similarity)
+  saveRDS(distMAIBD, paste0("maibd-recip-",mass,"-",temperature,".rds"))
 }
 
