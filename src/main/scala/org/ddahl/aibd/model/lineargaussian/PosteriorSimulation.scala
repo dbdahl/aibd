@@ -7,6 +7,10 @@ import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
 
+  def updatePermutation(aibdPrior: AttractionIndianBuffetDistribution, featureAllocation: FeatureAllocation): AttractionIndianBuffetDistribution = {
+    aibdPrior
+  }
+
   def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
