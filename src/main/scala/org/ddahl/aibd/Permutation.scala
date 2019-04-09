@@ -23,18 +23,24 @@ class Permutation private (private val x: Array[Int], val nPerShuffle: Int) exte
   }
 
   def shuffle(rdg: RandomDataGenerator): Permutation = {
-    val xx = x.clone
-    val indices = rdg.nextPermutation(nItems, nPerShuffle)
-    val sorted = indices.sorted
-    for (i <- 0 until nPerShuffle) {
-      xx(sorted(i)) = x(indices(i))
+    if ( nPerShuffle == 0 ) this
+    else {
+      val xx = x.clone
+      val indices = rdg.nextPermutation(nItems, nPerShuffle)
+      val sorted = indices.sorted
+      for (i <- 0 until nPerShuffle) {
+        xx(sorted(i)) = x(indices(i))
+      }
+      new Permutation(xx, nPerShuffle)
     }
-    new Permutation(xx, nPerShuffle)
   }
 
-  def nPerShuffle(n: Int): Permutation = new Permutation(x, n)
+  def nPerShuffle(n: Int): Permutation = {
+    if ( n < 0 ) throw new IllegalArgumentException("Negative values are not allowed.")
+    new Permutation(x, n)
+  }
 
-  def toArray = x.clone
+  def toArray: Array[Int] = x.clone
 
 }
 

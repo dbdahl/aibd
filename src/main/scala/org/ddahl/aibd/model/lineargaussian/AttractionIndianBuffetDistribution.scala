@@ -10,6 +10,21 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
   val nItems = similarity.nItems
   val logMass = log(mass)
 
+  def update(mass: Double): AttractionIndianBuffetDistribution = {
+    if ( mass <= 0.0 ) throw new IllegalArgumentException("'mass' must be positive.")
+    new AttractionIndianBuffetDistribution(mass, permutation, similarity)
+  }
+
+  def update(permutation: Permutation): AttractionIndianBuffetDistribution = {
+    if ( permutation.nItems != similarity.nItems ) throw new IllegalArgumentException("Inconsistent number of items.")
+    new AttractionIndianBuffetDistribution(mass, permutation, similarity)
+  }
+
+  def update(similarity: Similarity): AttractionIndianBuffetDistribution = {
+    if ( permutation.nItems != similarity.nItems ) throw new IllegalArgumentException("Inconsistent number of items.")
+    new AttractionIndianBuffetDistribution(mass, permutation, similarity)
+  }
+
   def logProbability(i: Int, fa: FeatureAllocation): Double = {
     var index = permutation.inverse(i)
     val state = fa.remove(permutation.drop(index), true)

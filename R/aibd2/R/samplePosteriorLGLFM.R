@@ -52,7 +52,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -82,9 +82,10 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     if ( samplingMethod == "viaNeighborhoods2" ) {
       dist <- featureAllocationDistributionToReference(distribution)
       storage.mode(featureAllocation) <- "double"
+      nPerShuffle <- as.integer(nPerShuffle[1])
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-      newZsRef <- s$PosteriorSimulation.updateFeatureAllocationViaNeighborhoods(s$FA(featureAllocation), dist, lglfm, nSamples, thin, 100L, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+      newZsRef <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, nSamples, thin, options()$width-2L, s$rdg(), nPerShuffle, parallel, rankOneUpdates, newFeaturesTruncationDivisor)
       scalaPull(s(newZsRef) ^ 'newZsRef.map(_.matrix)', "arrayOfMatrices")
     } else {
       stop("This has been disabled and needs to be removed.")

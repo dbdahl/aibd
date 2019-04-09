@@ -2,13 +2,14 @@ context("ibp-sampling-matches-pmf")
 
 # skip("ibp-sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", rankOneUpdates=FALSE, distr="IBP") {
-  # set.seed(234234)
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; distr="IBP"
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
+  # set.seed(234232)
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; nPerShuffle=100; rankOneUpdates=FALSE; distr="AIBD"
   # implementation="scala"; constructiveMethod=TRUE; posteriorSimulation=FALSE; samplingMethod="viaNeighborhoods2"; rankOneUpdates=FALSE; distr="AIBD"
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
+  nPerShuffle <- min(nPerShuffle,nItems)
   dist <- if ( distr == "IBP" ) {
     ibp(mass, nItems)
   } else if ( distr == "AIBD" ) {
@@ -34,7 +35,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod, parallel=FALSE, rankOneUpdates=rankOneUpdates)
+    samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates)
   }
   freq <- table(sapply(Zlist, function(Z) aibd2:::featureAllocation2Id(Z)))
   sampled <- as.data.frame(freq)
@@ -42,10 +43,11 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   maxNFeatures <- 9
   Zall <- enumerateFeatureAllocations(nItems, maxNFeatures)
   # dist <- ibp(mass+0.1, nItems)   # Uncomment to demonstrate power of this test.
+  dist2 <- if ( inherits(dist,"aibdFADistribution") && ( nPerShuffle > 0 ) ) aibd(dist$mass, NULL, dist$similarity) else dist
   probs <- if ( posteriorSimulation ) {
-    exp(logPosteriorLGLFM(Zall, dist, X, sdX=sigx, sdW=sigw, implementation=implementation))
+    exp(logPosteriorLGLFM(Zall, dist2, X, sdX=sigx, sdW=sigw, implementation=implementation))
   } else {
-    exp(logProbabilityFeatureAllocation(Zall, dist, implementation=implementation))
+    exp(logProbabilityFeatureAllocation(Zall, dist2, implementation=implementation))
   }
   probs <- probs/sum(probs)
   names <- sapply(Zall, function(Z) aibd2:::featureAllocation2Id(Z))
@@ -62,6 +64,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   coverage <- mean(both$hits)
   coverage
   z <- ( coverage - confidenceLevel ) / sqrt( confidenceLevel * (1-confidenceLevel) / nrow(both) )
+  z
   expect_gt( z, qnorm(0.001) )
 }
 
@@ -98,6 +101,10 @@ test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FA
 
 test_that("Sampling from LGLFM with AIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE, "AIBD")
+})
+
+test_that("Sampling from LGLFM with AIBD prior (with random permutation) using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", FALSE, TRUE, "viaNeighborhoods2", FALSE, "AIBD", nPerShuffle=100)
 })
 
 test_that("Sampling from LGLFM with MAIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
