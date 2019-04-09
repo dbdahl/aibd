@@ -5,22 +5,22 @@ import org.ddahl.aibd.Utils.logOnInt
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 
-class AttractionIndianBuffetDistribution private (val mass: Double, val permutation: Permutation, val similarity: Similarity) extends FeatureAllocationDistribution {
+class AttractionIndianBuffetDistribution private (val mass: Double, val permutation: Permutation, val similarity: Similarity) extends FeatureAllocationDistribution with HasMass[AttractionIndianBuffetDistribution] {
 
   val nItems = similarity.nItems
   val logMass = log(mass)
 
-  def update(mass: Double): AttractionIndianBuffetDistribution = {
+  def updateMass(mass: Double): AttractionIndianBuffetDistribution = {
     if ( mass <= 0.0 ) throw new IllegalArgumentException("'mass' must be positive.")
     new AttractionIndianBuffetDistribution(mass, permutation, similarity)
   }
 
-  def update(permutation: Permutation): AttractionIndianBuffetDistribution = {
+  def updatePermutation(permutation: Permutation): AttractionIndianBuffetDistribution = {
     if ( permutation.nItems != similarity.nItems ) throw new IllegalArgumentException("Inconsistent number of items.")
     new AttractionIndianBuffetDistribution(mass, permutation, similarity)
   }
 
-  def update(similarity: Similarity): AttractionIndianBuffetDistribution = {
+  def updateSimilarity(similarity: Similarity): AttractionIndianBuffetDistribution = {
     if ( permutation.nItems != similarity.nItems ) throw new IllegalArgumentException("Inconsistent number of items.")
     new AttractionIndianBuffetDistribution(mass, permutation, similarity)
   }

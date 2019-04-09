@@ -4,9 +4,14 @@ import org.ddahl.aibd.Utils.{harmonicNumber, logFactorial}
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 
-class IndianBuffetProcess private (val mass: Double, val nItems: Int) extends FeatureAllocationDistribution {
+class IndianBuffetProcess private (val mass: Double, val nItems: Int) extends FeatureAllocationDistribution with HasMass[IndianBuffetProcess] {
 
   val logMass = log(mass)
+
+  def updateMass(mass: Double): IndianBuffetProcess = {
+    if ( mass <= 0.0 ) throw new IllegalArgumentException("'mass' must be positive.")
+    new IndianBuffetProcess(mass, nItems)
+  }
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = logProbability(fa)   // This could be more efficient.
 

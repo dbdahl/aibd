@@ -1,19 +1,22 @@
 package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.aibd.{MCMCAcceptanceMonitor1, TimeMonitor}
+import org.ddahl.aibd.Utils.harmonicNumber
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.log
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
 
-  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, nPerShuffle: Int, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): Array[FeatureAllocation] = {
+  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, nPerShuffle: Int, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Double]) = {
     var stateFA = featureAllocation
     var stateFAPrior = featureAllocationPrior
     val monitorFA = MCMCAcceptanceMonitor1()
-    val monitorFAPrior = MCMCAcceptanceMonitor1()
+    val monitorFAMass = MCMCAcceptanceMonitor1()
+    val monitorFAPermutation = MCMCAcceptanceMonitor1()
     val tmAll = TimeMonitor()
     val tmAllocation = TimeMonitor()
+    val tmMass = TimeMonitor()
     val tmPermutation = TimeMonitor()
     val nIterations = thin*nSamples
     val (width,rate) = if ( progressWidth <= 0 ) (0,1)
@@ -22,20 +25,32 @@ object PosteriorSimulation {
       if ( r == 0 ) (nSamples, 1) else (progressWidth, r)
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
-    val results = Array.ofDim[FeatureAllocation](nSamples)
+    val resultFA = Array.ofDim[FeatureAllocation](nSamples)
+    val resultMass = Array.ofDim[Double](nSamples)
     var b = 1
     tmAll {
       while (b <= nIterations) {
         stateFA = monitorFA(tmAllocation(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, lglfm, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
         stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
-            monitorFAPrior(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
+            monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
+          case _ =>
+            stateFAPrior
+        }
+        stateFAPrior = stateFAPrior match {
+          case faPrior: FeatureAllocationDistribution with HasMass[_] =>
+            if ( ( massPriorShape <= 0 ) || ( massPriorRate <= 0 ) ) faPrior
+            else monitorFAMass(tmMass(updateMass(stateFA, faPrior, rdg, massPriorShape, massPriorRate)))
           case _ =>
             stateFAPrior
         }
         if (b % thin == 0) {
           val index = (b-1)/thin
-          results(index) = stateFA
+          resultFA(index) = stateFA
+          resultMass(index) = stateFAPrior match {
+            case faPrior: FeatureAllocationDistribution with HasMass[_] => faPrior.mass
+            case _ => 0.0
+          }
           if ( ( width > 0 ) && ( index % rate == 0 ) ) print("*")
         }
         b += 1
@@ -47,15 +62,22 @@ object PosteriorSimulation {
     println("Main lapse time: "+tmAll)
     println("Allocation lapse time: "+tmAllocation)
     println("Permutation lapse time: "+tmPermutation)
-    println("Permutation acceptance rate: "+monitorFAPrior.rate)
-    results
+    println("Mass lapse time: "+tmMass)
+    println("Permutation acceptance rate: "+monitorFAPermutation.rate)
+    (resultFA, resultMass)
   }
 
   def updatePermutation(featureAllocation: FeatureAllocation, aibdPrior: AttractionIndianBuffetDistribution, rdg: RandomDataGenerator, nPerShuffle: Int): (AttractionIndianBuffetDistribution, Int, Int) = {
     val proposedPermutation = aibdPrior.permutation.nPerShuffle(nPerShuffle).shuffle(rdg)
-    val proposedAIBDPrior = aibdPrior.update(proposedPermutation)
+    val proposedAIBDPrior = aibdPrior.updatePermutation(proposedPermutation)
     val diff = proposedAIBDPrior.logProbability(featureAllocation) - aibdPrior.logProbability(featureAllocation)
     if ( ( diff > 0 ) || ( log(rdg.nextUniform(0,1)) < diff ) ) (proposedAIBDPrior,1,1) else (aibdPrior,0,1)
+  }
+
+  def updateMass[T](featureAllocation: FeatureAllocation, hasMassPrior: FeatureAllocationDistribution with HasMass[T], rdg: RandomDataGenerator, priorShape: Double, priorRate: Double): (FeatureAllocationDistribution with HasMass[T], Int, Int) = {
+    val posteriorShape = priorShape + featureAllocation.nFeatures
+    val posteriorRate = priorRate + harmonicNumber(featureAllocation.nItems)
+    (hasMassPrior.updateMass(rdg.nextGamma(posteriorShape, 1/posteriorRate)), 1, 1)
   }
 
   def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
