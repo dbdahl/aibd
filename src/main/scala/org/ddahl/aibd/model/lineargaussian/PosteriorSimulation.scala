@@ -13,6 +13,8 @@ object PosteriorSimulation {
     val monitorFA = MCMCAcceptanceMonitor1()
     val monitorFAPrior = MCMCAcceptanceMonitor1()
     val tmAll = TimeMonitor()
+    val tmAllocation = TimeMonitor()
+    val tmPermutation = TimeMonitor()
     val nIterations = thin*nSamples
     val (width,rate) = if ( progressWidth <= 0 ) (0,1)
     else {
@@ -24,10 +26,10 @@ object PosteriorSimulation {
     var b = 1
     tmAll {
       while (b <= nIterations) {
-        stateFA = monitorFA(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, lglfm, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor))
+        stateFA = monitorFA(tmAllocation(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, lglfm, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
         stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
-            monitorFAPrior(updatePermutation(stateFA, faPrior, rdg, nPerShuffle))
+            monitorFAPrior(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
           case _ =>
             stateFAPrior
         }
@@ -43,6 +45,8 @@ object PosteriorSimulation {
     println("Parallel: "+parallel)
     println("Rank-one updates: "+rankOneUpdates)
     println("Main lapse time: "+tmAll)
+    println("Allocation lapse time: "+tmAllocation)
+    println("Permutation lapse time: "+tmPermutation)
     println("Permutation acceptance rate: "+monitorFAPrior.rate)
     results
   }
