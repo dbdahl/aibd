@@ -1,8 +1,9 @@
 #!/bin/bash
 
-maxNFeatures=7
+maxNFeatures=6
 dir=distribution
 mkdir -p out
+mkdir -p epam
 
 for i in $dir/*.rds
 do

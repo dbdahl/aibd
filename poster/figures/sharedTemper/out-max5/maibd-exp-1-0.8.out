@@ -1,0 +1,38 @@
+              New Hampshire      Iowa Wisconsin California    Nevada
+New Hampshire     0.9181856 0.5795898 0.5467675  0.3722769 0.3709373
+Iowa              0.5795898 0.9181856 0.5503139  0.3748162 0.3734664
+Wisconsin         0.5467675 0.5503139 0.9181856  0.3859870 0.3826834
+California        0.3722769 0.3748162 0.3859870  0.9181856 0.5938979
+Nevada            0.3709373 0.3734664 0.3826834  0.5938979 0.9181856
+attr(,"maxNItems")
+[1] 5
+
+---------
+[1] "Mon Apr  8 17:05:07 2019"
+Host: pearson
+R version 3.5.3 (2019-03-11)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 18.04.2 LTS
+
+Matrix products: default
+BLAS/LAPACK: /opt/intel/compilers_and_libraries_2018.3.222/linux/mkl/lib/intel64_lin/libmkl_rt.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] aibd2_0.1.0                 sdols_1.7.3.5-20190405-1438
+
+loaded via a namespace (and not attached):
+[1] compiler_3.5.3                    rscala_3.2.7-20190319-1751       
+[3] commonsMath_1.2.2.8-20190324-0645
+   user  system elapsed 
+ 11.779   0.468 155.004 
