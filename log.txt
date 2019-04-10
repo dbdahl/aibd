@@ -1,3 +1,26 @@
+2019-04-10: Dahl
+
+  1. Implemented efficient posterior inference for IBP and AIBD prior in the
+     Linear Gaussian Latent Feature Model (LGLFM).
+
+  2. In addition to random feature allocation (above), random permutation
+     and random mass parameter for posterior inference is implemented.
+
+  3. logProbabilityFeatureAllocation function replaces prFeatureAllocation.
+
+  4. Permit 'permutation' argument in aibd function to be NULL, thereby
+     indicating that the distribution marginalizings over all possible
+     permutations of the items.  This is helpful for: 1. testing the MCMC
+     handling of the permutations, 2: Illustrating properties of the prior.
+     Unfortunately, it is only feasible for very small number of items.
+
+  5. Added and updated all tests for all the above items.
+
+  6. Implemented the expectedPairwiseAllocationMatrix function to compute
+     the expected number of shared features among all pairs of items.
+
+
+
 2019-03-19: Group meeting notes
 
   1. Report on what we've been working on.

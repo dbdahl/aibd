@@ -8,7 +8,7 @@ import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
 
-  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, nPerShuffle: Int, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Double]) = {
+  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Double]) = {
     var stateFA = featureAllocation
     var stateFAPrior = featureAllocationPrior
     val monitorFA = MCMCAcceptanceMonitor1()
@@ -57,14 +57,16 @@ object PosteriorSimulation {
         b += 1
       }
     }
-    if ( width > 0 ) println("]")
-    println("Parallel: "+parallel)
-    println("Rank-one updates: "+rankOneUpdates)
-    println("Main lapse time: "+tmAll)
-    println("Allocation lapse time: "+tmAllocation)
-    println("Permutation lapse time: "+tmPermutation)
-    println("Mass lapse time: "+tmMass)
-    println("Permutation acceptance rate: "+monitorFAPermutation.rate)
+    if ( width > 0 ) {
+      println("]")
+      println("Parallel: " + parallel)
+      println("Rank-one updates: " + rankOneUpdates)
+      println("Main lapse time: " + tmAll)
+      println("Allocation lapse time: " + tmAllocation)
+      println("Permutation lapse time: " + tmPermutation)
+      println("Mass lapse time: " + tmMass)
+      println("Permutation acceptance rate: " + monitorFAPermutation.rate)
+    }
     (resultFA, resultMass)
   }
 

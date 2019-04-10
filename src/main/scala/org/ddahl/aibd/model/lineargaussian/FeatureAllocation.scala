@@ -355,7 +355,7 @@ sealed trait FeatureAllocation {
     }
   }
 
-  private def lessThan(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Boolean = compare(x,y) <= 0
+  private def lessThan(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Boolean = compare(x,y) < 0
 
   def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
     FeatureAllocationAlternative(nItems, features.map { f =>

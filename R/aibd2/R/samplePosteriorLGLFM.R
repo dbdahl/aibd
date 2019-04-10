@@ -52,7 +52,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=1, massPriorRate=1, newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -75,20 +75,21 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     }
     Zs
   } else if ( implementation == "SCALA" ) {
-    nSamples <- as.integer(nSamples[1])
+    nSamples <- as.integer(max(0L,nSamples[1]))
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
     if ( samplingMethod == "viaNeighborhoods2" ) {
       dist <- featureAllocationDistributionToReference(distribution)
       storage.mode(featureAllocation) <- "double"
+      width <- as.integer( if ( verbose ) options()$width-2L else 0L )
       massPriorShape <- as.double(massPriorShape[1])
       massPriorRate <- as.double(massPriorRate[1])
       nPerShuffle <- as.integer(nPerShuffle[1])
       nPerShuffle <- as.integer(nPerShuffle[1])
       rankOneUpdates <- as.logical(rankOneUpdates[1])
       lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-      ref <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nSamples, thin, options()$width-2L, s$rdg(), nPerShuffle, parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+      ref <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
       list(featureAllocation=scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices"), mass=ref$"_2"())
     } else {
       stop("This has been disabled and needs to be removed.")
