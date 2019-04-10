@@ -6,9 +6,9 @@ class Permutation private (private val x: Array[Int], val nPerShuffle: Int) exte
 
   def iterator = x.iterator
 
-  override def isEmpty = x.isEmpty
+  override def isEmpty: Boolean = x.isEmpty
 
-  override def size = x.size
+  override def size: Int = x.size
 
   val nItems: Int = x.size
 
@@ -23,7 +23,7 @@ class Permutation private (private val x: Array[Int], val nPerShuffle: Int) exte
   }
 
   def shuffle(rdg: RandomDataGenerator): Permutation = {
-    if ( nPerShuffle == 0 ) this
+    if ( nPerShuffle < 2 ) this
     else {
       val xx = x.clone
       val indices = rdg.nextPermutation(nItems, nPerShuffle)
@@ -36,8 +36,7 @@ class Permutation private (private val x: Array[Int], val nPerShuffle: Int) exte
   }
 
   def nPerShuffle(n: Int): Permutation = {
-    if ( n < 0 ) throw new IllegalArgumentException("Negative values are not allowed.")
-    new Permutation(x, n)
+    new Permutation(x, math.min(math.max(n,0),x.length))
   }
 
   def toArray: Array[Int] = x.clone

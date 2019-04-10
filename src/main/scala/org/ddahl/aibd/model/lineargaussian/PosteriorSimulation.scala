@@ -33,7 +33,8 @@ object PosteriorSimulation {
         stateFA = monitorFA(tmAllocation(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, lglfm, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
         stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
-            monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
+            if ( nPerShuffle < 2 ) faPrior
+            else monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
           case _ =>
             stateFAPrior
         }
