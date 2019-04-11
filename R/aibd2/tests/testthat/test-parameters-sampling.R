@@ -26,7 +26,7 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
     W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
     e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
     X <- Z %*% W + e
-    samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, massPriorShape=shape, massPriorRate=rate, nPerShuffle=nItems, maxStandardDeviationX=maxStandardDeviationX, maxStandardDeviationW=maxStandardDeviationW, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.3, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=FALSE, rankOneUpdates=FALSE, verbose=FALSE)
+    samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, massPriorShape=shape, massPriorRate=rate, nPerShuffle=nItems, maxStandardDeviationX=maxStandardDeviationX, maxStandardDeviationW=maxStandardDeviationW, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.3, implementation="scala", nSamples=nSamples, parallel=FALSE, rankOneUpdates=FALSE, verbose=FALSE)
     containsMass[b] <- prod(quantile(samplesIBP$parameters$mass,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - mass) < 0
     containsX[b] <- prod(quantile(samplesIBP$parameters$standardDeviationX,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigx) < 0
     containsW[b] <- prod(quantile(samplesIBP$parameters$standardDeviationW,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigw) < 0
