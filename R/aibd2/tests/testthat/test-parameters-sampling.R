@@ -12,7 +12,7 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
   maxStandardDeviationX <- 3
   maxStandardDeviationW <- 3
   B <- 100
-  pb <- txtProgressBar(0,B,style = 3)
+  # pb <- txtProgressBar(0,B,style = 3)
   containsMass <- logical(B)
   containsX <- logical(B)
   containsW <- logical(B)
@@ -29,7 +29,7 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
     containsMass[b] <- prod(quantile(samplesIBP$parameters$mass,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - mass) < 0
     containsX[b] <- prod(quantile(samplesIBP$parameters$standardDeviationX,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigx) < 0
     containsW[b] <- prod(quantile(samplesIBP$parameters$standardDeviationW,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigw) < 0
-    setTxtProgressBar(pb,b)
+    # setTxtProgressBar(pb,b)
   }
   expect_gte(t.test(containsMass, mu=nominalCoverage)$p.value, 0.01)
   expect_gte(t.test(containsX, mu=nominalCoverage)$p.value, 0.01)
