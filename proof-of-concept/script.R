@@ -1,8 +1,8 @@
 set.seed(74927)
 library(aibd2)
 
-Sys.setenv(nItems="20")
-Sys.setenv(nSamples="100")
+# Sys.setenv(nItems="20")
+# Sys.setenv(nSamples="100")
 # Sys.setenv(stamp="trashmeout")
 
 stamp <- Sys.getenv("stamp")
