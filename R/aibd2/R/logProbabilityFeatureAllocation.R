@@ -53,6 +53,9 @@ logProbabilityFeatureAllocation <- function(featureAllocation, distribution, imp
     return(sapply(featureAllocation, function(x) logProbabilityFeatureAllocation(x, distribution, implementation)))
   }
   if ( implementation == "R" ) {
+    if ( inherits(distribution,"aibdFADistribution") ) {
+      if ( ! isTRUE(all.equal(distribution$permutation,1:N)) ) stop("Permutation must be 1:N for the R implementation of AIBD.")
+    }
     alpha <- distribution$mass
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
     lof_Z <- toLof(featureAllocation, nums=binary_nums)

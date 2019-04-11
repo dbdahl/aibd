@@ -1,6 +1,6 @@
-context("lglfm-likelihood")
+context("lglfm-posterior")
 
-# skip("lglfm-likelihood")
+# skip("lglfm-posterior")
 
 mass <- 2.0
 sigx <- 0.5
