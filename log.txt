@@ -1,3 +1,18 @@
+2019-04-11: Dahl
+
+  1. Random sigmaX and sigmaW for posterior inference is implemented.
+
+  2. Added tests sigmaX and sigmaW.
+
+  3. Streamlined all tests and implemented AIBD_TEST_LEVEL environment
+     variable to adjust the degree of testing.  See the file
+     'setup-instance.R'.
+
+  4. Package checks without errors, warnings, or notes.  There is one
+     comment regarding long running examples which will need to be
+     addressed for CRAN.
+
+
 2019-04-10: Dahl
 
   1. Implemented efficient posterior inference for IBP and AIBD prior in the
