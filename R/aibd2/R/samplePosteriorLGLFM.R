@@ -5,6 +5,23 @@
 #' latent feature model (LGLFM) using an Indian buffet process (IBP) prior on
 #' the feature allocations.
 #'
+#' @param massPriorShape Shape parameter of the gamma prior on the mass
+#'   parameter, where the expected value if \code{massPriorShape/massPriorRate}.
+#' @param massPriorRate Rate parameter of the gamma prior on the mass parameter,
+#'   where the expected value if \code{massPriorShape/massPriorRate}.
+#' @param maxStandardDeviationX Maximum value parameter of the uniform prior
+#'   distribution on the standard deviation of \code{X}.
+#' @param maxStandardDeviationW Maximum value parameter of the uniform prior
+#'   distribution on the standard deviation of \code{W}.
+#' @param sdProposedStandardDeviationX Standard deviation of the Gaussian random
+#'   walk update for the standard deviation of \code{X}.
+#' @param sdProposedStandardDeviationW Standard deviation of the Gaussian random
+#'   walk update for the standard deviation of \code{W}.
+#' @param corProposedSdXSdW Correlation of the multivariate Gaussian random walk
+#'   updates for the standard deviations of \code{X} and \code{W}.
+#' @param nPerShuffle Number of items to randomly select and permute when
+#'   proposing an update to the permutation associated with the attraction
+#'   Indian buffet distribution (AIBD).
 #' @param newFeaturesTruncationDivisor While in theory a countable infinite
 #'   number of new features may be allocated to an item, the posterior
 #'   simulation needs to limit the number of new features that are considered.
@@ -25,8 +42,11 @@
 #' @param parallel Should computations be done in parallel?
 #' @param rankOneUpdates Should rank one updates for the inverse and determinant
 #'   be used? In some cases, this may be faster.
+#' @param verbose Should a progress bar and information regarding lapse time and
+#'   acceptance rates be displayed?
 #' @inheritParams logPosteriorLGLFM
 #'
+#' @importFrom stats sd
 #' @export
 #' @examples
 #' mass <- 1
@@ -41,16 +61,16 @@
 #' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
-#' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                               implementation="scala", nSamples=1000, thin=1)
+#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
+#'                                 implementation="scala", nSamples=1000, thin=1)
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
-#' Zlist <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                               implementation="scala", nSamples=1000, thin=1)
+#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
+#'                                 implementation="scala", nSamples=1000, thin=1)
 #'
 #' library(sdols)
-#' expectedPairwiseAllocationMatrix(Zlist)
+#' expectedPairwiseAllocationMatrix(samples$featureAllocation)
 #' Ztruth %*% t(Ztruth)
-#' plot(expectedPairwiseAllocationMatrix(Zlist), Ztruth %*% t(Ztruth))
+#' plot(expectedPairwiseAllocationMatrix(samples$featureAllocation), Ztruth %*% t(Ztruth))
 #'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")

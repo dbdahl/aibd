@@ -3,6 +3,7 @@ context("ibp-sampling-matches-pmf")
 # skip("ibp-sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
+  skip_on_cran()
   # set.seed(234232)
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; samplingMethod="viaNeighborhoods2"; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
