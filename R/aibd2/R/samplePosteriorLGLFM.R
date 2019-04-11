@@ -57,18 +57,16 @@
 #' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
-#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                                 implementation="scala", nSamples=1000, thin=1)
+#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, nSamples=1000, thin=1)
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
-#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw,
-#'                                 implementation="scala", nSamples=1000, thin=1)
+#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, nSamples=1000, thin=1)
 #'
 #' library(sdols)
 #' expectedPairwiseAllocationMatrix(samples$featureAllocation)
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(samples$featureAllocation), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2

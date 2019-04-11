@@ -32,9 +32,9 @@
 #' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 #' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 #' X <- Z %*% W + e
-#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw, implementation="scala")
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw)
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
-#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw, implementation="scala")
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw)
 #'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="scala") {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011

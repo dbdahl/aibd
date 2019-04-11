@@ -20,10 +20,10 @@
 #'
 #' samples <- enumerateFeatureAllocations(nItems,5)
 #'
-#' probs1 <- exp(logProbabilityFeatureAllocation(samples,d1,implementation="scala"))
+#' probs1 <- exp(logProbabilityFeatureAllocation(samples,d1))
 #' sum(probs1)    # This should be close to 1.
 #'
-#' probs2 <- exp(logProbabilityFeatureAllocation(samples,d2,implementation="scala"))
+#' probs2 <- exp(logProbabilityFeatureAllocation(samples,d2))
 #' sum(probs2)    # This should be close to 1.
 #'
 #' plot(log(probs1), log(probs2),

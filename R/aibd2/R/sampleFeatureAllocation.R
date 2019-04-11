@@ -18,14 +18,14 @@
 #' d2 <- aibd(1,seq_along(states),similarity)
 #'
 #' system.time(samples <- sampleFeatureAllocation(1000, d1))
-#' system.time(samples <- sampleFeatureAllocation(1000, d1, implementation="scala"))
-#' system.time(samples <- sampleFeatureAllocation(1000, d2, implementation="scala"))
+#' system.time(samples <- sampleFeatureAllocation(1000, d1))
+#' system.time(samples <- sampleFeatureAllocation(1000, d2))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd2:::s)
 #' }
 #'
-sampleFeatureAllocation <- function(nSamples, distribution, implementation="R") {
+sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala") {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")

@@ -14,7 +14,7 @@
 #'   density.
 #' @export
 #'
-logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), implementation="R") {
+logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), implementation="scala") {
   result <- logProbabilityFeatureAllocation(featureAllocation, distribution, implementation=implementation)
   result <- result + logLikelihoodLGLFM(featureAllocation, X, precisionX=precisionX, precisionW=precisionW, sdX=sdX, sdW=sdW, implementation=implementation)
   result
