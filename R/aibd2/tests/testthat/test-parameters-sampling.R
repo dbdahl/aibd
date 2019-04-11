@@ -3,7 +3,7 @@ context("parameters-sampling")
 # skip("parameters-sampling")
 
 test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence intervals compatible with known value from prior.", {
-  skip_on_cran()
+  requireLevel(3)
   dimW <- 3
   nItems <- 4
   nSamples <- 5000

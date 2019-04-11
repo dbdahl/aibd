@@ -2,12 +2,11 @@ context("sampling-matches-pmf")
 
 # skip("sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
-  skip_on_cran()
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
   # set.seed(234232)
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; samplingMethod="viaNeighborhoods2"; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; samplingMethod="viaNeighborhoods2"; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
   mass <- 1.0
   nItems <- 96  # Should be a multiple of 3
   nItems <- 3  # Should be a multiple of 3
@@ -37,7 +36,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, samplingMethod=samplingMethod, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
+    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
   freq <- table(sapply(samples, function(Z) aibd2:::featureAllocation2Id(Z)))
@@ -83,49 +82,57 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
 # definition or MCMC.
 
 test_that("Sampling from IBP using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
-  engine("scala", TRUE)
+  engine("scala", constructiveMethod=TRUE, posteriorSimulation=FALSE)
 })
 
 test_that("Sampling from AIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
-  engine("scala", TRUE, distr = "AIBD")
+  engine("scala", constructiveMethod=TRUE, posteriorSimulation=FALSE, distr="AIBD")
 })
 
 test_that("Sampling from MAIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
-  engine("scala", TRUE, distr = "MAIBD")
+  requireLevel(3)
+  engine("scala", constructiveMethod=TRUE, posteriorSimulation=FALSE, distr="MAIBD")
 })
 
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
-  engine("scala", FALSE)
+  requireLevel(2)
+  engine("scala", constructiveMethod=FALSE)
 })
 
-test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", nPerShuffle=0, FALSE)
+test_that("Sampling from LGLFM with IBP prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  requireLevel(2)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE)
 })
 
-test_that("Sampling from LGLFM with AIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", nPerShuffle=0, FALSE, "AIBD")
+test_that("Sampling from LGLFM with IBP prior and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE)
 })
 
-test_that("Sampling from LGLFM with AIBD prior (with random permutation) using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", nPerShuffle=100, FALSE, "AIBD")
+test_that("Sampling from LGLFM with AIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  requireLevel(2)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="AIBD")
 })
 
-test_that("Sampling from LGLFM with MAIBD prior using neighborhood sampler WITH FAST IMPLEMENTATION in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", nPerShuffle=0, FALSE, "MAIBD")
+test_that("Sampling from LGLFM with AIBD prior (with random permutation) in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD")
 })
 
-test_that("Sampling from LGLFM with IBP prior using neighborhood sampler WITH FAST IMPLEMENTATION and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
-  engine("scala", FALSE, TRUE, "viaNeighborhoods2", nPerShuffle=0, TRUE)
+test_that("Sampling from LGLFM with MAIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  requireLevel(3)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="MAIBD")
 })
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
-  engine("R", TRUE)
+  requireLevel(3)
+  engine("R", constructiveMethod=TRUE)
 })
 
 test_that("Sampling from IBP using MCMC (from R) gives a distribution consistent with the pmf.", {
-  engine("R", FALSE)
+  requireLevel(3)
+  engine("R", constructiveMethod=FALSE)
 })
 
-#test_that("Sampling from LGLFM with IBP prior using MCMC (from R) gives a distribution consistent with the posterior.", {
-#  engine("R", FALSE, TRUE)
-#})
+test_that("Sampling from LGLFM with IBP prior using MCMC (from R) gives a distribution consistent with the posterior.", {
+  skip("This test is known to fail.")
+  engine("R", constructiveMethod=FALSE, TRUE)
+})

@@ -32,10 +32,6 @@
 #'   of new features is less than the maximum posterior probability (among the
 #'   previous number of new features) dividided by
 #'   \code{newFeaturesTruncationDivisior}.
-#' @param samplingMethod The string \code{"independence"} or
-#'   \code{"pseudoGibbs"} indicating whether posterior simuluation should be
-#'   based on independing sampling from the prior or from the pseudo Gibbs
-#'   algorithm of Griffiths and Ghahramani (2011).
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
@@ -72,7 +68,7 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(samples$featureAllocation), Ztruth %*% t(Ztruth))
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, samplingMethod="viaNeighborhoods2", implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="R", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -99,49 +95,23 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
-    if ( samplingMethod == "viaNeighborhoods2" ) {
-      dist <- featureAllocationDistributionToReference(distribution)
-      storage.mode(featureAllocation) <- "double"
-      width <- as.integer( if ( verbose ) options()$width-2L else 0L )
-      massPriorShape <- as.double(massPriorShape[1])
-      massPriorRate <- as.double(massPriorRate[1])
-      nPerShuffle <- as.integer(nPerShuffle[1])
-      maxStandardDeviationX <- as.double(maxStandardDeviationX[1])
-      maxStandardDeviationW <- as.double(maxStandardDeviationW[1])
-      sdProposedStandardDeviationX <- as.double(sdProposedStandardDeviationX[1])
-      sdProposedStandardDeviationW <- as.double(sdProposedStandardDeviationW[1])
-      corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
-      rankOneUpdates <- as.logical(rankOneUpdates[1])
-      lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-      ref <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
-      Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
-      parameters <- as.data.frame(ref$"_2"())
-      names(parameters) <- c("mass","standardDeviationX","standardDeviationW")
-      list(featureAllocation=Zs, parameters=parameters)
-    } else {
-      stop("This has been disabled and needs to be removed.")
-      if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for this sampling method.")
-      dist <- s$IndianBuffetProcess(distribution$mass, distribution$nItems)
-      fa <- scalaPush(featureAllocation,"featureAllocation",s)
-      logLike <- if ( D == 0 ) {
-        s ^ '(fa: FeatureAllocation[Null]) => 0.0'
-      } else {
-        s(X, precisionX, precisionW, parallel) ^ '
-          (fa: FeatureAllocation[Null]) => LinearGaussianSamplingModel(X).logLikelihood(fa, precisionX, precisionW, parallel)
-        '
-      }
-      newZs <- if ( samplingMethod == "pseudoGibbs" ) {
-        s$MCMCSamplers.updateFeatureAllocationGibbsWithLikelihood(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-      } else if ( samplingMethod == "viaNeighborhoods" ) {
-        s$MCMCSamplers.updateFeatureAllocationViaNeighborhoods(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-      } else if ( samplingMethod == "bert" ) {
-        s$MCMCSamplers.updateFeatureAllocationBert(fa, dist, logLike, nSamples, thin, s$rdg(), newFeaturesTruncationDivisor)
-      } else if ( samplingMethod == "independence" ) {
-        s$MCMCSamplers.updateFeatureAllocationIndependence(fa, dist, logLike, nSamples, thin, s$rdg())
-      } else if ( samplingMethod == "gibbs" ) {
-        s$MCMCSamplers.updateFeatureAllocationGibbs(fa, dist, logLike, nSamples, thin, s$rdg(), parallel)
-      } else stop("Unrecgonized value for 'samplingMethod'.")
-      scalaPull(newZs,"featureAllocation")
-    }
+    dist <- featureAllocationDistributionToReference(distribution)
+    storage.mode(featureAllocation) <- "double"
+    width <- as.integer( if ( verbose ) options()$width-2L else 0L )
+    massPriorShape <- as.double(massPriorShape[1])
+    massPriorRate <- as.double(massPriorRate[1])
+    nPerShuffle <- as.integer(nPerShuffle[1])
+    maxStandardDeviationX <- as.double(maxStandardDeviationX[1])
+    maxStandardDeviationW <- as.double(maxStandardDeviationW[1])
+    sdProposedStandardDeviationX <- as.double(sdProposedStandardDeviationX[1])
+    sdProposedStandardDeviationW <- as.double(sdProposedStandardDeviationW[1])
+    corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
+    rankOneUpdates <- as.logical(rankOneUpdates[1])
+    lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
+    ref <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+    Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
+    parameters <- as.data.frame(ref$"_2"())
+    names(parameters) <- c("mass","standardDeviationX","standardDeviationW")
+    list(featureAllocation=Zs, parameters=parameters)
   } else stop("Unsupported 'implementation' argument.")
 }

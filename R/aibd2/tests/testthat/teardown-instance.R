@@ -1,1 +1,1 @@
-cat("Stopping tests.  **************************\n")
+cat("************ Stopping tests. ************\n")
