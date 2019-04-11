@@ -1,6 +1,6 @@
-context("ibp-sampling-matches-pmf")
+context("sampling-matches-pmf")
 
-# skip("ibp-sampling-matches-pmf")
+# skip("sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, samplingMethod="viaNeighborhoods2", nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
   skip_on_cran()
