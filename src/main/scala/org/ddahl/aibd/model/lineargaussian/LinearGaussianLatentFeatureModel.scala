@@ -2,26 +2,40 @@ package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.matrix._
 import org.apache.commons.math3.linear.CholeskyDecomposition
-import org.apache.commons.math3.util.FastMath.log
+import org.apache.commons.math3.util.FastMath.{sqrt, log}
 
 class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matrix, val M: Matrix, val d: Double) {
   val K = if ( Z == null ) 0 else Z.cols
 }
 
-class LinearGaussianLatentFeatureModel protected (val X: Matrix, val precisionX: Double, val precisionW: Double) {
+class LinearGaussianLatentFeatureModel private (val X: Matrix, val Xt: Matrix, val XtX: Matrix, val traceXtX: Double, val precisionX: Double, val precisionW: Double) {
 
   val N = X.rows
   val D = X.cols
 
-  private val Xt = X.t
-  private val XtX = X.t * X
-  private val traceXtX = trace(XtX)
+  def standardDeviationX = 1/sqrt(precisionX)
+  def standardDeviationW = 1/sqrt(precisionW)
+  def varianceX = 1/precisionX
+  def varianceW = 1/precisionW
+
   private val Dhalf = D / 2.0
   private val const = -N * Dhalf * log(2 * math.Pi) - precisionX / 2 * traceXtX
   private val DhalfTimesLogPrecisionX = Dhalf * log(precisionX)
   private val DhalfTimesLogPrecisionW = Dhalf * log(precisionW)
   private val halfPrecisionX = precisionX / 2
   private val ratioOfPrecisions = precisionW / precisionX
+
+  def updatePrecisions(precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, Xt, XtX, traceXtX, precisionX, precisionW)
+  }
+
+  def updateStandardDeviations(standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, Xt, XtX, traceXtX, 1/(standardDeviationX*standardDeviationX), 1/(standardDeviationW*standardDeviationW))
+  }
+
+  def updateVariances(varianceX: Double, varianceW: Double): LinearGaussianLatentFeatureModel = {
+    new LinearGaussianLatentFeatureModel(X, Xt, XtX, traceXtX, 1/varianceX, 1/varianceW)
+  }
 
   def logLikelihood(lc: LikelihoodComponents): Double = {
     if (lc.K == 0) {
@@ -111,17 +125,13 @@ class LinearGaussianLatentFeatureModel protected (val X: Matrix, val precisionX:
 
 }
 
-class DisabledLinearGaussianLatentFeatureModel(override val N: Int) extends LinearGaussianLatentFeatureModel(wrap(Array(Array(Double.NaN))),1,1) {
-
-  override val D = 0
-  override def logLikelihood(lc: LikelihoodComponents): Double = 0.0
-
-}
-
 object LinearGaussianLatentFeatureModel {
 
   def usingPrecisions(X: Matrix, precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
-    new LinearGaussianLatentFeatureModel(X, precisionX, precisionW)
+    val Xt = X.t
+    val XtX = X.t * X
+    val traceXtX = trace(XtX)
+    new LinearGaussianLatentFeatureModel(X, Xt, XtX, traceXtX, precisionX, precisionW)
   }
 
   def usingStandardDeviations(X: Matrix, standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {
@@ -135,7 +145,15 @@ object LinearGaussianLatentFeatureModel {
   def usingPrecisions(X: Array[Array[Double]], precisionX: Double, precisionW: Double): LinearGaussianLatentFeatureModel = {
     val m = wrap(X)
     if ( m != null ) usingPrecisions(m, precisionX, precisionW)
-    else new DisabledLinearGaussianLatentFeatureModel(X.length)
+    else {
+      val N2 = X.length
+      val X2 = wrap(Array(Array(Double.NaN)))
+      new LinearGaussianLatentFeatureModel(X2, null, null, Double.NaN, Double.NaN, Double.NaN) {
+        override val N = N2
+        override val D = 0
+        override def logLikelihood(lc: LikelihoodComponents): Double = 0.0
+      }
+    }
   }
 
   def usingStandardDeviations(X: Array[Array[Double]], standardDeviationX: Double, standardDeviationW: Double): LinearGaussianLatentFeatureModel = {

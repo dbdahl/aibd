@@ -1,8 +1,8 @@
 set.seed(74927)
 library(aibd2)
 
-# Sys.setenv(nItems="20")
-# Sys.setenv(nSamples="100")
+Sys.setenv(nItems="20")
+Sys.setenv(nSamples="100")
 # Sys.setenv(stamp="trashmeout")
 
 stamp <- Sys.getenv("stamp")
@@ -43,7 +43,12 @@ W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
 
-samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+plot(density(sapply(samplesAIBD$featureAllocation,ncol)))
+plot(density(samplesAIBD$parameters$mass))
+plot(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardDeviationW)
+cor(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardDeviationW)
+apply(samplesAIBD$parameters,2,summary)
 
 samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
 

@@ -3,21 +3,24 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.aibd.{MCMCAcceptanceMonitor1, TimeMonitor}
 import org.ddahl.aibd.Utils.harmonicNumber
 import org.apache.commons.math3.random.RandomDataGenerator
-import org.apache.commons.math3.util.FastMath.log
+import org.apache.commons.math3.util.FastMath.{sqrt, log}
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
 
-  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Double]) = {
+  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Array[Double]]) = {
     var stateFA = featureAllocation
     var stateFAPrior = featureAllocationPrior
+    var stateLGLFM = lglfm
     val monitorFA = MCMCAcceptanceMonitor1()
     val monitorFAMass = MCMCAcceptanceMonitor1()
     val monitorFAPermutation = MCMCAcceptanceMonitor1()
+    val monitorLGLFM = MCMCAcceptanceMonitor1()
     val tmAll = TimeMonitor()
     val tmAllocation = TimeMonitor()
     val tmMass = TimeMonitor()
     val tmPermutation = TimeMonitor()
+    val tmLGLFM = TimeMonitor()
     val nIterations = thin*nSamples
     val (width,rate) = if ( progressWidth <= 0 ) (0,1)
     else {
@@ -26,11 +29,11 @@ object PosteriorSimulation {
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
     val resultFA = Array.ofDim[FeatureAllocation](nSamples)
-    val resultMass = Array.ofDim[Double](nSamples)
+    val resultOthers = Array.ofDim[Double](nSamples,3)
     var b = 1
-    tmAll {
-      while (b <= nIterations) {
-        stateFA = monitorFA(tmAllocation(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, lglfm, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
+    while (b <= nIterations) {
+      tmAll {
+        stateFA = monitorFA(tmAllocation(updateFeatureAllocationViaNeighborhoods(stateFA, stateFAPrior, stateLGLFM, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
         stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
             if ( nPerShuffle < 2 ) faPrior
@@ -45,29 +48,37 @@ object PosteriorSimulation {
           case _ =>
             stateFAPrior
         }
+        stateLGLFM = if ( ( sdProposedStandardDeviationX <= 0.0 ) || ( sdProposedStandardDeviationW <= 0.0 ) ) stateLGLFM
+        else monitorLGLFM(tmLGLFM(updateSamplingModel(stateFA, stateFAPrior, stateLGLFM, rdg, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW)))
         if (b % thin == 0) {
           val index = (b-1)/thin
           resultFA(index) = stateFA
-          resultMass(index) = stateFAPrior match {
+          resultOthers(index)(0) = stateFAPrior match {
             case faPrior: FeatureAllocationDistribution with HasMass[_] => faPrior.mass
             case _ => 0.0
           }
+          resultOthers(index)(1) = stateLGLFM.standardDeviationX
+          resultOthers(index)(2) = stateLGLFM.standardDeviationW
           if ( ( width > 0 ) && ( index % rate == 0 ) ) print("*")
         }
-        b += 1
       }
+      b += 1
     }
     if ( width > 0 ) {
       println("]")
       println("Parallel: " + parallel)
       println("Rank-one updates: " + rankOneUpdates)
-      println("Main lapse time: " + tmAll)
-      println("Allocation lapse time: " + tmAllocation)
-      println("Permutation lapse time: " + tmPermutation)
-      println("Mass lapse time: " + tmMass)
-      println("Permutation acceptance rate: " + monitorFAPermutation.rate)
+      println("Lapse times:")
+      println("  Total: " + tmAll)
+      println("  Allocation: " + tmAllocation)
+      println("  Permutation: " + tmPermutation)
+      println("  Mass: " + tmMass)
+      println("  Sampling model: " + tmLGLFM)
+      println("Acceptance rates:")
+      println("  Permutation: " + monitorFAPermutation.rate)
+      println("  Sampling model: " + monitorLGLFM.rate)
     }
-    (resultFA, resultMass)
+    (resultFA, resultOthers)
   }
 
   def updatePermutation(featureAllocation: FeatureAllocation, aibdPrior: AttractionIndianBuffetDistribution, rdg: RandomDataGenerator, nPerShuffle: Int): (AttractionIndianBuffetDistribution, Int, Int) = {
@@ -81,6 +92,18 @@ object PosteriorSimulation {
     val posteriorShape = priorShape + featureAllocation.nFeatures
     val posteriorRate = priorRate + harmonicNumber(featureAllocation.nItems)
     (hasMassPrior.updateMass(rdg.nextGamma(posteriorShape, 1/posteriorRate)), 1, 1)
+  }
+
+  def updateSamplingModel(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double): (LinearGaussianLatentFeatureModel, Int, Int) = {
+    val m1 = lglfm.standardDeviationX
+    val m2 = lglfm.standardDeviationW
+    val proposedStandardDeviationX = rdg.nextGaussian(m1, sdProposedStandardDeviationX)
+    if ( ( proposedStandardDeviationX < 0 ) || ( proposedStandardDeviationX > maxStandardDeviationX ) ) return (lglfm,0,1)
+    val proposedStandardDeviationW = rdg.nextGaussian(m2 + (sdProposedStandardDeviationW/sdProposedStandardDeviationX) * corProposedSdXSdW * (proposedStandardDeviationX - m1), sqrt((1 - corProposedSdXSdW*corProposedSdXSdW)*sdProposedStandardDeviationW*sdProposedStandardDeviationW))
+    if ( ( proposedStandardDeviationW < 0 ) || ( proposedStandardDeviationW > maxStandardDeviationW ) ) return (lglfm,0,1)
+    val proposedLGLFM = lglfm.updateStandardDeviations(proposedStandardDeviationX, proposedStandardDeviationW)
+    val diff = proposedLGLFM.logLikelihood(featureAllocation) - lglfm.logLikelihood(featureAllocation)
+    if ( ( diff > 0 ) || ( log(rdg.nextUniform(0,1)) < diff ) ) (proposedLGLFM,1,1) else (lglfm,0,1)
   }
 
   def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {

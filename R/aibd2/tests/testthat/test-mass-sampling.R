@@ -22,7 +22,7 @@ test_that("Posterior mass simulation yields confidence intervals compatible with
     e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
     X <- Z %*% W + e
     samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, massPriorShape=shape, massPriorRate=rate, nPerShuffle=nItems, samplingMethod="viaNeighborhoods2", implementation="scala", nSamples=nSamples, parallel=FALSE, rankOneUpdates=FALSE, verbose=FALSE)
-    contains[b] <- prod(quantile(samplesIBP$mass,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - mass) < 0
+    contains[b] <- prod(quantile(samplesIBP$parameters$mass,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - mass) < 0
     # setTxtProgressBar(pb,b)
   }
   expect_gte(t.test(contains, mu=nominalCoverage)$p.value, 0.01)
