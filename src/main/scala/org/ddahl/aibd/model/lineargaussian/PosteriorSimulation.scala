@@ -25,7 +25,7 @@ object PosteriorSimulation {
     val (width,rate) = if ( progressWidth <= 0 ) (0,1)
     else {
       val r = nSamples / progressWidth
-      if ( r == 0 ) (nSamples, 1) else (progressWidth, r)
+      if ( r == 0 ) (nSamples, 1) else (nSamples / r, r)
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
     val resultFA = Array.ofDim[FeatureAllocation](nSamples)
