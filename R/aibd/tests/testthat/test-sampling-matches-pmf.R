@@ -39,7 +39,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
-  freq <- table(sapply(samples, function(Z) aibd2:::featureAllocation2Id(Z)))
+  freq <- table(sapply(samples, function(Z) aibd:::featureAllocation2Id(Z)))
   sampled <- as.data.frame(freq)
   names(sampled) <- c("names","freq")
   maxNFeatures <- 9
@@ -52,7 +52,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     exp(logProbabilityFeatureAllocation(Zall, dist2, implementation=implementation))
   }
   probs <- probs/sum(probs)
-  names <- sapply(Zall, function(Z) aibd2:::featureAllocation2Id(Z))
+  names <- sapply(Zall, function(Z) aibd:::featureAllocation2Id(Z))
   truth <- data.frame(names,probs)
   truth <- truth[nSamples*truth$probs>=1,]
   both <- merge(truth,sampled)

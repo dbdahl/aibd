@@ -1,4 +1,4 @@
 library(testthat)
-library(aibd2)
+library(aibd)
 
-test_check("aibd2")
+test_check("aibd")

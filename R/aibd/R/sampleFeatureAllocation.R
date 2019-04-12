@@ -22,7 +22,7 @@
 #' system.time(samples <- sampleFeatureAllocation(1000, d2))
 #'
 #' \dontshow{
-#' rscala::scalaDisconnect(aibd2:::s)
+#' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
 sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala") {

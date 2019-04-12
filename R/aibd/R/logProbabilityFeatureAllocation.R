@@ -37,7 +37,7 @@
 #' all.equal(logProbabilityFeatureAllocation(Z3, d2), logProbabilityFeatureAllocation(Z3, d2,"R"))
 #'
 #' \dontshow{
-#' rscala::scalaDisconnect(aibd2:::s)
+#' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
 logProbabilityFeatureAllocation <- function(featureAllocation, distribution, implementation="scala") {

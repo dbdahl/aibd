@@ -21,7 +21,7 @@
 #' epam <- expectedPairwiseAllocationMatrix(d2,3)
 #'
 #' \dontshow{
-#' rscala::scalaDisconnect(aibd2:::s)
+#' rscala::scalaDisconnect(aibd:::s)
 #' }
 expectedPairwiseAllocationMatrix.aibdFADistribution <- function(x, maxNFeatures, ...) {
   dist <- featureAllocationDistributionToReference(x)

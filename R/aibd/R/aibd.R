@@ -21,7 +21,7 @@
 #' a1 <- aibd(1,seq_along(states),similarity)
 #'
 #' \dontshow{
-#' rscala::scalaDisconnect(aibd2:::s)
+#' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
 aibd <- function(mass, permutation, similarity) {

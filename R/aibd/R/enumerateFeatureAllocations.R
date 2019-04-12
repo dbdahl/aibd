@@ -35,7 +35,7 @@
 #' all.equal(probs1,probs1r)
 #'
 #' \dontshow{
-#' rscala::scalaDisconnect(aibd2:::s)
+#' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
