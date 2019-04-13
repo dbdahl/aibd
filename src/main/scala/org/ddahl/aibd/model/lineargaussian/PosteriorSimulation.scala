@@ -27,7 +27,7 @@ object PosteriorSimulation {
       val r = nSamples / progressWidth
       if ( r == 0 ) (nSamples, 1) else (nSamples / r, r)
     }
-    if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)))
+    if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)) + "   ")
     val resultFA = Array.ofDim[FeatureAllocation](nSamples)
     val resultOthers = Array.ofDim[Double](nSamples,3)
     var b = 1
@@ -59,13 +59,19 @@ object PosteriorSimulation {
           }
           resultOthers(index)(1) = stateLGLFM.standardDeviationX
           resultOthers(index)(2) = stateLGLFM.standardDeviationW
-          if ( ( width > 0 ) && ( index % rate == 0 ) ) print("*")
+          if ( ( width > 0 ) && ( index % rate == 0 ) ) {
+            print("\b"*3)
+            print("*")
+            print(" ")
+            print("%2d".format(stateFA.nFeatures))
+          }
         }
       }
       b += 1
     }
     if ( width > 0 ) {
-      println("]")
+      print("\b"*3)
+      println("]  ")
       println("Parallel: " + parallel)
       println("Rank-one updates: " + rankOneUpdates)
       println("Lapse times:")
