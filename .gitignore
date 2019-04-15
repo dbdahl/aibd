@@ -1,5 +1,4 @@
 .bloop
-/.vscode
 /.metals
 /R/aibd/.Rproj.user
 /R/aibd_*.tar.gz
