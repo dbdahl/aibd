@@ -112,16 +112,36 @@ object PosteriorSimulation {
     if ( ( diff > 0 ) || ( log(rdg.nextUniform(0,1)) < diff ) ) (proposedLGLFM,1,1) else (lglfm,0,1)
   }
 
+  private def logPosterior0(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
+    featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(fa)
+  }
+
+  private def logPosterior1(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): (FeatureAllocation, Double) = {
+    (fa, featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(fa) )
+  }
+
+  private def logPosterior2(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
+    (fa, featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(lglfm.allocateFeaturesFor(i,lc,fa.matrix(i))) )
+  }
+
+  def updateFeatureAllocationOfSingletonsOf(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, logNewFeaturesTruncationDivisor: Double) = {
+    @scala.annotation.tailrec
+    def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
+      val newCumState = FeatureAllocation(weights.head._1).add(i)
+      val newLogWeight = logPosterior1(i, newCumState, featureAllocationPrior, lglfm)._2
+      val expanded = (newCumState, newLogWeight) :: weights
+      if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
+      else engine(expanded, if (newLogWeight > max) newLogWeight else max)
+    }
+    val existing = featureAllocation.partitionBySingletonsOf(i)._2
+    val weights = engine(logPosterior1(i, existing, featureAllocationPrior, lglfm) :: Nil, Double.NegativeInfinity).toIndexedSeq
+    rdg.nextItem(weights, onLogScale = true)._1
+  }
+
   def updateFeatureAllocationViaNeighborhoods(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
-    def logPosterior1(i: Int, fa: FeatureAllocation): (FeatureAllocation, Double) = {
-      (fa, featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(fa) )
-    }
-    def logPosterior2(i: Int, fa: FeatureAllocation, lc: LikelihoodComponents): (FeatureAllocation, Double) = {
-      (fa, featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(lglfm.allocateFeaturesFor(i,lc,fa.matrix(i))) )
-    }
     for (i <- 0 until nItems) {
       val proposals = state.enumerateFor(i)
       val logWeights = {
@@ -130,26 +150,39 @@ object PosteriorSimulation {
           else {
             val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
             val lc2 = lglfm.deallocateFeaturesFor(i, lc1)
-            if (parallel) proposals.par.map(logPosterior2(i, _, lc2)).toArray else proposals.map(logPosterior2(i, _, lc2))
+            if (parallel) proposals.par.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2)).toArray else proposals.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2))
           }
         } else {
-          if (parallel) proposals.par.map(logPosterior1(i, _)).toArray else proposals.map(logPosterior1(i, _))
+          if (parallel) proposals.par.map(logPosterior1(i, _, featureAllocationPrior, lglfm)).toArray else proposals.map(logPosterior1(i, _, featureAllocationPrior, lglfm))
         }
       }
       state = rdg.nextItem(logWeights, onLogScale = true)._1
-      state = state.partitionBySingletonsOf(i)._2
-      @scala.annotation.tailrec
-      def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
-        val newCumState = FeatureAllocation(weights.head._1).add(i)
-        val newLogWeight = logPosterior1(i,newCumState)._2
-        val expanded = (newCumState, newLogWeight) :: weights
-        if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded
-        else engine(expanded, if (newLogWeight > max) newLogWeight else max)
-      }
-      val weights = engine(logPosterior1(i,state) :: Nil, Double.NegativeInfinity).toIndexedSeq
-      state = rdg.nextItem(weights, onLogScale = true)._1
+      state = updateFeatureAllocationOfSingletonsOf(i, state, featureAllocationPrior, lglfm, rdg, logNewFeaturesTruncationDivisor)
     }
     (state, 1, 1)
+  }
+
+  def updateFeatureAllocationSimply(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, newFeaturesTruncationDivisor: Double): (FeatureAllocation, Int, Int) = {
+    throw new RuntimeException("This method does not work!")
+    val nItems = lglfm.N
+    val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
+    var state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    for (i <- 0 until nItems) {
+      if ( state.nFeatures > 0 ) {
+        val j = rdg.nextInt(0,state.nFeatures-1)
+        val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
+        val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+        attempts += 1
+        if ( ( diff > 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+          accepts += 1
+          state = proposal
+        }
+      }
+      state = updateFeatureAllocationOfSingletonsOf(i, state, featureAllocationPrior, lglfm, rdg, logNewFeaturesTruncationDivisor)
+    }
+    (state, accepts, attempts)
   }
 
 }

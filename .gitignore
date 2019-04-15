@@ -1,3 +1,6 @@
+.bloop
+/.vscode
+/.metals
 /R/aibd/.Rproj.user
 /R/aibd_*.tar.gz
 /R/aibd/inst/java/scala-*/*.jar
