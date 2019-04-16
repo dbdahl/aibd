@@ -155,7 +155,7 @@ sealed trait FeatureAllocation {
     new FeatureAllocationWithArrayAndSizes(nItems, newFeatures, newSizes)
   }
 
-  def add(i: Int, j: Int): FeatureAllocation = {
+  def addOld(i: Int, j: Int): FeatureAllocation = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( features(j)(i) ) this
@@ -173,6 +173,14 @@ sealed trait FeatureAllocation {
         new FeatureAllocationWithArrayAndSizes(nItems, newFeatures, newSizes)
       }
     }
+  }
+
+  def add(i: Int, j: Int): FeatureAllocation = {
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
+    val newMatrix = matrix.map(_.clone)
+    newMatrix(i)(j) = 1.0
+    new FeatureAllocationWithMatrix(newMatrix)
   }
 
   def mutateAdd(i: Int, j: Int): Unit = {
@@ -197,7 +205,7 @@ sealed trait FeatureAllocation {
     }
   }
 
-  def remove(i: Int, j: Int): FeatureAllocation = {
+  def removeOld(i: Int, j: Int): FeatureAllocation = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( ! features(j)(i) ) this
@@ -215,6 +223,27 @@ sealed trait FeatureAllocation {
         new FeatureAllocationWithArrayAndSizes(nItems, newFeatures, newSizes)
       }
     }
+  }
+
+  def remove(i: Int, j: Int): FeatureAllocation = {
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
+    val newMatrix = matrix.map(_.clone)
+    newMatrix(i)(j) = 0.0
+    new FeatureAllocationWithMatrix(newMatrix)
+  }
+
+  def removeRow(i: Int): FeatureAllocation = {
+    val newMatrix = matrix.map(_.clone)
+    newMatrix(i) = new Array[Double](nFeatures)
+    val counts = (0 until nFeatures).map { j =>
+      (0 until nItems).count{ i => newMatrix(i)(j) == 1.0 }
+    }
+    val thoseToKeep = counts.zipWithIndex.partition { case (count,index) => count != 0 }._1.map(_._2)
+    val newNewMatrix = Array.tabulate(nItems, thoseToKeep.sum) { case (i,j) =>
+      newMatrix(i)(thoseToKeep(j))
+    }
+    new FeatureAllocationWithMatrix(newNewMatrix)
   }
 
   def remove(i: Int): FeatureAllocation = remove(Array(i), false)

@@ -31,6 +31,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
   X <- Z %*% W + e
   nSamples <- 10000
+  nSamples <- 1
   nSamples <- 1000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   samples <- if ( constructiveMethod ) {

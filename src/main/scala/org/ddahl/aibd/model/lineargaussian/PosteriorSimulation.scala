@@ -272,26 +272,64 @@ object PosteriorSimulation {
     (state, accepts, attempts)
   }
 
+  def updateFeatureAllocationOfExistingWholeRowBroken(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    var state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    val p = 0.5
+    val debug = false
+    if ( debug ) println("i: "+i)
+    if ( debug ) println("State:\n"+state)
+    repeat(20) {
+      if ( debug ) println("*")
+      var proposal = FeatureAllocation(state.matrix.map(_.clone))
+      for ( j <- 0 until state.nFeatures; if ! state.isSingleton(i,j) ) {
+        proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
+      }
+      if ( debug ) println("State:\n"+state)
+      if ( debug ) println("Proposal:\n"+proposal)
+      val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+      if ( debug ) println("Diff: "+diff)
+      attempts += 1
+      if ( rdg.nextUniform(0.0,1.0) < math.exp(diff) ) {
+        if ( debug ) println("Accept")
+        accepts += 1
+        state = proposal
+      }
+    }
+    (state, accepts, attempts)
+  }
+
   def updateFeatureAllocationOfExistingWholeRow(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     var state = featureAllocation
     var accepts = 0
     var attempts = 0
     val p = 0.5
-    repeat(5) {
-    var proposal = state
-    for ( j <- 0 until state.nFeatures; if ! state.isSingleton(i,j) ) {
-      proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
-    }
-    val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
-    attempts += 1
-    if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
-      accepts += 1
-      state = proposal
-    }
+    val debug = false
+    if ( debug ) println("i: "+i)
+    if ( debug ) println("State:\n"+state)
+    repeat(20) {
+      if ( debug ) println("*")
+      var proposal = state.removeRow(i)
+      for ( j <- 0 until proposal.nFeatures ) {
+        proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
+      }
+      repeat(rdg.nextInt(0,6)) {
+        proposal = proposal.add(i)
+      }
+      if ( debug ) println("State:\n"+state)
+      if ( debug ) println("Proposal:\n"+proposal)
+      val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+      if ( debug ) println("Diff: "+diff)
+      attempts += 1
+      if ( rdg.nextUniform(0.0,1.0) < math.exp(diff) ) {
+        if ( debug ) println("Accept")
+        accepts += 1
+        state = proposal
+      }
     }
     (state, accepts, attempts)
   }
-
 
 }
 
