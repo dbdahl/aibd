@@ -166,7 +166,7 @@ sealed trait FeatureAllocation {
       newSizes(j) += 1
       if ( matrixIsCached ) {
         val newMatrix = matrix.clone  // Shallow copy
-        newMatrix(i) = new Array[Double](nFeatures)
+        newMatrix(i) = matrix(i).clone
         newMatrix(i)(j) = 1.0
         new FeatureAllocationWithAll(newMatrix, newFeatures, newSizes)
       } else {
@@ -208,7 +208,7 @@ sealed trait FeatureAllocation {
       newSizes(j) -= 1
       if ( matrixIsCached ) {
         val newMatrix = matrix.clone  // Shallow copy
-        newMatrix(i) = new Array[Double](nFeatures)
+        newMatrix(i) = matrix(i).clone
         newMatrix(i)(j) = 0.0
         new FeatureAllocationWithAll(newMatrix, newFeatures, newSizes)
       } else {
@@ -296,11 +296,17 @@ sealed trait FeatureAllocation {
     result
   }
 
+  def isSingleton(i: Int, j: Int): Boolean = {
+    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
+    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
+    ( sizes(j) == 1 ) && features(j)(i)
+  }
+
   def partitionBySingletonsOf(i: Int): (FeatureAllocation, FeatureAllocation) = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     var sum = 0
     val sel = Array.tabulate(nFeatures) { j =>
-      val result = ( sizes(j) == 1 ) && features(j)(i)
+      val result = isSingleton(i,j)
       if ( result ) sum += 1
       result
     }
