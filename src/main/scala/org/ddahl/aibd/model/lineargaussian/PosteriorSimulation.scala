@@ -121,7 +121,7 @@ object PosteriorSimulation {
     var attempts = 0
     for (i <- 0 until nItems) {
       val (stateNew, n, d) = updateFeatureAllocationOfExistingByEnumeration(i, state, featureAllocationPrior, lglfm, rdg, parallel, rankOneUpdates)
-      // val (stateNew, n, d) = updateFeatureAllocationOfExistingSimply(i, state, featureAllocationPrior, lglfm, rdg)
+      // val (stateNew, n, d) = updateFeatureAllocationOfExistingWholeRow(i, state, featureAllocationPrior, lglfm, rdg)
       state = stateNew
       accepts += n
       attempts += d
@@ -173,20 +173,36 @@ object PosteriorSimulation {
     (rdg.nextItem(logWeights, onLogScale = true)._1, 1, 1)
   }
 
-  def updateFeatureAllocationOfExistingSimply(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingSimplyOff(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    println("---Start---")
+    println("i: "+i)
+    println("State:")
+    println(featureAllocation)
     var (singletons, state) = featureAllocation.partitionBySingletonsOf(i)
+    println("Singletons:")
+    println(singletons)
+    println("Existing:")
+    println(state)
     var accepts = 0
     var attempts = 0
     repeat(state.nFeatures) {
       val j = rdg.nextInt(0,state.nFeatures-1)
       val proposal = if ( rdg.nextUniform(0,1) < 0.5 ) {
-        if ( state.features(j).contains(i) ) state else state.add(i,j)
+        println("add: "+i+" "+j)
+        state.add(i,j)
       } else {
-        if ( state.features(j).contains(i) ) state.remove(i,j) else state
+        println("remove: "+i+" "+j)
+        state.remove(i,j)
       }
-      val diff = logPosterior0(i, proposal add singletons, featureAllocationPrior, lglfm) - logPosterior0(i, state add singletons, featureAllocationPrior, lglfm)
+      val fullProposal = proposal add singletons
+      val fullState = state add singletons
+      println("Full State:\n"+fullState)
+      println("Full Proposal:\n"+fullProposal)
+      fullProposal.check()
+      val diff = logPosterior0(i, fullProposal, featureAllocationPrior, lglfm) - logPosterior0(i, fullState, featureAllocationPrior, lglfm)
       attempts += 1
       if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+        println("Accept!")
         accepts += 1
         state = proposal
       }
@@ -210,7 +226,7 @@ object PosteriorSimulation {
     (state add singletons, accepts, attempts)
   }
 
-  def updateFeatureAllocationOfExistingSimply2(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingSimplyBroken(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     var state = featureAllocation
     var accepts = 0
     var attempts = 0
@@ -225,6 +241,57 @@ object PosteriorSimulation {
     }
     (state, accepts, attempts)
   }
+
+  def updateFeatureAllocationOfExistingSimplySwapBroken(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    if ( featureAllocation.partitionBySingletonsOf(i)._2.nFeatures < 2 ) return (featureAllocation,0,0)
+    var state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    repeat(10) {
+      val (j1, j2) = {
+        @scala.annotation.tailrec
+        def get(taken: Int): Int = {
+          val j = rdg.nextInt(0,state.nFeatures-1)
+          if ( ( j == taken ) || state.isSingleton(i,j) ) get(taken) else j
+        }
+        val j1 = get(-1)
+        (j1, get(j1))
+      }
+      val proposal = if ( state.features(j1).contains(i) == state.features(j2).contains(i) ) state
+      else {
+        if ( state.features(j1).contains(i) ) state.remove(i,j1).add(i,j2)
+        else state.remove(i,j2).add(i,j1)
+      }
+      val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+      attempts += 1
+      if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+        accepts += 1
+        state = proposal
+      }
+    }
+    (state, accepts, attempts)
+  }
+
+  def updateFeatureAllocationOfExistingWholeRow(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    var state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    val p = 0.5
+    repeat(5) {
+    var proposal = state
+    for ( j <- 0 until state.nFeatures; if ! state.isSingleton(i,j) ) {
+      proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
+    }
+    val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+    attempts += 1
+    if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+      accepts += 1
+      state = proposal
+    }
+    }
+    (state, accepts, attempts)
+  }
+
 
 }
 
