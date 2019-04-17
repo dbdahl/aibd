@@ -3,15 +3,15 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
 import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import org.ddahl.aibd.Utils.logFactorial
-import scala.collection.mutable.BitSet
+import scala.collection.immutable.BitSet
 
 sealed trait FeatureAllocation {
 
   val nItems: Int
   val nFeatures: Int
-  val sizes: Array[Int]
-  val features: Array[BitSet]
-  val featuresAsList: Array[List[Int]]
+  val sizes: Vector[Int]
+  val features: Vector[BitSet]
+  val featuresAsList: Vector[List[Int]]
   val matrix: Array[Array[Double]]
 
   protected var matrixIsCached: Boolean = false
@@ -36,8 +36,8 @@ sealed trait FeatureAllocation {
     assert(nFeatures == sizes.length)
     assert((nFeatures == 0) || (nFeatures == matrix(0).length))
     val that1 = FeatureAllocation(matrix)
-    val that2 = new FeatureAllocationWithFeatures(nItems, features.map(_.clone))
-    val that3 = new FeatureAllocationWithFeaturesAndSizes(nItems, features.map(_.clone), sizes.clone)
+    val that2 = new FeatureAllocationWithFeatures(nItems, features)
+    val that3 = new FeatureAllocationWithFeaturesAndSizes(nItems, features, sizes)
     val a = that1.matrix.flatten
     val b = that2.matrix.flatten
     val c = that3.matrix.flatten
@@ -55,26 +55,25 @@ sealed trait FeatureAllocation {
     aaa.zip(ccc).forall { x => x._1 == x._2 }
   }
 
-  protected def computeSizes: Array[Int] = features.map(_.size)
+  protected def computeSizes: Vector[Int] = features.map(_.size)
 
-  protected def computeFeatures: Array[BitSet] = {
+  protected def computeFeatures: Vector[BitSet] = {
     val result = Array.fill(nFeatures)(BitSet())
     var j = 0
     while (j < nFeatures) {
-      val bs = result(j)
+      var bs = result(j)
       var i = 0
       while (i < nItems) {
-        if (matrix(i)(j) != 0.0) bs.add(i)
+        if (matrix(i)(j) != 0.0) bs += i
         i += 1
       }
       result(j) = bs
-      bs.size
       j += 1
     }
-    result
+    result.toVector
   }
 
-  protected def computeFeaturesAsList: Array[List[Int]] = features.map(_.toList)
+  protected def computeFeaturesAsList: Vector[List[Int]] = features.map(_.toList)
 
   protected def computeMatrix: Array[Array[Double]] = {
     matrixIsCached = true
@@ -116,6 +115,10 @@ sealed trait FeatureAllocation {
     result
   }
 
+  def featuresAsListWithout(except: Iterable[Int]): Array[List[Int]] = {
+    features.toArray.map { f => ( f -- except ).toList }
+  }
+
   def featuresOf(i: Int): Array[Int] = {
     if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
     var list = List[Int]()
@@ -145,12 +148,12 @@ sealed trait FeatureAllocation {
       val newFeatures = new Array[BitSet](nFeatures + fa.nFeatures)
       Array.copy(   features, 0, newFeatures, 0,            nFeatures)
       Array.copy(fa.features, 0, newFeatures, nFeatures, fa.nFeatures)
-      new FeatureAllocationWithFeatures(nItems, newFeatures)
+      new FeatureAllocationWithFeatures(nItems, newFeatures.toVector)
     }
   }
 
   def add(i: Int): FeatureAllocation = {
-    val newFeatures = features :+ BitSet(i)  // Shallow copy
+    val newFeatures = features :+ BitSet(i)
     val newSizes = sizes :+ 1
     new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures, newSizes)
   }
@@ -160,40 +163,18 @@ sealed trait FeatureAllocation {
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( features(j)(i) ) this
     else {
-      val newFeatures = features.clone  // Shallow copy
-      val newSizes = sizes.clone
+      val newFeatures = features.toArray   // Shallow copy
+      val newSizes = sizes.toArray
       newFeatures(j) = newFeatures(j) + i  // Clones
       newSizes(j) += 1
       if ( matrixIsCached ) {
         val newMatrix = matrix.clone  // Shallow copy
         newMatrix(i) = matrix(i).clone
         newMatrix(i)(j) = 1.0
-        new FeatureAllocationWithAll(newMatrix, newFeatures, newSizes)
+        new FeatureAllocationWithAll(newMatrix, newFeatures.toVector, newSizes.toVector)
       } else {
-        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures, newSizes)
+        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures.toVector, newSizes.toVector)
       }
-    }
-  }
-
-  def mutateAdd(i: Int, j: Int): Unit = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
-    if ( ! features(j)(i) ) {
-      sizes(j) += 1
-      featuresAsList(j) = i :: featuresAsList(j)  // Could be lazy, so must be before next line!
-      features(j).add(i)                          // Mutates
-      if ( matrixIsCached ) matrix(i)(j) = 1.0
-    }
-  }
-
-  def mutateRemove(i: Int, j: Int): Unit = {
-    if ( ( i < 0 ) || ( i >= nItems ) ) throw new IllegalArgumentException("Item index "+i+" is out of bounds [0,"+(nItems-1)+"].")
-    if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
-    if ( features(j)(i) ) {
-      sizes(j) -= 1
-      featuresAsList(j) = featuresAsList(j).diff(List(i))  // Could be lazy, so must be before next line!
-      features(j).remove(i)                                // Mutates
-      if ( matrixIsCached ) matrix(i)(j) = 0.0
     }
   }
 
@@ -202,44 +183,40 @@ sealed trait FeatureAllocation {
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     if ( ! features(j)(i) ) this
     else {
-      val newFeatures = features.clone  // Shallow copy
-      val newSizes = sizes.clone
+      val newFeatures = features.toArray
+      val newSizes = sizes.toArray
       newFeatures(j) = newFeatures(j) - i  // Clones
       newSizes(j) -= 1
       if ( matrixIsCached ) {
         val newMatrix = matrix.clone  // Shallow copy
         newMatrix(i) = matrix(i).clone
         newMatrix(i)(j) = 0.0
-        new FeatureAllocationWithAll(newMatrix, newFeatures, newSizes)
+        new FeatureAllocationWithAll(newMatrix, newFeatures.toVector, newSizes.toVector)
       } else {
-        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures, newSizes)
+        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures.toVector, newSizes.toVector)
       }
     }
   }
 
-  def remove(i: Int): FeatureAllocation = remove(Array(i), false)
+  def remove(i: Int): FeatureAllocation = remove(Array(i))
 
-  def remove(i: Int, cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = remove(Array(i), cloneAndKeepEmptyFeatures)
-
-  def remove(i: Iterable[Int]): FeatureAllocation = remove(i, false)
-
-  def remove(i: Iterable[Int], cloneAndKeepEmptyFeatures: Boolean): FeatureAllocation = {
-    val newFeatures = if ( cloneAndKeepEmptyFeatures ) features.map(_.clone) else features.clone
-    val newSizes = sizes.clone
+  def remove(i: Iterable[Int]): FeatureAllocation = {
+    val newFeatures = features.toArray
+    val newSizes = sizes.toArray
     var nToDelete = 0
     for ( ii <- i ) {
       if ( ( ii < 0 ) || ( ii >= nItems ) ) throw new IllegalArgumentException("Item index "+ii+" is out of bounds [0"+(nItems-1)+"].")
       var j = 0
       while (j < nFeatures) {
         if ( ( newSizes(j) > 0 ) && features(j)(ii) ) {
-          if ( cloneAndKeepEmptyFeatures ) newFeatures(j).remove(ii) else newFeatures(j) = newFeatures(j) - ii
+          newFeatures(j) -= ii
           newSizes(j) -= 1
           if (newSizes(j) == 0) nToDelete += 1
         }
         j += 1
       }
     }
-    if ( ( !cloneAndKeepEmptyFeatures ) && ( nToDelete > 0 ) ) {
+    if ( nToDelete > 0 ) {
       val newFeatures2 = new Array[BitSet](nFeatures - nToDelete)
       val newSizes2 = new Array[Int](nFeatures - nToDelete)
       var j = 0
@@ -253,14 +230,14 @@ sealed trait FeatureAllocation {
         }
         j += 1
       }
-      new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures2, newSizes2)
+      new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures2.toVector, newSizes2.toVector)
     } else {
       if ( matrixIsCached ) {
-        val newMatrix = if ( cloneAndKeepEmptyFeatures ) matrix.map(_.clone) else matrix.clone
+        val newMatrix = matrix.clone
         i.foreach { newMatrix(_) = new Array[Double](nFeatures) }
-        new FeatureAllocationWithAll(newMatrix, newFeatures, newSizes)
+        new FeatureAllocationWithAll(newMatrix, newFeatures.toVector, newSizes.toVector)
       } else {
-        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures, newSizes)
+        new FeatureAllocationWithFeaturesAndSizes(nItems, newFeatures.toVector, newSizes.toVector)
       }
     }
   }
@@ -319,17 +296,17 @@ sealed trait FeatureAllocation {
     var jr = 0
     while ( j < nFeatures ) {
       if ( sel(j) ) {
-        leftArray(jl) = features(j).clone
+        leftArray(jl) = features(j)
         leftSizes(jl) = sizes(j)
         jl += 1
       } else {
-        rightArray(jr) = features(j).clone
+        rightArray(jr) = features(j)
         rightSizes(jr) = sizes(j)
         jr += 1
       }
       j += 1
     }
-    (new FeatureAllocationWithFeaturesAndSizes(nItems,leftArray,leftSizes), new FeatureAllocationWithFeaturesAndSizes(nItems,rightArray,rightSizes))
+    (new FeatureAllocationWithFeaturesAndSizes(nItems,leftArray.toVector,leftSizes.toVector), new FeatureAllocationWithFeaturesAndSizes(nItems,rightArray.toVector,rightSizes.toVector))
   }
 
   def enumerateFor(i: Int): Array[FeatureAllocation] = {   // Careful, this results in tons of shared mutable instances.
@@ -353,12 +330,12 @@ sealed trait FeatureAllocation {
     engine(b, singletons.features.toList)
     if ( collector.length == 0 ) Array[FeatureAllocation]()
     else {
-      val zeroedOutMatrix = new FeatureAllocationWithFeatures(nItems, collector.head.toArray).matrixWithout(i)
+      val zeroedOutMatrix = new FeatureAllocationWithFeatures(nItems, collector.head.toVector).matrixWithout(i)
       collector.map { x =>
         val arr = x.toArray
         val mat = zeroedOutMatrix.clone // Shallow copy
         mat(i) = arr.map { f => if (f(i)) 1.0 else 0.0 }
-        new FeatureAllocationWithMatrixAndFeatures(mat, arr)
+        new FeatureAllocationWithMatrixAndFeatures(mat, arr.toVector)
       }
     }
   }
@@ -429,8 +406,8 @@ sealed trait FeatureAllocation {
 sealed class FeatureAllocationNone private[lineargaussian](override val nItems: Int) extends FeatureAllocation {
 
   override val nFeatures = 0
-  override val sizes = Array[Int]()
-  override val features = Array[BitSet]()
+  override val sizes = Vector[Int]()
+  override val features = Vector[BitSet]()
   override lazy val featuresAsList = computeFeaturesAsList
   override val matrix = Array.ofDim[Double](nItems,0)
   matrixIsCached = true
@@ -448,7 +425,7 @@ sealed class FeatureAllocationWithMatrix private[lineargaussian] (override val m
 
 }
 
-sealed class FeatureAllocationWithFeatures private[lineargaussian] (override val nItems: Int, override val features: Array[BitSet]) extends FeatureAllocation {
+sealed class FeatureAllocationWithFeatures private[lineargaussian] (override val nItems: Int, override val features: Vector[BitSet]) extends FeatureAllocation {
 
   override val nFeatures = features.length
   override lazy val sizes = computeSizes
@@ -457,7 +434,7 @@ sealed class FeatureAllocationWithFeatures private[lineargaussian] (override val
 
 }
 
-sealed class FeatureAllocationWithFeaturesAndSizes private[lineargaussian] (override val nItems: Int, override val features: Array[BitSet], override val sizes: Array[Int]) extends FeatureAllocation {
+sealed class FeatureAllocationWithFeaturesAndSizes private[lineargaussian] (override val nItems: Int, override val features: Vector[BitSet], override val sizes: Vector[Int]) extends FeatureAllocation {
 
   override val nFeatures = features.length
   override lazy val featuresAsList = computeFeaturesAsList
@@ -465,7 +442,7 @@ sealed class FeatureAllocationWithFeaturesAndSizes private[lineargaussian] (over
 
 }
 
-sealed class FeatureAllocationWithMatrixAndFeatures private[lineargaussian] (override val matrix: Array[Array[Double]], override val features: Array[BitSet]) extends FeatureAllocation {
+sealed class FeatureAllocationWithMatrixAndFeatures private[lineargaussian] (override val matrix: Array[Array[Double]], override val features: Vector[BitSet]) extends FeatureAllocation {
 
   override val nItems = matrix.length
   override val nFeatures = features.length
@@ -475,7 +452,7 @@ sealed class FeatureAllocationWithMatrixAndFeatures private[lineargaussian] (ove
 
 }
 
-sealed class FeatureAllocationWithAll private[lineargaussian] (override val matrix: Array[Array[Double]], override val features: Array[BitSet], override val sizes: Array[Int]) extends FeatureAllocation {
+sealed class FeatureAllocationWithAll private[lineargaussian] (override val matrix: Array[Array[Double]], override val features: Vector[BitSet], override val sizes: Vector[Int]) extends FeatureAllocation {
 
   override val nItems = matrix.length
   override val nFeatures = features.length
@@ -486,9 +463,9 @@ sealed class FeatureAllocationWithAll private[lineargaussian] (override val matr
 
 sealed class FeatureAllocationEmpty private[lineargaussian] (override val nItems: Int, override val nFeatures: Int) extends FeatureAllocation {
 
-  override val sizes = Array.ofDim[Int](nFeatures)
-  override val features = Array.fill(nFeatures)(BitSet())
-  override val featuresAsList = Array.fill(nFeatures)(List[Int]())
+  override val sizes = Vector.fill(nFeatures) { 0 }
+  override val features = Vector.fill(nFeatures)(BitSet())
+  override val featuresAsList = Vector.fill(nFeatures)(List[Int]())
   override val matrix = Array.ofDim[Double](nItems,nFeatures)
   matrixIsCached = true
 
@@ -499,12 +476,6 @@ object FeatureAllocation {
   def apply(nItems: Int): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
     new FeatureAllocationNone(nItems)
-  }
-
-  def apply(nItems: Int, nFeatures: Int): FeatureAllocation = {
-    if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
-    if ( nFeatures < 0 ) throw new IllegalArgumentException("Number of features must be at least 0.")
-    new FeatureAllocationEmpty(nItems,nFeatures)
   }
 
   def apply(matrix: Array[Array[Int]]): FeatureAllocation = apply(matrix.map(_.map(_.toDouble)))
@@ -526,22 +497,10 @@ object FeatureAllocation {
   def apply(nItems: Int, map: Map[(BitSet,Int),Int]): FeatureAllocation = {
     val pair = map.map { case (pair, count) =>
       (Seq.fill(count)(pair._1), Seq.fill(count)(pair._2))
-    }.foldLeft((Array[BitSet](),Array[Int]())) { case (sum, x) =>
+    }.foldLeft((Vector[BitSet](),Vector[Int]())) { case (sum, x) =>
       (sum._1 ++ x._1, sum._2 ++ x._2)
     }
     new FeatureAllocationWithFeaturesAndSizes(nItems, pair._1, pair._2)
-  }
-
-  def apply(fa: FeatureAllocation): FeatureAllocation = {  // Shallow clones
-    fa match {
-      case e: FeatureAllocationNone => new FeatureAllocationNone(e.nItems)
-      case e: FeatureAllocationWithMatrix => new FeatureAllocationWithMatrix(e.matrix.clone)
-      case e: FeatureAllocationWithFeatures => new FeatureAllocationWithFeatures(e.nItems, e.features.clone)
-      case e: FeatureAllocationWithFeaturesAndSizes => new FeatureAllocationWithFeaturesAndSizes(e.nItems, e.features.clone, e.sizes.clone)
-      case e: FeatureAllocationWithMatrixAndFeatures => new FeatureAllocationWithMatrixAndFeatures(e.matrix.clone, e.features.clone)
-      case e: FeatureAllocationWithAll => new FeatureAllocationWithAll(e.matrix.clone, e.features.clone, e.sizes.clone)
-      case e: FeatureAllocationEmpty => throw new IllegalArgumentException("This subtype cannot be shallow copied.")
-    }
   }
 
   def enumerate(nItems: Int, maxNFeatures: Int): Array[FeatureAllocation] = {

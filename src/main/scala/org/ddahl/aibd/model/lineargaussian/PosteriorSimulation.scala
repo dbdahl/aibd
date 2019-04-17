@@ -145,7 +145,7 @@ object PosteriorSimulation {
   def updateFeatureAllocationOfSingletons(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, logNewFeaturesTruncationDivisor: Double) = {
     @scala.annotation.tailrec
     def engine(weights: List[(FeatureAllocation, Double)], max: Double): List[(FeatureAllocation, Double)] = {
-      val newCumState = FeatureAllocation(weights.head._1).add(i)
+      val newCumState = weights.head._1.add(i)
       val newLogWeight = logPosterior1(i, newCumState, featureAllocationPrior, lglfm)._2
       val expanded = (newCumState, newLogWeight) :: weights
       if (newLogWeight < max - logNewFeaturesTruncationDivisor) expanded

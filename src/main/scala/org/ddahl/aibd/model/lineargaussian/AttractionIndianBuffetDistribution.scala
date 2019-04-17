@@ -27,7 +27,7 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = {
     var index = permutation.inverse(i)
-    val state = fa.remove(permutation.drop(index), true)
+    val state = fa.featuresAsListWithout(permutation.drop(index))
     var sum = 0.0
     while ( index < fa.nItems ) {
       val ii = permutation(index)
@@ -35,15 +35,15 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
       var newFeatureCount = 0
       var j = 0
       while ( j < fa.nFeatures ) {
-        if ( state.isEmpty(j) ) {
+        if ( state(j).isEmpty ) {
           if ( fa.features(j)(ii) ) {
-            state.mutateAdd(ii,j)
+            state(j) = ii :: state(j)
             newFeatureCount += 1
           }
         } else {
-          val p = index / (index + 1.0) * state.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
+          val p = index / (index + 1.0) * state(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
           if ( fa.features(j)(ii) ) {
-            state.mutateAdd(ii,j)
+            state(j) = ii :: state(j)
             sum += log(p)
           } else sum += log(1-p)
         }
@@ -61,8 +61,7 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
     val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
     val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
-    val nFeatures = nNewFeaturesCumulant(nItems)
-    val fa = FeatureAllocation(nItems, nFeatures)
+    var fa = FeatureAllocation(nItems)
     var index = 0
     while (index < nItems) {
       val ii = permutation(index)
@@ -70,11 +69,11 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
       var j = 0
       while (j < nNewFeaturesCumulant(index)) {
         val p = index / (index + 1.0) * fa.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
-        if ( rdg.nextUniform(0.0,1.0) <= p ) fa.mutateAdd(ii,j)
+        if ( rdg.nextUniform(0.0,1.0) <= p ) fa = fa.add(ii,j)
         j += 1
       }
       while (j < nNewFeaturesCumulant(index+1) ) {
-        fa.mutateAdd(ii,j)
+        fa = fa.add(ii)
         j += 1
       }
       index += 1
