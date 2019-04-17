@@ -300,7 +300,7 @@ object PosteriorSimulation {
     (state, accepts, attempts)
   }
 
-  def updateFeatureAllocationOfExistingWholeRow(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingWholeRowBroken2(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     var state = featureAllocation
     var accepts = 0
     var attempts = 0
@@ -328,6 +328,32 @@ object PosteriorSimulation {
         state = proposal
       }
     }
+    (state, accepts, attempts)
+  }
+
+  def updateFeatureAllocationOfExistingSimplyTies(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    val state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    val existing = state.asList.filter { case (feature,size,count) => ! ( ( size == 1 ) || feature.contains(i) ) }
+    val nExistingFeatures = existing.size
+    if ( nExistingFeatures > 0 ) {
+      val which = rdg.nextInt(0,nExistingFeatures-1)
+      val current = existing(which)
+    }
+
+    /*
+    for ( pair <- stateMap.keys; if ! ( ( pair._2 == 1 ) && ( pair._1.contains(i) ) ) ) {
+      val proposal = if ( pair._1.contains(i) ) state.remove(i,j) else state.add(i,j)
+      state.asMap
+      val diff = logPosterior0(i, proposal, featureAllocationPrior, lglfm) - logPosterior0(i, state, featureAllocationPrior, lglfm)
+      attempts += 1
+      if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+        accepts += 1
+        state = proposal
+      }
+    }
+    */
     (state, accepts, attempts)
   }
 
