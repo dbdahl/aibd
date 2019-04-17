@@ -310,7 +310,7 @@ object PosteriorSimulation {
     if ( debug ) println("State:\n"+state)
     repeat(20) {
       if ( debug ) println("*")
-      var proposal = state.removeRow(i)
+      var proposal = state.remove(i)
       for ( j <- 0 until proposal.nFeatures ) {
         proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
       }
@@ -331,6 +331,7 @@ object PosteriorSimulation {
     (state, accepts, attempts)
   }
 
+    /*
   def updateFeatureAllocationOfExistingSimplyTies(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     val state = featureAllocation
     var accepts = 0
@@ -342,7 +343,6 @@ object PosteriorSimulation {
       val current = existing(which)
     }
 
-    /*
     for ( pair <- stateMap.keys; if ! ( ( pair._2 == 1 ) && ( pair._1.contains(i) ) ) ) {
       val proposal = if ( pair._1.contains(i) ) state.remove(i,j) else state.add(i,j)
       state.asMap
@@ -353,9 +353,9 @@ object PosteriorSimulation {
         state = proposal
       }
     }
-    */
     (state, accepts, attempts)
   }
+    */
 
 }
 
