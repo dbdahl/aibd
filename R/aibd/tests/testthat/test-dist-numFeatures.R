@@ -25,6 +25,7 @@ customer.feat <- aggregate(cbind(AIBD.pmf, IBP.pmf) ~ Cust + NFeat, data=results
 
 
 test_that("Distribution of the number of columns is the same between the IBP / AIBD", {
+  requireLevel(1)
   cols <- sapply(enum, ncol)
   aibd.col.pmf <- aggregate(prEnumAibd ~ cols, FUN=sum)
   ibp.col.pmf <- aggregate(prEnumIbp ~ cols, FUN=sum)
@@ -33,6 +34,7 @@ test_that("Distribution of the number of columns is the same between the IBP / A
 })
 
 test_that("Distribution of number of features per customer is identical for all customers in the IBP", {
+  requireLevel(1)
   cust.dists <- sapply(1:nItems, function(i) customer.feat[customer.feat$Cust==i,'IBP.pmf'])
   min.vals <- apply(cust.dists, 1, min) # Since we can't compare more than 2 at a time
   max.vals <- apply(cust.dists, 1, max)
@@ -40,6 +42,7 @@ test_that("Distribution of number of features per customer is identical for all 
 })
 
 test_that("Distribution of number of features per customer is identical for all customers in the AIBD", {
+  requireLevel(1)
   cust.dists <- sapply(1:nItems, function(i) customer.feat[customer.feat$Cust==i,'AIBD.pmf'])
   min.vals <- apply(cust.dists, 1, min) # Since we can't compare more than 2 at a time
   max.vals <- apply(cust.dists, 1, max)
@@ -49,6 +52,7 @@ test_that("Distribution of number of features per customer is identical for all 
 # Since the distribution on number of features per customer has already been tested, only 1 customer
 # from AIBD / IBP is tested for equality
 test_that("Distribution of number of features per customer is identical for both IBP and AIBD", {
+  requireLevel(1)
   expect_equal(customer.feat[customer.feat$Cust==1,'IBP.pmf'], customer.feat[customer.feat$Cust==1,'AIBD.pmf'], tol=1e-10)
 })
 

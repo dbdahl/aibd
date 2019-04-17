@@ -85,10 +85,12 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
 # definition or MCMC.
 
 test_that("Sampling from IBP using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
+  requireLevel(1)
   engine("scala", constructiveMethod=TRUE, posteriorSimulation=FALSE)
 })
 
 test_that("Sampling from AIBD using constructive definition (from Scala) gives a distribution consistent with the pmf.", {
+  requireLevel(1)
   engine("scala", constructiveMethod=TRUE, posteriorSimulation=FALSE, distr="AIBD")
 })
 
@@ -108,6 +110,7 @@ test_that("Sampling from LGLFM with IBP prior in MCMC (from Scala) gives a distr
 })
 
 test_that("Sampling from LGLFM with IBP prior and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  requireLevel(1)
   engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE)
 })
 
@@ -117,6 +120,7 @@ test_that("Sampling from LGLFM with AIBD prior in MCMC (from Scala) gives a dist
 })
 
 test_that("Sampling from LGLFM with AIBD prior (with random permutation) in MCMC (from Scala) gives a distribution consistent with the posterior.", {
+  requireLevel(1)
   engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD")
 })
 

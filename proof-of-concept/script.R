@@ -1,5 +1,5 @@
 set.seed(74927)
-library(aibd2)
+library(aibd)
 
 # Sys.setenv(nItems="20")
 # Sys.setenv(nSamples="100")
@@ -45,6 +45,7 @@ X <- Z %*% W + e
 
 samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, nPerShuffle=10, implementation="scala", massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
 plot(density(sapply(samplesAIBD$featureAllocation,ncol)))
+plot(sapply(samplesAIBD$featureAllocation,ncol),type="l")
 plot(density(samplesAIBD$parameters$mass))
 plot(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardDeviationW)
 cor(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardDeviationW)

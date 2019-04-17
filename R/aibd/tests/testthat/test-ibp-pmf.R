@@ -10,10 +10,12 @@ dist <- ibp(mass, nItems)
 logProbsFromScala <- logProbabilityFeatureAllocation(samples, dist, implementation="scala")
 
 test_that("R and Scala give the same values for IBP PMF", {
+  requireLevel(1)
   logProbsFromR     <- logProbabilityFeatureAllocation(samples, dist, implementation="R")
   expect_equal(logProbsFromR, logProbsFromScala)
 })
 
 test_that("IBP PMF (almost) sums to one.", {
+  requireLevel(1)
   expect_gte(sum(exp(logProbsFromScala)), 0.983)
 })

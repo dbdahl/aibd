@@ -17,6 +17,7 @@ featureAllocations <- enumerateFeatureAllocations(nItems, maxNFeatures)
 dist <- ibp(mass, nItems)
 
 test_that("R and Scala give the same values for log posterior in LGLFM", {
+  requireLevel(1)
   fromR     <- logPosteriorLGLFM(featureAllocations, dist, X, sdX=sigx, sdW=sigw, implementation="R")
   fromScala <- logPosteriorLGLFM(featureAllocations, dist, X, sdX=sigx, sdW=sigw, implementation="scala")
   expect_equal(fromR, fromScala)
