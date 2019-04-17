@@ -396,22 +396,32 @@ sealed trait FeatureAllocation {
     fa.features.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
   }
 
-  def computeRegardingTies: Double = {
+  def tiesMapper[B](initial: => B, aggregator: (B,(BitSet,Int),Int) => B): B = {
     val aa = features.zip(sizes).sortWith(lessThan)
-    var sum = 0.0
-    var run = 1
     var j = 1
-    while ( j < aa.length ) {
-      if ( compare(aa(j-1),aa(j)) == 0 ) run += 1
-      else {
-        sum += logFactorial(run)
-        run = 1
+    var sum = initial
+    if ( nFeatures == 0 ) sum
+    else {
+      var run = 1
+      while ( j < nFeatures ) {
+        if ( compare(aa(j-1),aa(j)) == 0 ) run += 1
+        else {
+          sum = aggregator(sum,aa(j-1),run)
+          run = 1
+        }
+        j += 1
       }
-      j += 1
+      aggregator(sum,aa(j-1),run)
     }
-    sum += logFactorial(run)
-    sum
   }
+
+  def asMap: Map[(BitSet,Int),Int] = tiesMapper(Map[(BitSet,Int),Int](), (sum: Map[(BitSet,Int),Int], pair, count) => {
+    sum + { pair -> count }
+  })
+
+  def computeRegardingTies: Double = tiesMapper(0.0, (sum: Double, pair, count) => {
+    sum + logFactorial(count)
+  })
 
   private def compare(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Int = {
     if ( x._2 < y._2 ) return -1
