@@ -29,6 +29,13 @@ sealed trait FeatureAllocation {
     }
   }
 
+  def id = {
+    asCountList.flatMap { case (bs, size, count) =>
+      val str = bs.toBitMask.mkString(",")
+      Array.fill(count)(str)
+    }.mkString(":")
+  }
+
   def check(): Unit = {
     assert(nItems == matrix.length)
     assert(nFeatures == features.length)

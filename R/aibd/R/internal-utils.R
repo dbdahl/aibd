@@ -1,4 +1,10 @@
 featureAllocation2Id <- function(Z) {
+  if ( ! is.list(Z) ) Z <- list(Z)
+  ref <- scalaPush(Z, "arrayOfMatrices", s)
+  s(ref) * 'ref.map { m => FA.fromMatrix(m).id }'
+}
+
+featureAllocation2IdOld <- function(Z) {
   Z <- toLof(Z)
   paste0(sapply(seq_len(ncol(Z)), function(j) {
     sum((2^(0:(nrow(Z)-1)))*Z[,j])

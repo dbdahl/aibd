@@ -5,13 +5,11 @@ context("sampling-matches-pmf")
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
   # set.seed(234232)
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
-  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
+  # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
   mass <- 1.0
-  nItems <- 96  # Should be a multiple of 3
-  nItems <- 3  # Should be a multiple of 3
+  nItems <- 4
+  nItems <- 3
   nPerShuffle <- min(nPerShuffle,nItems)
   dist <- if ( distr == "IBP" ) {
     ibp(mass, nItems)
@@ -23,15 +21,12 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   sigx <- 0.1
   sigw <- 1.0
   dimW <- 1
-  Z <- matrix(c(1,0,1,1,0,1,1,0,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=16)
-  Z <- matrix(c(1,0,1,1,0,1,1,0,1,0,0,1),byrow=TRUE,nrow=nItems,ncol=4)
-  Z <- matrix(c(1,0,1,1,0,1),byrow=TRUE,nrow=nItems,ncol=2)
+  Z <- matrix(c(0,0,1,0,1,1,0,1,1,0,0,0,1,1,1,0,0,1,1,0)[1:(2*nItems)],byrow=TRUE,nrow=nItems,ncol=2)
   Ztruth <- Z
   W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
   X <- Z %*% W + e
   nSamples <- 10000
-  nSamples <- 1
   nSamples <- 1000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   samples <- if ( constructiveMethod ) {
@@ -42,7 +37,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
-  freq <- table(sapply(samples, function(Z) aibd:::featureAllocation2Id(Z)))
+  freq <- table(aibd:::featureAllocation2Id(samples))
   sampled <- as.data.frame(freq)
   names(sampled) <- c("names","freq")
   maxNFeatures <- 9
@@ -55,7 +50,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     exp(logProbabilityFeatureAllocation(Zall, dist2, implementation=implementation))
   }
   probs <- probs/sum(probs)
-  names <- sapply(Zall, function(Z) aibd:::featureAllocation2Id(Z))
+  names <- aibd:::featureAllocation2Id(Zall)
   truth <- data.frame(names,probs)
   truth <- truth[nSamples*truth$probs>=1,]
   both <- merge(truth,sampled)

@@ -120,8 +120,8 @@ object PosteriorSimulation {
     var accepts = 0
     var attempts = 0
     for (i <- 0 until nItems) {
-      val (stateNew, n, d) = updateFeatureAllocationOfExistingByEnumeration(i, state, featureAllocationPrior, lglfm, rdg, parallel, rankOneUpdates)
-      // val (stateNew, n, d) = updateFeatureAllocationOfExistingSimply(i, state, featureAllocationPrior, lglfm, rdg)
+      // val (stateNew, n, d) = updateFeatureAllocationOfExistingByEnumeration(i, state, featureAllocationPrior, lglfm, rdg, parallel, rankOneUpdates)
+      val (stateNew, n, d) = updateFeatureAllocationOfExistingSimply(i, state, featureAllocationPrior, lglfm, rdg)
       state = stateNew
       accepts += n
       attempts += d
@@ -212,9 +212,10 @@ object PosteriorSimulation {
 
   def updateFeatureAllocationOfExistingSimply(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     var (singletons, state) = featureAllocation.partitionBySingletonsOf(i)
+    if ( state.nFeatures == 0 ) return (featureAllocation, 0, 0)
     var accepts = 0
     var attempts = 0
-    for ( j <- 0 until state.nFeatures ) {
+    for ( j <- rdg.nextPermutation(state.nFeatures, state.nFeatures) ) {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
       val diff = logPosterior0(i, proposal add singletons, featureAllocationPrior, lglfm) - logPosterior0(i, state add singletons, featureAllocationPrior, lglfm)
       val mapCurrent = state.asCountMap
