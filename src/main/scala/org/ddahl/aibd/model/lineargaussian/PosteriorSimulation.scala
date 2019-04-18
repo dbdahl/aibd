@@ -217,8 +217,8 @@ object PosteriorSimulation {
     for ( j <- 0 until state.nFeatures ) {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
       val diff = logPosterior0(i, proposal add singletons, featureAllocationPrior, lglfm) - logPosterior0(i, state add singletons, featureAllocationPrior, lglfm)
-      val mapCurrent = state.tabulateAsMap
-      val mapProposal = proposal.tabulateAsMap
+      val mapCurrent = state.asCountMap
+      val mapProposal = proposal.asCountMap
       val rpp = -log(mapCurrent((state.features(j),state.sizes(j)))) + log(mapProposal((proposal.features(j),proposal.sizes(j))))
       val diff2 = diff + rpp
       attempts += 1

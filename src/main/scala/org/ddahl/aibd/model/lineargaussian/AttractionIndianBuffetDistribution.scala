@@ -27,7 +27,7 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = {
     var index = permutation.inverse(i)
-    val state = fa.featuresAsListWithout(permutation.drop(index))
+    val state = fa.asListsWithout(permutation.drop(index)).toArray
     var sum = 0.0
     while ( index < fa.nItems ) {
       val ii = permutation(index)

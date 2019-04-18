@@ -11,7 +11,6 @@ sealed trait FeatureAllocation {
   val nFeatures: Int
   val sizes: Vector[Int]
   val features: Vector[BitSet]
-  val featuresAsList: Vector[List[Int]]
   val matrix: Array[Array[Double]]
 
   protected var matrixIsCached: Boolean = false
@@ -73,8 +72,6 @@ sealed trait FeatureAllocation {
     result.toVector
   }
 
-  protected def computeFeaturesAsList: Vector[List[Int]] = features.map(_.toList)
-
   protected def computeMatrix: Array[Array[Double]] = {
     matrixIsCached = true
     val result = Array.ofDim[Double](nItems, nFeatures)
@@ -97,10 +94,6 @@ sealed trait FeatureAllocation {
     if ( ( j < 0 ) || ( j >= nFeatures ) ) throw new IllegalArgumentException("Feature index "+j+" is out of bounds [0,"+(nFeatures-1)+"].")
     val f = features(j)
     Array.tabulate(nItems) { i => if ( f(i) ) 1.0 else 0.0 }
-  }
-
-  def featuresAsListWithout(except: Iterable[Int]): Array[List[Int]] = {
-    features.toArray.map { f => ( f -- except ).toList }
   }
 
   def add(fa: FeatureAllocation): FeatureAllocation = {
@@ -299,13 +292,19 @@ sealed trait FeatureAllocation {
     }
   }
 
-  def tabulateAsMap: Map[(BitSet,Int),Int] = tiesMapper(Map[(BitSet,Int),Int](), (sum: Map[(BitSet,Int),Int], pair, count) => {
+  def asCountMap: Map[(BitSet,Int),Int] = tiesMapper(Map[(BitSet,Int),Int](), (sum: Map[(BitSet,Int),Int], pair, count) => {
     sum + { pair -> count }
   })
 
-  def tabulateAsList: List[(BitSet,Int,Int)] = tiesMapper(List[(BitSet,Int,Int)](), (sum: List[(BitSet,Int,Int)], pair, count) => {
+  def asCountList: List[(BitSet,Int,Int)] = tiesMapper(List[(BitSet,Int,Int)](), (sum: List[(BitSet,Int,Int)], pair, count) => {
     (pair._1, pair._2, count) :: sum
   })
+
+  def asLists: Vector[List[Int]] = features.map(_.toList)
+
+  def asListsWithout(except: Iterable[Int]): Vector[List[Int]] = {
+    features.map { f => ( f -- except ).toList }
+  }
 
   def computeRegardingTies: Double = tiesMapper(0.0, (sum: Double, pair, count) => {
     sum + logFactorial(count)
@@ -348,7 +347,6 @@ sealed class FeatureAllocationNone private[lineargaussian](override val nItems: 
   override val nFeatures = 0
   override val sizes = Vector[Int]()
   override val features = Vector[BitSet]()
-  override lazy val featuresAsList = computeFeaturesAsList
   override val matrix = Array.ofDim[Double](nItems,0)
   matrixIsCached = true
 
@@ -360,7 +358,6 @@ sealed class FeatureAllocationWithMatrix private[lineargaussian] (override val m
   override val nFeatures = matrix(0).length
   override lazy val sizes = computeSizes
   override lazy val features = computeFeatures
-  override lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }
@@ -369,7 +366,6 @@ sealed class FeatureAllocationWithFeatures private[lineargaussian] (override val
 
   override val nFeatures = features.length
   override lazy val sizes = computeSizes
-  override lazy val featuresAsList = computeFeaturesAsList
   override lazy val matrix = computeMatrix
 
 }
@@ -377,7 +373,6 @@ sealed class FeatureAllocationWithFeatures private[lineargaussian] (override val
 sealed class FeatureAllocationWithFeaturesAndSizes private[lineargaussian] (override val nItems: Int, override val features: Vector[BitSet], override val sizes: Vector[Int]) extends FeatureAllocation {
 
   override val nFeatures = features.length
-  override lazy val featuresAsList = computeFeaturesAsList
   override lazy val matrix = computeMatrix
 
 }
@@ -387,7 +382,6 @@ sealed class FeatureAllocationWithMatrixAndFeatures private[lineargaussian] (ove
   override val nItems = matrix.length
   override val nFeatures = features.length
   override lazy val sizes = computeSizes
-  override lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }
@@ -396,7 +390,6 @@ sealed class FeatureAllocationWithAll private[lineargaussian] (override val matr
 
   override val nItems = matrix.length
   override val nFeatures = features.length
-  override lazy val featuresAsList = computeFeaturesAsList
   matrixIsCached = true
 
 }
@@ -405,7 +398,6 @@ sealed class FeatureAllocationEmpty private[lineargaussian] (override val nItems
 
   override val sizes = Vector.fill(nFeatures) { 0 }
   override val features = Vector.fill(nFeatures)(BitSet())
-  override val featuresAsList = Vector.fill(nFeatures)(List[Int]())
   override val matrix = Array.ofDim[Double](nItems,nFeatures)
   matrixIsCached = true
 
@@ -425,12 +417,12 @@ object FeatureAllocation {
 
   def fromFeatures(nItems: Int, features: Array[BitSet]): FeatureAllocation = fromFeatures(nItems, features.toVector)
 
-  def fromLists(nItems: Int, featuresAsList: Vector[List[Int]]): FeatureAllocation = {
+  def fromLists(nItems: Int, lists: Vector[List[Int]]): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
-    new FeatureAllocationWithFeatures(nItems, featuresAsList.map { _.foldLeft(BitSet()) { _ + _ } })
+    new FeatureAllocationWithFeatures(nItems, lists.map { _.foldLeft(BitSet()) { _ + _ } })
   }
 
-  def fromLists(nItems: Int, featuresAsList: Array[List[Int]]): FeatureAllocation = fromLists(nItems, featuresAsList.toVector)
+  def fromLists(nItems: Int, lists: Array[List[Int]]): FeatureAllocation = fromLists(nItems, lists.toVector)
 
   def fromMatrix(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length
