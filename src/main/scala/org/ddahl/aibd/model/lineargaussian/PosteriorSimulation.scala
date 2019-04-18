@@ -1,7 +1,7 @@
 package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.aibd.{MCMCAcceptanceMonitor1, TimeMonitor}
-import org.ddahl.aibd.Utils.harmonicNumber
+import org.ddahl.aibd.Utils.{harmonicNumber, logOnInt}
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{sqrt, log}
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
@@ -91,8 +91,8 @@ object PosteriorSimulation {
   def updatePermutation(featureAllocation: FeatureAllocation, aibdPrior: AttractionIndianBuffetDistribution, rdg: RandomDataGenerator, nPerShuffle: Int): (AttractionIndianBuffetDistribution, Int, Int) = {
     val proposedPermutation = aibdPrior.permutation.nPerShuffle(nPerShuffle).shuffle(rdg)
     val proposedAIBDPrior = aibdPrior.updatePermutation(proposedPermutation)
-    val diff = proposedAIBDPrior.logProbability(featureAllocation) - aibdPrior.logProbability(featureAllocation)
-    if ( ( diff > 0 ) || ( log(rdg.nextUniform(0,1)) < diff ) ) (proposedAIBDPrior,1,1) else (aibdPrior,0,1)
+    val logMHRatio = proposedAIBDPrior.logProbability(featureAllocation) - aibdPrior.logProbability(featureAllocation)
+    if ( ( logMHRatio > 0 ) || ( log(rdg.nextUniform(0,1)) < logMHRatio ) ) (proposedAIBDPrior,1,1) else (aibdPrior,0,1)
   }
 
   def updateMass[T](featureAllocation: FeatureAllocation, hasMassPrior: FeatureAllocationDistribution with HasMass[T], rdg: RandomDataGenerator, priorShape: Double, priorRate: Double): (FeatureAllocationDistribution with HasMass[T], Int, Int) = {
@@ -109,8 +109,8 @@ object PosteriorSimulation {
     val proposedStandardDeviationW = rdg.nextGaussian(m2 + (sdProposedStandardDeviationW/sdProposedStandardDeviationX) * corProposedSdXSdW * (proposedStandardDeviationX - m1), sqrt((1 - corProposedSdXSdW*corProposedSdXSdW)*sdProposedStandardDeviationW*sdProposedStandardDeviationW))
     if ( ( proposedStandardDeviationW < 0 ) || ( proposedStandardDeviationW > maxStandardDeviationW ) ) return (lglfm,0,1)
     val proposedLGLFM = lglfm.updateStandardDeviations(proposedStandardDeviationX, proposedStandardDeviationW)
-    val diff = proposedLGLFM.logLikelihood(featureAllocation) - lglfm.logLikelihood(featureAllocation)
-    if ( ( diff > 0 ) || ( log(rdg.nextUniform(0,1)) < diff ) ) (proposedLGLFM,1,1) else (lglfm,0,1)
+    val logMHRatio = proposedLGLFM.logLikelihood(featureAllocation) - lglfm.logLikelihood(featureAllocation)
+    if ( ( logMHRatio > 0 ) || ( log(rdg.nextUniform(0,1)) < logMHRatio ) ) (proposedLGLFM,1,1) else (lglfm,0,1)
   }
 
   def updateFeatureAllocation(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
@@ -184,9 +184,9 @@ object PosteriorSimulation {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
       val proposalMap = proposal.asCountMap
       val proposalLogPosterior = logPosterior0(i, proposal, featureAllocationPrior, lglfm)
-      val diff = proposalLogPosterior - stateLogPosterior - log(stateMap((state.features(j),state.sizes(j)))) + log(proposalMap((proposal.features(j),proposal.sizes(j))))
+      val logMHRatio = proposalLogPosterior - stateLogPosterior - logOnInt(stateMap((state.features(j),state.sizes(j)))) + logOnInt(proposalMap((proposal.features(j),proposal.sizes(j))))
       attempts += 1
-      if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+      if ( ( logMHRatio >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < logMHRatio ) ) {
         accepts += 1
         state = proposal
         stateMap = proposalMap
