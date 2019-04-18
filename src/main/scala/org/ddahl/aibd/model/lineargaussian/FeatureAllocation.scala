@@ -106,7 +106,7 @@ sealed trait FeatureAllocation {
   def add(fa: FeatureAllocation): FeatureAllocation = {
     if ( fa.nFeatures == 0 ) this
     else if ( this.nFeatures == 0 ) fa
-    else new FeatureAllocationWithFeatures(nItems, features ++ fa.features)
+    else new FeatureAllocationWithFeaturesAndSizes(nItems, features ++ fa.features, sizes ++ fa.sizes)
   }
 
   def add(i: Int): FeatureAllocation = {
