@@ -410,19 +410,15 @@ object FeatureAllocation {
     new FeatureAllocationNone(nItems)
   }
 
-  def fromFeatures(nItems: Int, features: Vector[BitSet]): FeatureAllocation = {
+  def fromBitSets(nItems: Int, features: Iterable[BitSet]): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
-    new FeatureAllocationWithFeatures(nItems, features)
+    new FeatureAllocationWithFeatures(nItems, features.toVector)
   }
 
-  def fromFeatures(nItems: Int, features: Array[BitSet]): FeatureAllocation = fromFeatures(nItems, features.toVector)
-
-  def fromLists(nItems: Int, lists: Vector[List[Int]]): FeatureAllocation = {
+  def fromLists(nItems: Int, lists: Iterable[List[Int]]): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
-    new FeatureAllocationWithFeatures(nItems, lists.map { _.foldLeft(BitSet()) { _ + _ } })
+    new FeatureAllocationWithFeatures(nItems, lists.map { _.foldLeft(BitSet()) { _ + _ } }.toVector)
   }
-
-  def fromLists(nItems: Int, lists: Array[List[Int]]): FeatureAllocation = fromLists(nItems, lists.toVector)
 
   def fromMatrix(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length
@@ -440,7 +436,7 @@ object FeatureAllocation {
 
   def fromMatrix(matrix: Array[Array[Int]]): FeatureAllocation = fromMatrix(matrix.map(_.map(_.toDouble)))
 
-  def fromMap(nItems: Int, map: Map[(BitSet,Int),Int]): FeatureAllocation = {
+  def fromCountMap(nItems: Int, map: Map[(BitSet,Int),Int]): FeatureAllocation = {
     val pair = map.map { case (pair, count) =>
       (Seq.fill(count)(pair._1), Seq.fill(count)(pair._2))
     }.foldLeft((Vector[BitSet](),Vector[Int]())) { case (sum, x) =>
