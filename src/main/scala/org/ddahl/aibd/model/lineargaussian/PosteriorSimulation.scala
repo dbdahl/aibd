@@ -174,24 +174,26 @@ object PosteriorSimulation {
   }
 
   def updateFeatureAllocationOfExistingOneByOne(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
-    var (singletons, state) = featureAllocation.partitionBySingletonsOf(i)
-    if ( state.nFeatures == 0 ) return (featureAllocation, 0, 0)
+    if ( featureAllocation.nFeatures == 0 ) return (featureAllocation,0,0)
     var accepts = 0
     var attempts = 0
-    for ( j <- rdg.nextPermutation(state.nFeatures, state.nFeatures) ) {
+    var state = featureAllocation
+    var stateMap = state.asCountMap
+    var stateLogPosterior = logPosterior0(i, state, featureAllocationPrior, lglfm)
+    for ( j <- rdg.nextPermutation(state.nFeatures, state.nFeatures); if ! state.isSingleton(i,j) ) {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
-      val diff = logPosterior0(i, proposal add singletons, featureAllocationPrior, lglfm) - logPosterior0(i, state add singletons, featureAllocationPrior, lglfm)
-      val mapCurrent = state.asCountMap
-      val mapProposal = proposal.asCountMap
-      val rpp = -log(mapCurrent((state.features(j),state.sizes(j)))) + log(mapProposal((proposal.features(j),proposal.sizes(j))))
-      val diff2 = diff + rpp
+      val proposalMap = proposal.asCountMap
+      val proposalLogPosterior = logPosterior0(i, proposal, featureAllocationPrior, lglfm)
+      val diff = proposalLogPosterior - stateLogPosterior - log(stateMap((state.features(j),state.sizes(j)))) + log(proposalMap((proposal.features(j),proposal.sizes(j))))
       attempts += 1
-      if ( ( diff2 >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff2 ) ) {
+      if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
         accepts += 1
         state = proposal
+        stateMap = proposalMap
+        stateLogPosterior = proposalLogPosterior
       }
     }
-    (state add singletons, accepts, attempts)
+    (state, accepts, attempts)
   }
 
 }
