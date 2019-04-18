@@ -30,7 +30,7 @@ class IndianBuffetProcess private (val mass: Double, val nItems: Int) extends Fe
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
     val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
     val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
-    var fa = FeatureAllocation(nItems)
+    var fa = FeatureAllocation.empty(nItems)
     var i = 0
     while (i < nItems) {
       var j = 0

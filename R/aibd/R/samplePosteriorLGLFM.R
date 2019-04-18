@@ -106,7 +106,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
     rankOneUpdates <- as.logical(rankOneUpdates[1])
     lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-    ref <- s$PosteriorSimulation.update4AIBD(s$FA(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
     Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
     parameters <- as.data.frame(ref$"_2"())
     names(parameters) <- c("mass","standardDeviationX","standardDeviationW")

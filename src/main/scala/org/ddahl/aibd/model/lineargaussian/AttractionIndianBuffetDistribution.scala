@@ -61,24 +61,25 @@ class AttractionIndianBuffetDistribution private (val mass: Double, val permutat
   def sample(rdg: RandomDataGenerator): FeatureAllocation = {
     val nNewFeaturesPerItems = Array.tabulate(nItems) { i => rdg.nextPoisson(mass / (i+1)).toInt }
     val nNewFeaturesCumulant = nNewFeaturesPerItems.scan(0)(_+_)
-    var fa = FeatureAllocation(nItems)
+    val nFeatures = nNewFeaturesCumulant(nItems)
+    val featuresAsList = Array.ofDim[List[Int]](nFeatures)
     var index = 0
     while (index < nItems) {
       val ii = permutation(index)
       val divisor = (0 until index).foldLeft(0.0) { (s,indexPrime) => s + similarity(ii,permutation(indexPrime)) }
       var j = 0
       while (j < nNewFeaturesCumulant(index)) {
-        val p = index / (index + 1.0) * fa.featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
-        if ( rdg.nextUniform(0.0,1.0) <= p ) fa = fa.add(ii,j)
+        val p = index / (index + 1.0) * featuresAsList(j).foldLeft(0.0) { (s, iPrime) => s + similarity(ii,iPrime) } / divisor
+        if ( rdg.nextUniform(0.0,1.0) <= p ) featuresAsList(j) = ii :: featuresAsList(j)
         j += 1
       }
       while (j < nNewFeaturesCumulant(index+1) ) {
-        fa = fa.add(ii)
+        featuresAsList(j) = ii :: Nil
         j += 1
       }
       index += 1
     }
-    fa
+    FeatureAllocation.fromLists(nItems, featuresAsList)
   }
 
 }

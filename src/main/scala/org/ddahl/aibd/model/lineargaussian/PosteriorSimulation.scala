@@ -282,7 +282,7 @@ object PosteriorSimulation {
     if ( debug ) println("State:\n"+state)
     repeat(20) {
       if ( debug ) println("*")
-      var proposal = FeatureAllocation(state.matrix.map(_.clone))
+      var proposal = FeatureAllocation.fromMatrix(state.matrix.map(_.clone))
       for ( j <- 0 until state.nFeatures; if ! state.isSingleton(i,j) ) {
         proposal = if ( rdg.nextUniform(0,1) <= p ) proposal.add(i,j) else proposal.remove(i,j)
       }

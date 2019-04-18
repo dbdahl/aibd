@@ -35,7 +35,7 @@ sealed trait FeatureAllocation {
     assert(nFeatures == features.length)
     assert(nFeatures == sizes.length)
     assert((nFeatures == 0) || (nFeatures == matrix(0).length))
-    val that1 = FeatureAllocation(matrix)
+    val that1 = new FeatureAllocationWithMatrix(matrix)
     val that2 = new FeatureAllocationWithFeatures(nItems, features)
     val that3 = new FeatureAllocationWithFeaturesAndSizes(nItems, features, sizes)
     val a = that1.matrix.flatten
@@ -250,15 +250,16 @@ sealed trait FeatureAllocation {
       }
       j += 1
     }
-    (new FeatureAllocationWithFeaturesAndSizes(nItems,leftArray.toVector,leftSizes.toVector), new FeatureAllocationWithFeaturesAndSizes(nItems,rightArray.toVector,rightSizes.toVector))
+    (new FeatureAllocationWithFeaturesAndSizes(nItems,leftArray.toVector, leftSizes.toVector),
+     new FeatureAllocationWithFeaturesAndSizes(nItems,rightArray.toVector,rightSizes.toVector))
   }
 
-  def enumerateFor(i: Int): Array[FeatureAllocation] = {   // Careful, this results in tons of shared mutable instances.
+  def enumerateFor(i: Int): Array[FeatureAllocation] = {
     val (singletons, existing) = partitionBySingletonsOf(i)
     val a = existing.remove(i).features.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
       val off = x._1
-      val on  = x._1 + i  // Leads to a clone, unlike the "add" method.
+      val on  = x._1 + i
       val count = x._2
       List.tabulate(count+1) { n => List.tabulate(count) { k => if ( k < n ) on else off } }
     }
@@ -282,10 +283,6 @@ sealed trait FeatureAllocation {
         new FeatureAllocationWithMatrixAndFeatures(mat, arr.toVector)
       }
     }
-  }
-
-  def computeRegardingTiesSlow(fa: FeatureAllocation): Double = {
-    fa.features.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
   }
 
   def tiesMapper[B](initial: => B, aggregator: (B,(BitSet,Int),Int) => B): B = {
@@ -318,6 +315,10 @@ sealed trait FeatureAllocation {
   def computeRegardingTies: Double = tiesMapper(0.0, (sum: Double, pair, count) => {
     sum + logFactorial(count)
   })
+
+  def computeRegardingTiesSlow(fa: FeatureAllocation): Double = {
+    fa.features.groupBy(identity).map(_._2.length).foldLeft(0.0)((s, x) => s + logFactorial(x))
+  }
 
   private def compare(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Int = {
     if ( x._2 < y._2 ) return -1
@@ -417,14 +418,26 @@ sealed class FeatureAllocationEmpty private[lineargaussian] (override val nItems
 
 object FeatureAllocation {
 
-  def apply(nItems: Int): FeatureAllocation = {
+  def empty(nItems: Int): FeatureAllocation = {
     if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
     new FeatureAllocationNone(nItems)
   }
 
-  def apply(matrix: Array[Array[Int]]): FeatureAllocation = apply(matrix.map(_.map(_.toDouble)))
+  def fromFeatures(nItems: Int, features: Vector[BitSet]): FeatureAllocation = {
+    if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
+    new FeatureAllocationWithFeatures(nItems, features)
+  }
 
-  def apply(matrix: Array[Array[Double]]): FeatureAllocation = {
+  def fromFeatures(nItems: Int, features: Array[BitSet]): FeatureAllocation = fromFeatures(nItems, features.toVector)
+
+  def fromLists(nItems: Int, featuresAsList: Vector[List[Int]]): FeatureAllocation = {
+    if ( nItems < 0 ) throw new IllegalArgumentException("Number of items must be at least 0.")
+    new FeatureAllocationWithFeatures(nItems, featuresAsList.map { _.foldLeft(BitSet()) { _ + _ } })
+  }
+
+  def fromLists(nItems: Int, featuresAsList: Array[List[Int]]): FeatureAllocation = fromLists(nItems, featuresAsList.toVector)
+
+  def fromMatrix(matrix: Array[Array[Double]]): FeatureAllocation = {
     val rows = matrix.length
     if ( rows == 0 ) return new FeatureAllocationNone(rows)
     val cols = matrix(0).length
@@ -438,7 +451,9 @@ object FeatureAllocation {
     new FeatureAllocationWithMatrix(matrix)
   }
 
-  def apply(nItems: Int, map: Map[(BitSet,Int),Int]): FeatureAllocation = {
+  def fromMatrix(matrix: Array[Array[Int]]): FeatureAllocation = fromMatrix(matrix.map(_.map(_.toDouble)))
+
+  def fromMap(nItems: Int, map: Map[(BitSet,Int),Int]): FeatureAllocation = {
     val pair = map.map { case (pair, count) =>
       (Seq.fill(count)(pair._1), Seq.fill(count)(pair._2))
     }.foldLeft((Vector[BitSet](),Vector[Int]())) { case (sum, x) =>
@@ -458,11 +473,11 @@ object FeatureAllocation {
       }
       if ( i < nItems-1 ) bag.flatMap(fa => engine(i+1, fa)) else bag
     }
-    engine(0,apply(nItems)).toArray
+    engine(0,empty(nItems)).toArray
   }
 
   def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {
-    apply(faa.toMatrix)
+    fromMatrix(faa.toMatrix)
   }
 
 }

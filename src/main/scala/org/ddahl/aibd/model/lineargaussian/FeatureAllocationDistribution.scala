@@ -10,7 +10,7 @@ trait FeatureAllocationDistribution {
 
   def logProbability(i: Int, fa: FeatureAllocation): Double
 
-  def logProbability(i: Int, fa: Array[Array[Double]]): Double = logProbability(i, FeatureAllocation(fa))
+  def logProbability(i: Int, fa: Array[Array[Double]]): Double = logProbability(i, FeatureAllocation.fromMatrix(fa))
 
   def logProbability(i: Int, fa: Array[FeatureAllocation]): Array[Double] = fa.map(logProbability(i,_))
 
@@ -18,7 +18,7 @@ trait FeatureAllocationDistribution {
 
   def logProbability(fa: FeatureAllocation): Double
 
-  def logProbability(fa: Array[Array[Double]]): Double = logProbability(FeatureAllocation(fa))
+  def logProbability(fa: Array[Array[Double]]): Double = logProbability(FeatureAllocation.fromMatrix(fa))
 
   def logProbability(fa: Array[FeatureAllocation]): Array[Double] = fa.map(logProbability)
 
