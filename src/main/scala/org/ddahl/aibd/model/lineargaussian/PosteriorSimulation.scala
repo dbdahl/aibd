@@ -82,6 +82,7 @@ object PosteriorSimulation {
       println("  Mass: " + tmMass)
       println("  Sampling model: " + tmLGLFM)
       println("Acceptance rates:")
+      println("  Allocation: " + monitorFA.rate)
       println("  Permutation: " + monitorFAPermutation.rate)
       println("  Sampling model: " + monitorLGLFM.rate)
     }
