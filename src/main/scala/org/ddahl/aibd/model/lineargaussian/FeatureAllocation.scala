@@ -106,12 +106,7 @@ sealed trait FeatureAllocation {
   def add(fa: FeatureAllocation): FeatureAllocation = {
     if ( fa.nFeatures == 0 ) this
     else if ( this.nFeatures == 0 ) fa
-    else {
-      val newFeatures = new Array[BitSet](nFeatures + fa.nFeatures)
-      Array.copy(   features, 0, newFeatures, 0,            nFeatures)
-      Array.copy(fa.features, 0, newFeatures, nFeatures, fa.nFeatures)
-      new FeatureAllocationWithFeatures(nItems, newFeatures.toVector)
-    }
+    else new FeatureAllocationWithFeatures(nItems, features ++ fa.features)
   }
 
   def add(i: Int): FeatureAllocation = {

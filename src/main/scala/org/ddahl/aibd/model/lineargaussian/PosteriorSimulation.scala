@@ -121,7 +121,7 @@ object PosteriorSimulation {
     var attempts = 0
     for (i <- 0 until nItems) {
       val (stateNew, n, d) = updateFeatureAllocationOfExistingByEnumeration(i, state, featureAllocationPrior, lglfm, rdg, parallel, rankOneUpdates)
-      // val (stateNew, n, d) = updateFeatureAllocationOfExistingWholeRow(i, state, featureAllocationPrior, lglfm, rdg)
+      // val (stateNew, n, d) = updateFeatureAllocationOfExistingSimply(i, state, featureAllocationPrior, lglfm, rdg)
       state = stateNew
       accepts += n
       attempts += d
@@ -210,15 +210,19 @@ object PosteriorSimulation {
     (state add singletons, accepts, attempts)
   }
 
-  def updateFeatureAllocationOfExistingSimply1(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingSimply(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
     var (singletons, state) = featureAllocation.partitionBySingletonsOf(i)
     var accepts = 0
     var attempts = 0
     for ( j <- 0 until state.nFeatures ) {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
       val diff = logPosterior0(i, proposal add singletons, featureAllocationPrior, lglfm) - logPosterior0(i, state add singletons, featureAllocationPrior, lglfm)
+      val mapCurrent = state.tabulateAsMap
+      val mapProposal = proposal.tabulateAsMap
+      val rpp = -log(mapCurrent((state.features(j),state.sizes(j)))) + log(mapProposal((proposal.features(j),proposal.sizes(j))))
+      val diff2 = diff + rpp
       attempts += 1
-      if ( ( diff >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff ) ) {
+      if ( ( diff2 >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < diff2 ) ) {
         accepts += 1
         state = proposal
       }
