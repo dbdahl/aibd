@@ -124,7 +124,7 @@ object PosteriorSimulation {
     var attempts = 0
     for (i <- 0 until nItems) {
       // val (stateNew, n, d) = updateFeatureAllocationOfExistingByEnumeration(i, state, featureAllocationPrior, lglfm, rdg, parallel, rankOneUpdates)
-      val (stateNew, n, d) = updateFeatureAllocationOfExistingOneByOne(i, state, featureAllocationPrior, lglfm, rdg)
+      val (stateNew, n, d) = updateFeatureAllocationOfExistingOneByOne(i, state, featureAllocationPrior, lglfm, rdg, rankOneUpdates)
       state = stateNew
       accepts += n
       attempts += d
@@ -139,7 +139,7 @@ object PosteriorSimulation {
     var state = featureAllocation
     var accepts = 0
     var attempts = 0
-    val (stateNew, n, d) = updateFeatureAllocationOfExistingOneByOneInParallel(state.nItems*state.nFeatures, Runtime.getRuntime.availableProcessors, state, featureAllocationPrior, lglfm, rdg)
+    val (stateNew, n, d) = updateFeatureAllocationOfExistingOneByOneInParallel(state.nItems*state.nFeatures, Runtime.getRuntime.availableProcessors, state, featureAllocationPrior, lglfm, rdg, rankOneUpdates)
     state = stateNew
     accepts += n
     attempts += d
@@ -149,12 +149,12 @@ object PosteriorSimulation {
     (state, accepts, attempts)
   }
 
-  private def logPosterior(fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
-    featureAllocationPrior.logProbability(fa) + lglfm.logLikelihood(fa)
+  private def logPosterior(fa: FeatureAllocation, likelihoodComponentsOption: Option[LikelihoodComponents], featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
+    featureAllocationPrior.logProbability(fa) + { if ( likelihoodComponentsOption.isDefined ) lglfm.logLikelihood(likelihoodComponentsOption.get) else lglfm.logLikelihood(fa) }
   }
 
-  private def logPosterior0(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
-    featureAllocationPrior.logProbability(i, fa) + lglfm.logLikelihood(fa)
+  private def logPosterior0(i: Int, fa: FeatureAllocation, likelihoodComponentsOption: Option[LikelihoodComponents], featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
+    featureAllocationPrior.logProbability(i, fa) + { if ( likelihoodComponentsOption.isDefined ) lglfm.logLikelihood(likelihoodComponentsOption.get) else lglfm.logLikelihood(fa) }
   }
 
   private def logPosterior1(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): (FeatureAllocation, Double) = {
@@ -196,36 +196,40 @@ object PosteriorSimulation {
     (rdg.nextItem(logWeights, onLogScale = true)._1, 1, 1)
   }
 
-  def updateFeatureAllocationOfExistingOneByOne(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingOneByOne(i: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, rankOneUpdates: Boolean): (FeatureAllocation, Int, Int) = {
     if ( featureAllocation.nFeatures == 0 ) return (featureAllocation,0,0)
     var accepts = 0
     var attempts = 0
     var state = featureAllocation
     var stateMap = state.asCountMap
-    var stateLogPosterior = logPosterior0(i, state, featureAllocationPrior, lglfm)
+    var stateLikelihoodComponentsOption = if ( rankOneUpdates ) Some(lglfm.computeLikelihoodComponents(state)) else None
+    var stateLogPosterior = logPosterior0(i, state, stateLikelihoodComponentsOption, featureAllocationPrior, lglfm)
     for ( j <- rdg.nextPermutation(state.nFeatures, state.nFeatures); if ! state.isSingleton(i,j) ) {
       val proposal = if ( state.features(j).contains(i) ) state.remove(i,j) else state.add(i,j)
       val proposalMap = proposal.asCountMap
-      val proposalLogPosterior = logPosterior0(i, proposal, featureAllocationPrior, lglfm)
+      val proposalLikelihoodComponentsOption = if ( rankOneUpdates ) Some(lglfm.reallocateFeaturesFor(i, stateLikelihoodComponentsOption.get, proposal.matrixRow(i))) else None
+      val proposalLogPosterior = logPosterior0(i, proposal, proposalLikelihoodComponentsOption, featureAllocationPrior, lglfm)
       val logMHRatio = proposalLogPosterior - stateLogPosterior - logOnInt(stateMap((state.features(j),state.sizes(j)))) + logOnInt(proposalMap((proposal.features(j),proposal.sizes(j))))
       attempts += 1
       if ( ( logMHRatio >= 0 ) || ( log(rdg.nextUniform(0.0,1.0)) < logMHRatio ) ) {
         accepts += 1
         state = proposal
         stateMap = proposalMap
+        stateLikelihoodComponentsOption = proposalLikelihoodComponentsOption
         stateLogPosterior = proposalLogPosterior
       }
     }
     (state, accepts, attempts)
   }
 
-  def updateFeatureAllocationOfExistingOneByOneInParallel(nProposals: Int, nCores: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocationOfExistingOneByOneInParallel(nProposals: Int, nCores: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, rankOneUpdates: Boolean): (FeatureAllocation, Int, Int) = {
     if ( featureAllocation.nFeatures == 0 ) return (featureAllocation,0,0)
     var accepts = 0
     var attempts = 0
     var state = featureAllocation
     var stateMap = state.asCountMap
-    var stateLogPosterior = logPosterior(state, featureAllocationPrior, lglfm)
+    var stateLikelihoodComponentsOption = if ( rankOneUpdates ) Some(lglfm.computeLikelihoodComponents(state)) else None
+    var stateLogPosterior = logPosterior(state, stateLikelihoodComponentsOption, featureAllocationPrior, lglfm)
     val rdgs = rdg.nextRandomDataGenerators(nCores)
     while ( attempts < nProposals ) {
       val nWorkers = nCores min (nProposals - attempts)
@@ -241,20 +245,22 @@ object PosteriorSimulation {
         }
         val proposal = if (state.features(j).contains(i)) state.remove(i, j) else state.add(i, j)
         val proposalMap = proposal.asCountMap
-        val proposalLogPosterior = logPosterior(proposal, featureAllocationPrior, lglfm)
+        val proposalLikelihoodComponentsOption = if ( rankOneUpdates ) Some(lglfm.reallocateFeaturesFor(i, stateLikelihoodComponentsOption.get, proposal.matrixRow(i))) else None
+        val proposalLogPosterior = logPosterior(proposal, proposalLikelihoodComponentsOption, featureAllocationPrior, lglfm)
         val logMHRatio = proposalLogPosterior - stateLogPosterior - logOnInt(stateMap((state.features(j), state.sizes(j)))) + logOnInt(proposalMap((proposal.features(j), proposal.sizes(j))))
-        (proposal, proposalMap, proposalLogPosterior, logMHRatio)
+        (proposal, proposalMap, proposalLikelihoodComponentsOption, proposalLogPosterior, logMHRatio)
       }.toVector
 
       def process(): Unit = {
         var k = 0
         while (k < proposals.length) {
           attempts += 1
-          val (proposal, proposalMap, proposalLogPosterior, logMHRatio) = proposals(k)
+          val (proposal, proposalMap, proposalLikelihoodComponentsOption, proposalLogPosterior, logMHRatio) = proposals(k)
           if ((logMHRatio >= 0) || (log(rdg.nextUniform(0.0, 1.0)) < logMHRatio)) {
             accepts += 1
             state = proposal
             stateMap = proposalMap
+            stateLikelihoodComponentsOption = proposalLikelihoodComponentsOption
             stateLogPosterior = proposalLogPosterior
             return
           }
