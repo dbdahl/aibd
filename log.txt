@@ -1,3 +1,15 @@
+2019-04-23: Dahl
+
+  1. Parallelize MCMC update scheme for a single element of the feature
+     allocation.
+
+
+2019-04-22: Dahl
+
+  1. MCMC update scheme for a single element of the feature allocation
+     matrix, thereby avoiding combinatorial difficulties with the previous
+     all-possible-combinations challenge.
+
 2019-04-11: Dahl
 
   1. Random sigmaX and sigmaW for posterior inference is implemented.

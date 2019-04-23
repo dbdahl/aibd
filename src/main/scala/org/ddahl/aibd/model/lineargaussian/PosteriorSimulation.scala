@@ -3,7 +3,7 @@ package org.ddahl.aibd.model.lineargaussian
 import org.ddahl.aibd.{MCMCAcceptanceMonitor1, TimeMonitor}
 import org.ddahl.aibd.Utils.{harmonicNumber, logOnInt}
 import org.apache.commons.math3.random.RandomDataGenerator
-import org.apache.commons.math3.util.FastMath.{sqrt, log}
+import org.apache.commons.math3.util.FastMath.{log, sqrt}
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
@@ -33,7 +33,10 @@ object PosteriorSimulation {
     var b = 1
     while (b <= nIterations) {
       tmAll {
-        stateFA = monitorFA(tmAllocation(updateFeatureAllocation(stateFA, stateFAPrior, stateLGLFM, rdg, parallel, rankOneUpdates, newFeaturesTruncationDivisor)))
+        stateFA = monitorFA(tmAllocation {
+          if ( parallel ) updateFeatureAllocationInParallel(stateFA, stateFAPrior, stateLGLFM, rdg, rankOneUpdates, newFeaturesTruncationDivisor)
+          else updateFeatureAllocation(stateFA, stateFAPrior, stateLGLFM, rdg, rankOneUpdates, newFeaturesTruncationDivisor)
+        })
         stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
             if ( nPerShuffle < 2 ) faPrior
@@ -113,7 +116,7 @@ object PosteriorSimulation {
     if ( ( logMHRatio > 0 ) || ( log(rdg.nextUniform(0,1)) < logMHRatio ) ) (proposedLGLFM,1,1) else (lglfm,0,1)
   }
 
-  def updateFeatureAllocation(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
+  def updateFeatureAllocation(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
     val nItems = lglfm.N
     val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
     var state = featureAllocation
@@ -128,6 +131,26 @@ object PosteriorSimulation {
       state = updateFeatureAllocationOfSingletons(i, state, featureAllocationPrior, lglfm, rdg, logNewFeaturesTruncationDivisor)
     }
     (state, accepts, attempts)
+  }
+
+  def updateFeatureAllocationInParallel(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (FeatureAllocation, Int, Int) = {
+    val nItems = lglfm.N
+    val logNewFeaturesTruncationDivisor = log(newFeaturesTruncationDivisor)
+    var state = featureAllocation
+    var accepts = 0
+    var attempts = 0
+    val (stateNew, n, d) = updateFeatureAllocationOfExistingOneByOneInParallel(state.nItems*state.nFeatures, Runtime.getRuntime.availableProcessors, state, featureAllocationPrior, lglfm, rdg)
+    state = stateNew
+    accepts += n
+    attempts += d
+    for (i <- 0 until nItems) {
+      state = updateFeatureAllocationOfSingletons(i, state, featureAllocationPrior, lglfm, rdg, logNewFeaturesTruncationDivisor)
+    }
+    (state, accepts, attempts)
+  }
+
+  private def logPosterior(fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
+    featureAllocationPrior.logProbability(fa) + lglfm.logLikelihood(fa)
   }
 
   private def logPosterior0(i: Int, fa: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel): Double = {
@@ -192,6 +215,54 @@ object PosteriorSimulation {
         stateMap = proposalMap
         stateLogPosterior = proposalLogPosterior
       }
+    }
+    (state, accepts, attempts)
+  }
+
+  def updateFeatureAllocationOfExistingOneByOneInParallel(nProposals: Int, nCores: Int, featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator): (FeatureAllocation, Int, Int) = {
+    if ( featureAllocation.nFeatures == 0 ) return (featureAllocation,0,0)
+    var accepts = 0
+    var attempts = 0
+    var state = featureAllocation
+    var stateMap = state.asCountMap
+    var stateLogPosterior = logPosterior(state, featureAllocationPrior, lglfm)
+    val rdgs = rdg.nextRandomDataGenerators(nCores)
+    while ( attempts < nProposals ) {
+      val nWorkers = nCores min (nProposals - attempts)
+      val proposals = rdgs.take(nWorkers).map { rdg =>
+        val (i,j) = {
+          var i = -1
+          var j = -1
+          while ((j == -1) || (state.isSingleton(i, j))) {
+            i = rdg.nextInt(0, state.nItems - 1)
+            j = rdg.nextInt(0, state.nFeatures - 1)
+          }
+          (i,j)
+        }
+        val proposal = if (state.features(j).contains(i)) state.remove(i, j) else state.add(i, j)
+        val proposalMap = proposal.asCountMap
+        val proposalLogPosterior = logPosterior(proposal, featureAllocationPrior, lglfm)
+        val logMHRatio = proposalLogPosterior - stateLogPosterior - logOnInt(stateMap((state.features(j), state.sizes(j)))) + logOnInt(proposalMap((proposal.features(j), proposal.sizes(j))))
+        (proposal, proposalMap, proposalLogPosterior, logMHRatio)
+      }.toVector
+
+      def process(): Unit = {
+        var k = 0
+        while (k < proposals.length) {
+          attempts += 1
+          val (proposal, proposalMap, proposalLogPosterior, logMHRatio) = proposals(k)
+          if ((logMHRatio >= 0) || (log(rdg.nextUniform(0.0, 1.0)) < logMHRatio)) {
+            accepts += 1
+            state = proposal
+            stateMap = proposalMap
+            stateLogPosterior = proposalLogPosterior
+            return
+          }
+          k += 1
+        }
+      }
+
+      process
     }
     (state, accepts, attempts)
   }

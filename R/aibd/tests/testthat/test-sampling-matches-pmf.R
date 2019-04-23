@@ -2,7 +2,7 @@ context("sampling-matches-pmf")
 
 # skip("sampling-matches-pmf")
 
-engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
+engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=FALSE) {
   # set.seed(234232)
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=FALSE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
@@ -34,7 +34,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=FALSE, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
+    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=parallel, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
   freq <- table(aibd:::featureAllocation2Id(samples))
@@ -96,45 +96,45 @@ test_that("Sampling from MAIBD using constructive definition (from Scala) gives 
 
 test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consistent with the pmf.", {
   requireLevel(2)
-  engine("scala", constructiveMethod=FALSE)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=FALSE)
 })
 
 test_that("Sampling from LGLFM with IBP prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(2)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=TRUE)
 })
 
 test_that("Sampling from LGLFM with IBP prior and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(1)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE)
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE, distr="IBP", parallel=FALSE)
 })
 
 test_that("Sampling from LGLFM with AIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(2)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="AIBD")
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="AIBD", parallel=FALSE)
 })
 
 test_that("Sampling from LGLFM with AIBD prior (with random permutation) in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(1)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD")
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD", parallel=TRUE)
 })
 
 test_that("Sampling from LGLFM with MAIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(3)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="MAIBD")
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="MAIBD", parallel=TRUE)
 })
 
 test_that("Sampling from IBP using constructive definition (from R) gives a distribution consistent with the pmf.", {
   requireLevel(3)
-  engine("R", constructiveMethod=TRUE)
+  engine("R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=FALSE)
 })
 
 test_that("Sampling from IBP using MCMC (from R) gives a distribution consistent with the pmf.", {
   requireLevel(3)
-  engine("R", constructiveMethod=FALSE)
+  engine("R", constructiveMethod=FALSE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=FALSE)
 })
 
 test_that("Sampling from LGLFM with IBP prior using MCMC (from R) gives a distribution consistent with the posterior.", {
   skip("This test is known to fail.")
-  engine("R", constructiveMethod=FALSE, TRUE)
+  engine("R", constructiveMethod=FALSE,  posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=FALSE)
 })

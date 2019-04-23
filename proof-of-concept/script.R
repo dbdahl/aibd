@@ -1,4 +1,3 @@
-set.seed(98994234)
 library(aibd)
 
 Sys.setenv(nItems="20")
@@ -44,8 +43,7 @@ W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
 
-set.seed(3214234)
-samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, nPerShuffle=10, massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=-0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, nPerShuffle=10, massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=-0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE, verbose=TRUE)
 
 plot(density(sapply(samplesAIBD$featureAllocation,ncol)))
 plot(sapply(samplesAIBD$featureAllocation,ncol),type="l")
