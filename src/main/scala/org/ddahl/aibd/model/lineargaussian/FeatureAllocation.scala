@@ -249,7 +249,7 @@ sealed trait FeatureAllocation {
      new FeatureAllocationWithFeaturesAndSizes(nItems,rightArray.toVector,rightSizes.toVector))
   }
 
-  def enumerateFor(i: Int): Array[FeatureAllocation] = {
+  def enumerateFor(i: Int): Vector[FeatureAllocation] = {
     val (singletons, existing) = partitionBySingletonsOf(i)
     val a = existing.remove(i).features.groupBy(identity).mapValues(_.size)
     val b = a.map { x =>
@@ -268,10 +268,10 @@ sealed trait FeatureAllocation {
       } else toProcess.head.foreach { h => engine(toProcess.tail, h ++ result) }
     }
     engine(b, singletons.features.toList)
-    if ( collector.length == 0 ) Array[FeatureAllocation]()
+    if ( collector.length == 0 ) Vector[FeatureAllocation]()
     else {
       val zeroedOutMatrix = new FeatureAllocationWithFeatures(nItems, collector.head.toVector).matrixWithout(i)
-      collector.map { x =>
+      collector.toVector.map { x =>
         val arr = x.toArray
         val mat = zeroedOutMatrix.clone // Shallow copy
         mat(i) = arr.map { f => if (f(i)) 1.0 else 0.0 }
@@ -452,18 +452,17 @@ object FeatureAllocation {
     new FeatureAllocationWithFeaturesAndSizes(nItems, pair._1, pair._2)
   }
 
-  def enumerate(nItems: Int, maxNFeatures: Int): Array[FeatureAllocation] = {
-    import scala.collection.parallel.mutable.ParArray
-    def engine(i: Int, fa: FeatureAllocation): ParArray[FeatureAllocation] = {
+  def enumerate(nItems: Int, maxNFeatures: Int): Vector[FeatureAllocation] = {
+    def engine(i: Int, fa: FeatureAllocation): Vector[FeatureAllocation] = {
       var state = fa
-      var bag = state.enumerateFor(i).par
+      var bag = state.enumerateFor(i)
       for ( k <- state.nFeatures until maxNFeatures ) {
         state = state.add(i)
         bag ++= state.enumerateFor(i)
       }
       if ( i < nItems-1 ) bag.flatMap(fa => engine(i+1, fa)) else bag
     }
-    engine(0,empty(nItems)).toArray
+    engine(0,empty(nItems))
   }
 
   def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {

@@ -11,7 +11,7 @@ class MarginalizedAttractionIndianBuffetDistribution private (val mass: Double, 
   def logProbability(i: Int, fa: FeatureAllocation): Double = logProbability(fa)
 
   def logProbability(fa: FeatureAllocation): Double = {
-    val components = Permutation.enumerate(nItems).map(p => AttractionIndianBuffetDistribution(mass, p, similarity)).par
+    val components = Permutation.enumerate(nItems).par.map(p => AttractionIndianBuffetDistribution(mass, p, similarity))
     val nPermutations = components.length
     val logProbs = components.map(_.logProbability(fa))
     val max = logProbs.max

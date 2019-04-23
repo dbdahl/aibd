@@ -1,6 +1,6 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import org.ddahl.commonsmath._
+import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 import org.apache.commons.math3.random.RandomDataGenerator
 import scala.reflect.ClassTag
 

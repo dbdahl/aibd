@@ -13,7 +13,7 @@ class MarginalizedAttractionIndianBuffetDistribution[A] protected (val mass: Dou
 
   private val logNFactorial = if (enumeration) factorialLog(nItems) else Double.NegativeInfinity
 
-  private val allAIBD = if (enumeration) Permutation.enumerate(nItems).map(AttractionIndianBuffetDistribution(mass, _, similarity, parameterDistribution)) else Array[AttractionIndianBuffetDistribution[A]]()
+  private val allAIBD = if (enumeration) Permutation.enumerate(nItems).map(AttractionIndianBuffetDistribution(mass, _, similarity, parameterDistribution)) else Vector[AttractionIndianBuffetDistribution[A]]()
 
   def dropParameter = new MarginalizedAttractionIndianBuffetDistribution[Null](mass, similarity, NullParameterDistribution, enumeration)
 

@@ -160,14 +160,14 @@ object PosteriorSimulation {
     val proposals = featureAllocation.enumerateFor(i)
     val logWeights = {
       if (rankOneUpdates) {
-        if (proposals.isEmpty) Array[(FeatureAllocation, Double)]()
+        if (proposals.isEmpty) Vector[(FeatureAllocation, Double)]()
         else {
           val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
           val lc2 = lglfm.deallocateFeaturesFor(i, lc1)
-          if (parallel) proposals.par.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2)).toArray else proposals.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2))
+          if (parallel) proposals.par.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2)).toVector else proposals.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2))
         }
       } else {
-        if (parallel) proposals.par.map(logPosterior1(i, _, featureAllocationPrior, lglfm)).toArray else proposals.map(logPosterior1(i, _, featureAllocationPrior, lglfm))
+        if (parallel) proposals.par.map(logPosterior1(i, _, featureAllocationPrior, lglfm)).toVector else proposals.map(logPosterior1(i, _, featureAllocationPrior, lglfm))
       }
     }
     (rdg.nextItem(logWeights, onLogScale = true)._1, 1, 1)

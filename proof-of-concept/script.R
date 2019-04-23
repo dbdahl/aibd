@@ -1,9 +1,9 @@
-set.seed(74927)
+set.seed(98994234)
 library(aibd)
 
-# Sys.setenv(nItems="20")
-# Sys.setenv(nSamples="100")
-# Sys.setenv(stamp="trashmeout")
+Sys.setenv(nItems="20")
+Sys.setenv(nSamples="1000")
+Sys.setenv(stamp="trashmeout")
 
 stamp <- Sys.getenv("stamp")
 stamp
@@ -37,13 +37,16 @@ distMAIBD <- aibd(mass,NULL,similarity)
 Z <- sampleFeatureAllocation(1, distAIBD, "scala")[[1]]
 dim(Z)
 
-dimW <- 32
+dimW <- 224
+dimW <- 10
 W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
 
-samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, nPerShuffle=10, implementation="scala", massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+set.seed(3214234)
+samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, nPerShuffle=10, massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=-0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+
 plot(density(sapply(samplesAIBD$featureAllocation,ncol)))
 plot(sapply(samplesAIBD$featureAllocation,ncol),type="l")
 acf(sapply(samplesAIBD$featureAllocation,ncol))
@@ -52,7 +55,16 @@ plot(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardD
 cor(samplesAIBD$parameters$standardDeviationX, samplesAIBD$parameters$standardDeviationW)
 apply(samplesAIBD$parameters,2,summary)
 
-samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, implementation="scala", nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+samplesIBP <- samplePosteriorLGLFM(Z, distIBP, X, sdX=sigx, sdW=sigw, nPerShuffle=10, massPriorShape=1, massPriorRate=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.5, nSamples=nSamples, parallel=TRUE, rankOneUpdates=TRUE)
+
+plot(density(sapply(samplesIBP$featureAllocation,ncol)))
+plot(sapply(samplesIBP$featureAllocation,ncol),type="l")
+acf(sapply(samplesIBP$featureAllocation,ncol))
+plot(density(samplesIBP$parameters$mass))
+plot(samplesIBP$parameters$standardDeviationX, samplesIBP$parameters$standardDeviationW)
+cor(samplesIBP$parameters$standardDeviationX, samplesIBP$parameters$standardDeviationW)
+apply(samplesIBP$parameters,2,summary)
+
 
 library(sdols)
 epamAIBD <- expectedPairwiseAllocationMatrix(samplesAIBD$featureAllocation)

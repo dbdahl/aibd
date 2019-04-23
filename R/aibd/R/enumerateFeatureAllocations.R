@@ -40,5 +40,5 @@
 #'
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
   ref <- s$FA.enumerate(as.integer(nItems[1]), as.integer(maxNFeatures[1]))
-  scalaPull(s(ref) ^ 'ref.map(_.matrix)', "arrayOfMatrices")
+  scalaPull(s(ref) ^ 'ref.map(_.matrix).toArray', "arrayOfMatrices")
 }

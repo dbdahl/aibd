@@ -13,7 +13,7 @@ class IndianBuffetProcess private (val mass: Double, val nItems: Int) extends Fe
     new IndianBuffetProcess(mass, nItems)
   }
 
-  def logProbability(i: Int, fa: FeatureAllocation): Double = logProbability(fa)   // This could be more efficient.
+  def logProbability(i: Int, fa: FeatureAllocation): Double = logProbability(fa)
 
   def logProbability(fa: FeatureAllocation): Double = {
     val const1 = -mass * harmonicNumber(fa.nItems)
