@@ -1,6 +1,6 @@
 package org.ddahl.aibd.distribution
 
-trait Similarity {
+trait SimilarityOff {
 
   val nItems: Int
 
@@ -29,9 +29,9 @@ trait Similarity {
 
 }
 
-object Similarity {
+object SimilarityOff {
 
-  def uniform(size: Int) = new Similarity() {
+  def uniform(size: Int) = new SimilarityOff() {
     val nItems = size
     val isUniform = true
 
@@ -40,7 +40,7 @@ object Similarity {
 
   def apply(x: Array[Array[Double]]) = fromDistance(x, identity)
 
-  def fromDistance(x: Array[Array[Double]], similarityFunction: Double => Double) = new Similarity() {
+  def fromDistance(x: Array[Array[Double]], similarityFunction: Double => Double) = new SimilarityOff() {
     if (x == null) throw new IllegalArgumentException("Array cannot be null.")
     val nItems = x.length
     if (x.length == 0) throw new IllegalArgumentException("Dimension must be at least 1x1.")

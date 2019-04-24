@@ -70,7 +70,7 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -103,14 +103,17 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     massPriorShape <- as.double(massPriorShape[1])
     massPriorRate <- as.double(massPriorRate[1])
     nPerShuffle <- as.integer(nPerShuffle[1])
+    temperaturePriorShape <- as.double(temperaturePriorShape[1])
+    temperaturePriorRate  <- as.double(temperaturePriorRate[1])
     maxStandardDeviationX <- as.double(maxStandardDeviationX[1])
     maxStandardDeviationW <- as.double(maxStandardDeviationW[1])
+    sdProposedTemperature <- as.double(sdProposedTemperature[1])
     sdProposedStandardDeviationX <- as.double(sdProposedStandardDeviationX[1])
     sdProposedStandardDeviationW <- as.double(sdProposedStandardDeviationW[1])
     corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
     rankOneUpdates <- as.logical(rankOneUpdates[1])
     lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
     Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
     parameters <- as.data.frame(ref$"_2"())
     names(parameters) <- c("mass","standardDeviationX","standardDeviationW")

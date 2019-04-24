@@ -2,28 +2,31 @@ package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.aibd._
 import distribution._
+import org.apache.commons.math3.distribution.GammaDistribution
 import util._
 import util.Functions.{harmonicNumber, logOnInt}
-
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{log, sqrt}
+
 import scala.collection.parallel.ParSeq
 
 object PosteriorSimulation {
 
-  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Array[Double]]) = {
+  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, temperaturePriorShape: Double, temperaturePriorRate: Double, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedTemperature: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, parallel: Boolean, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Array[Double]]) = {
     var stateFA = featureAllocation
     var stateFAPrior = featureAllocationPrior
     var stateLGLFM = lglfm
     val monitorFA = MCMCAcceptanceMonitor1()
     val monitorFAMass = MCMCAcceptanceMonitor1()
     val monitorFAPermutation = MCMCAcceptanceMonitor1()
+    val monitorFATemperature = MCMCAcceptanceMonitor1()
     val monitorLGLFM = MCMCAcceptanceMonitor1()
     val tmAll = TimeMonitor()
     val tmAllocation = TimeMonitor()
     val tmMass = TimeMonitor()
     val tmPermutation = TimeMonitor()
+    val tmTemperature = TimeMonitor()
     val tmLGLFM = TimeMonitor()
     val nIterations = thin*nSamples
     val (width,rate) = if ( progressWidth <= 0 ) (0,1)
@@ -43,6 +46,13 @@ object PosteriorSimulation {
           else updateFeatureAllocation(stateFA, stateFAPrior, stateLGLFM, rdg, rankOneUpdates, newFeaturesTruncationDivisor)
         })
         stateFAPrior = stateFAPrior match {
+          case faPrior: FeatureAllocationDistribution with HasMass[_] =>
+            if ( ( massPriorShape <= 0 ) || ( massPriorRate <= 0 ) ) faPrior
+            else monitorFAMass(tmMass(updateMass(stateFA, faPrior, rdg, massPriorShape, massPriorRate)))
+          case _ =>
+            stateFAPrior
+        }
+        stateFAPrior = stateFAPrior match {
           case faPrior: AttractionIndianBuffetDistribution =>
             if ( nPerShuffle < 2 ) faPrior
             else monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
@@ -50,9 +60,9 @@ object PosteriorSimulation {
             stateFAPrior
         }
         stateFAPrior = stateFAPrior match {
-          case faPrior: FeatureAllocationDistribution with HasMass[_] =>
-            if ( ( massPriorShape <= 0 ) || ( massPriorRate <= 0 ) ) faPrior
-            else monitorFAMass(tmMass(updateMass(stateFA, faPrior, rdg, massPriorShape, massPriorRate)))
+          case faPrior: AttractionIndianBuffetDistribution =>
+            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
+            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
           case _ =>
             stateFAPrior
         }
@@ -85,15 +95,23 @@ object PosteriorSimulation {
       println("Lapse times:")
       println("  Total: " + tmAll)
       println("  Allocation: " + tmAllocation)
-      println("  Permutation: " + tmPermutation)
       println("  Mass: " + tmMass)
+      println("  Permutation: " + tmPermutation)
+      println("  Temperature: " + tmTemperature)
       println("  Sampling model: " + tmLGLFM)
       println("Acceptance rates:")
       println("  Allocation: " + monitorFA.rate)
       println("  Permutation: " + monitorFAPermutation.rate)
+      println("  Temperature: " + monitorFATemperature.rate)
       println("  Sampling model: " + monitorLGLFM.rate)
     }
     (resultFA, resultOthers)
+  }
+
+  def updateMass[T](featureAllocation: FeatureAllocation, hasMassPrior: FeatureAllocationDistribution with HasMass[T], rdg: RandomDataGenerator, priorShape: Double, priorRate: Double): (FeatureAllocationDistribution with HasMass[T], Int, Int) = {
+    val posteriorShape = priorShape + featureAllocation.nFeatures
+    val posteriorRate = priorRate + harmonicNumber(featureAllocation.nItems)
+    (hasMassPrior.updateMass(rdg.nextGamma(posteriorShape, 1/posteriorRate)), 1, 1)
   }
 
   def updatePermutation(featureAllocation: FeatureAllocation, aibdPrior: AttractionIndianBuffetDistribution, rdg: RandomDataGenerator, nPerShuffle: Int): (AttractionIndianBuffetDistribution, Int, Int) = {
@@ -103,10 +121,17 @@ object PosteriorSimulation {
     if ( ( logMHRatio > 0 ) || ( log(rdg.nextUniform(0,1)) < logMHRatio ) ) (proposedAIBDPrior,1,1) else (aibdPrior,0,1)
   }
 
-  def updateMass[T](featureAllocation: FeatureAllocation, hasMassPrior: FeatureAllocationDistribution with HasMass[T], rdg: RandomDataGenerator, priorShape: Double, priorRate: Double): (FeatureAllocationDistribution with HasMass[T], Int, Int) = {
-    val posteriorShape = priorShape + featureAllocation.nFeatures
-    val posteriorRate = priorRate + harmonicNumber(featureAllocation.nItems)
-    (hasMassPrior.updateMass(rdg.nextGamma(posteriorShape, 1/posteriorRate)), 1, 1)
+  def updateTemperature(featureAllocation: FeatureAllocation, aibdPrior: AttractionIndianBuffetDistribution, rdg: RandomDataGenerator, temperatureShape: Double, temperatureRate: Double, sdProposedTemperature: Double): (FeatureAllocationDistribution, Int, Int) = {
+    val (currentTemperature, proposedTemperature, proposedAIBDPrior) = aibdPrior.similarity match {
+      case x: Similarity with HasTemperature[_] =>
+        val proposedTemperature = rdg.nextGaussian(x.temperature, sdProposedTemperature)
+        if ( proposedTemperature < 0 ) return (aibdPrior,0,1)
+        (x.temperature, proposedTemperature, aibdPrior.updateSimilarity(x.updateTemperature(proposedTemperature)))
+      case _ => return (aibdPrior, 0, 0)
+    }
+    val gammaDistribution = new GammaDistribution(null, temperatureShape, 1/temperatureRate)
+    val logMHRatio = proposedAIBDPrior.logProbability(featureAllocation) + gammaDistribution.logDensity(proposedTemperature) - aibdPrior.logProbability(featureAllocation) - gammaDistribution.logDensity(currentTemperature)
+    if ( ( logMHRatio > 0 ) || ( log(rdg.nextUniform(0,1)) < logMHRatio ) ) (proposedAIBDPrior,1,1) else (aibdPrior,0,1)
   }
 
   def updateSamplingModel(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, rdg: RandomDataGenerator, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double): (LinearGaussianLatentFeatureModel, Int, Int) = {
