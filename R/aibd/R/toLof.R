@@ -1,4 +1,4 @@
-#' Convert a feature allocation matrix to Left-Ordered Form
+#' Convert a Feature Allocation Matrix to Left-Ordered Form
 #'
 #' This function will remove all zero columns and return the left-ordered form of a supplied matrix.
 #'

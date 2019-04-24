@@ -20,6 +20,7 @@
 #' system.time(samples <- sampleFeatureAllocation(1000, d1))
 #' system.time(samples <- sampleFeatureAllocation(1000, d1))
 #' system.time(samples <- sampleFeatureAllocation(1000, d2))
+#' system.time(samples <- sampleFeatureAllocation(1000, d2))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)

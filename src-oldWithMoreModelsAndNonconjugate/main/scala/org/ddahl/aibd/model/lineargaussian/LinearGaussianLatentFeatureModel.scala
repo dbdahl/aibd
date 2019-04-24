@@ -1,8 +1,6 @@
 package org.ddahl.aibd.model.lineargaussian
 
 import org.ddahl.matrix._
-import org.ddahl.aibd.FeatureAllocation
-
 import org.apache.commons.math3.linear.CholeskyDecomposition
 import org.apache.commons.math3.util.FastMath.{sqrt, log}
 

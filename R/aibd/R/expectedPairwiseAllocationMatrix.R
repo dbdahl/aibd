@@ -16,9 +16,12 @@
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
 #' similarity <- exp(-1.0*dist)
-#' d2 <- aibd(1,NULL,similarity)
 #'
-#' epam <- expectedPairwiseAllocationMatrix(d2,3)
+#' d1 <- ibp(1,4)
+#' epam1 <- expectedPairwiseAllocationMatrix(d1,3)
+#'
+#' d2 <- aibd(1,NULL,similarity)
+#' epam2 <- expectedPairwiseAllocationMatrix(d2,3)
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
@@ -28,6 +31,7 @@ expectedPairwiseAllocationMatrix.aibdFADistribution <- function(x, maxNFeatures,
   dist$expectedPairwiseAllocationMatrix(as.integer(maxNFeatures[1]))
 }
 
+#' @rdname expectedPairwiseAllocationMatrix.aibdFADistribution
 #' @export
 expectedPairwiseAllocationMatrix.ibpFADistribution <- function(x, maxNFeatures, ...) {
   dist <- featureAllocationDistributionToReference(x)

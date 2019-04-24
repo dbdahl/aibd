@@ -36,6 +36,10 @@
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw)
 #'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd:::s)
+#' }
+#'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="scala") {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
   if ( missing(precisionX) ) precisionX <- 1/sdX^2

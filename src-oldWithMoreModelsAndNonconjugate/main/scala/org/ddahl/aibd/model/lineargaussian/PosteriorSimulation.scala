@@ -1,13 +1,10 @@
 package org.ddahl.aibd.model.lineargaussian
 
-import org.ddahl.aibd._
-import distribution._
-import util._
-import util.Functions.{harmonicNumber, logOnInt}
-
-import org.ddahl.commonsmath.RandomDataGeneratorImprovements
+import org.ddahl.aibd.{MCMCAcceptanceMonitor1, TimeMonitor}
+import org.ddahl.aibd.Utils.{harmonicNumber, logOnInt}
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{log, sqrt}
+import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 
 object PosteriorSimulation {
 

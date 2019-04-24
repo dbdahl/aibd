@@ -13,6 +13,25 @@
 #' @return A numeric vector giving the log of the unnormalized posterior
 #'   density.
 #' @export
+#' @examples
+#' sigx <- 0.1
+#' sigw <- 1.0
+#' dimW <- 1
+#' nItems <- 8  # Should be a multiple of 4
+#' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
+#' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
+#' Ztruth <- Z
+#' W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
+#' e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
+#' X <- Z %*% W + e
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw)
+#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
+#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdW=sigw)
+#' logPosteriorLGLFM(Z, ibp(1,nItems), X, sdX=sigx, sdW=sigw)
+#'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd:::s)
+#' }
 #'
 logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), implementation="scala") {
   result <- logProbabilityFeatureAllocation(featureAllocation, distribution, implementation=implementation)

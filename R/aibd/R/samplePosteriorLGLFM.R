@@ -66,6 +66,10 @@
 #' Ztruth %*% t(Ztruth)
 #' plot(expectedPairwiseAllocationMatrix(samples$featureAllocation), Ztruth %*% t(Ztruth))
 #'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd:::s)
+#' }
+#'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, parallel=FALSE, nPerShuffle=0L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
