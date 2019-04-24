@@ -1,6 +1,8 @@
 package org.ddahl.aibd.distribution
 
-trait SimilarityOff {
+import org.apache.commons.math3.util.FastMath.{exp, pow}
+
+trait Similarity {
 
   val nItems: Int
 
@@ -27,36 +29,101 @@ trait SimilarityOff {
     r.dropRight(1).toString
   }
 
+  override def toString: String = toText("%4.3f")
+
 }
 
-object SimilarityOff {
+class FixedSimilarity(similarity: Array[Array[Double]]) extends Similarity {
 
-  def uniform(size: Int) = new SimilarityOff() {
-    val nItems = size
-    val isUniform = true
+  val nItems = similarity.length
 
-    def apply(i: Int, j: Int) = if ( i != j ) 1.0 else 0.0
-  }
+  val isUniform = false
 
-  def apply(x: Array[Array[Double]]) = fromDistance(x, identity)
+  def apply(i: Int, j: Int): Double = if (j < i) similarity(i)(j) else similarity(j)(i)
 
-  def fromDistance(x: Array[Array[Double]], similarityFunction: Double => Double) = new SimilarityOff() {
+}
+
+object Similarity {
+
+  def apply(x: Array[Array[Double]]): Similarity = new FixedSimilarity(checkAndCopyMatrix(x))
+
+  def checkAndCopyMatrix(x: Array[Array[Double]]): Array[Array[Double]] = {
     if (x == null) throw new IllegalArgumentException("Array cannot be null.")
     val nItems = x.length
-    if (x.length == 0) throw new IllegalArgumentException("Dimension must be at least 1x1.")
-    if (x(0) == null || x(0).length != nItems) throw new IllegalArgumentException("Inconsistent dimensions.")
-    private val y = new Array[Array[Double]](x.length)
+    if (nItems == 0) throw new IllegalArgumentException("Dimension must be at least 1x1.")
+    val y = new Array[Array[Double]](x.length)
     for (i <- x.indices) {
+      if (x(i) == null || x(i).length != nItems) throw new IllegalArgumentException("Inconsistent dimensions.")
       y(i) = new Array[Double](i + 1)
       for (j <- 0 until i) {
         if (x(i)(j) == Double.PositiveInfinity || x(i)(j) == Double.NaN || x(i)(j) <= 0.0) throw new IllegalArgumentException("Distances must be positive.")
         if (x(i)(j) != x(j)(i)) throw new IllegalArgumentException("Distances must be symmetric.")
-        y(i)(j) = similarityFunction(x(i)(j))
+        y(i)(j) = x(i)(j)
       }
     }
-    val isUniform = false
+    y
+  }
 
-    def apply(i: Int, j: Int) = if (j < i) y(i)(j) else y(j)(i)
+  def checkTemperature(x: Double): Unit = {
+    if ( x == Double.PositiveInfinity || x == Double.NaN || x < 0.0 ) throw new IllegalArgumentException("Temperature must be nonnegative.")
+  }
+
+}
+
+trait HasTemperature[T] {
+
+  val isUniform = false
+
+  val temperature: Double
+
+  def updateTemperature(temperature: Double): Similarity with HasTemperature[T]
+
+}
+
+class ExponentialSimilarity private (distances: Array[Array[Double]], val temperature: Double) extends Similarity with HasTemperature[ExponentialSimilarity] {
+
+  val nItems = distances.length
+
+  def apply(i: Int, j: Int): Double = if (j < i) y(i)(j) else y(j)(i)
+
+  private val y = distances.map(_.map { z => exp(-temperature*z) })
+
+  def updateTemperature(temperature: Double): ExponentialSimilarity = {
+    new ExponentialSimilarity(distances, temperature)
+  }
+
+}
+
+object ExponentialSimilarity {
+
+  def apply(distances: Array[Array[Double]], temperature: Double): ExponentialSimilarity = {
+    val d = Similarity.checkAndCopyMatrix(distances)
+    Similarity.checkTemperature(temperature)
+    new ExponentialSimilarity(d, temperature)
+  }
+
+}
+
+class ReciprocalSimilarity private (distances: Array[Array[Double]], val temperature: Double) extends Similarity with HasTemperature[ReciprocalSimilarity] {
+
+  val nItems = distances.length
+
+  def apply(i: Int, j: Int): Double = if (j < i) y(i)(j) else y(j)(i)
+
+  private val y = distances.map(_.map { z => pow(z,-temperature) })
+
+  def updateTemperature(temperature: Double): ReciprocalSimilarity = {
+    new ReciprocalSimilarity(distances, temperature)
+  }
+
+}
+
+object ReciprocalSimilarity {
+
+  def apply(distances: Array[Array[Double]], temperature: Double): ReciprocalSimilarity = {
+    val d = Similarity.checkAndCopyMatrix(distances)
+    Similarity.checkTemperature(temperature)
+    new ReciprocalSimilarity(d, temperature)
   }
 
 }
