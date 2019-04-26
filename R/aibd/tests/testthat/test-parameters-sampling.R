@@ -11,8 +11,8 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
   nominalCoverage <- 0.90
   massShape <- 10
   massRate <- 20
-  temperatureShape <- 2
-  temperatureRate <- 2
+  temperatureShape <- -2
+  temperatureRate <- -2
   maxStandardDeviationX <- 3
   maxStandardDeviationW <- 3
   B <- 100
@@ -21,7 +21,8 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
   for ( b in seq_len(B) ) {
     mass <- rgamma(1,massShape,massRate)
     permutation <- sample(1:nItems)
-    temperature <- rgamma(1,temperatureShape,temperatureRate)
+    # temperature <- rgamma(1,temperatureShape,temperatureRate)
+    temperature <- 1
     distAIBD <- aibd(mass, permutation, temperature, distance)
     sigx <- runif(1,0,maxStandardDeviationX)
     sigw <- runif(1,0,maxStandardDeviationW)

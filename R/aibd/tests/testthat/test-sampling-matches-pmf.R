@@ -34,7 +34,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, implementation=implementation, nSamples=nSamples, thin=10, parallel=parallel, nPerShuffle=nPerShuffle, rankOneUpdates=rankOneUpdates, verbose=FALSE)
+    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, nPerShuffle=nPerShuffle, implementation=implementation, nSamples=nSamples, thin=10, parallel=parallel, rankOneUpdates=rankOneUpdates, verbose=FALSE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
   freq <- table(aibd:::featureAllocation2Id(samples))
