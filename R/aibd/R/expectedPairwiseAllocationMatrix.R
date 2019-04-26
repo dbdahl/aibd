@@ -15,12 +15,11 @@
 #' states <- c("California","Wisconsin","Utah","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
-#' similarity <- exp(-1.0*dist)
 #'
 #' d1 <- ibp(1,4)
 #' epam1 <- expectedPairwiseAllocationMatrix(d1,3)
 #'
-#' d2 <- aibd(1,NULL,similarity)
+#' d2 <- aibd(1, NULL, 1.0, dist)
 #' epam2 <- expectedPairwiseAllocationMatrix(d2,3)
 #'
 #' \dontshow{

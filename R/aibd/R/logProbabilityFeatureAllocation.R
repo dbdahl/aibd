@@ -16,8 +16,7 @@
 #' states <- c("California","Wisconsin","Nebraska","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
-#' similarity <- exp(-1.0*dist)
-#' d2 <- aibd(1,seq_along(states),similarity)
+#' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
 #' Z0 <- matrix(0, ncol=0, nrow=4)
 #' Z00 <- matrix(c(0,0,0,0), nrow=4)
@@ -55,6 +54,10 @@ logProbabilityFeatureAllocation <- function(featureAllocation, distribution, imp
   if ( implementation == "R" ) {
     if ( inherits(distribution,"aibdFADistribution") ) {
       if ( ! isTRUE(all.equal(distribution$permutation,1:N)) ) stop("Permutation must be 1:N for the R implementation of AIBD.")
+      similarity <- if ( distribution$decayFunction == "exponential" ) exp(-distribution$temperature*distribution$distance)
+      else if ( distribution$decayFunction == "reciprocal" ) 1/distribution$distance^distribution$temperature
+      else if ( distribution$decayFunction == "identity" ) distribution$distance
+      else stop("Unrecognized decay function.")
     }
     alpha <- distribution$mass
     binary_nums <- apply(featureAllocation, 2, function(x) sum(2^((N-1):0)*x))
@@ -71,7 +74,7 @@ logProbabilityFeatureAllocation <- function(featureAllocation, distribution, imp
       # Inner product Terms
       for (i in 2:N){
         if (yis[i-1] != 0){
-          sim.component <- if(inherits(distribution,"aibdFADistribution")){ distribution$similarity[i,1:(i-1)]}
+          sim.component <- if(inherits(distribution,"aibdFADistribution")){ similarity[i,1:(i-1)]}
           for (k in 1:yis[i-1]){
               zik <- lof_Z[i,k]
               if (!is.null(sim.component)){

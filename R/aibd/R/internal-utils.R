@@ -19,7 +19,10 @@ id2FeatureAllocation <- function(id, nItems) {
 featureAllocationDistributionToReference <- function(distribution) {
   dist <- if ( inherits(distribution,"ibpFADistribution") ) s$IndianBuffetProcess(distribution$mass, distribution$nItems)
   else if ( inherits(distribution,"aibdFADistribution") ) {
-    similarity <- s$Similarity(distribution$similarity)
+    similarity <- if ( distribution$decayFunction == "exponential" ) s$ExponentialSimilarity(distribution$distance, distribution$temperature)
+    else if ( distribution$decayFunction == "reciprocal" )            s$ReciprocalSimilarity(distribution$distance, distribution$temperature)
+    else if ( distribution$decayFunction == "identity" ) s$Similarity(distribution$distance)
+    else stop("Unrecognized decay function.")
     if ( is.null(distribution$permutation) ) {
       s$MarginalizedAttractionIndianBuffetDistribution(distribution$mass,similarity)
     } else {

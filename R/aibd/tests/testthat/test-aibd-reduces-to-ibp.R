@@ -8,7 +8,7 @@ maxNFeatures <- 4
 samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
 
 d1 <- ibp(mass, nItems)
-d2 <- aibd(mass, sample(1:nItems), matrix(1,nrow=nItems,ncol=nItems))
+d2 <- aibd(mass, sample(1:nItems), 0.0, matrix(1,nrow=nItems,ncol=nItems), "identity")
 
 test_that("IBP and AIBD are the same when the distances are equal (using Scala).", {
   requireLevel(1)
@@ -20,7 +20,7 @@ test_that("IBP and AIBD are the same when the distances are equal (using Scala).
 test_that("IBP and AIBD are the same when the distances are equal (using R).", {
   # Only the natural permutation is supported by the R implementation.
   requireLevel(1)
-  d2 <- aibd(mass, 1:nItems, matrix(1,nrow=nItems,ncol=nItems))
+  d2 <- aibd(mass, 1:nItems, 0.0, matrix(1,nrow=nItems,ncol=nItems), "identity")
   expect_equal(
     logProbabilityFeatureAllocation(samples,d1,implementation="R"),
     logProbabilityFeatureAllocation(samples,d2,implementation="R"))

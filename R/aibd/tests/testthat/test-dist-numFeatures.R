@@ -5,10 +5,9 @@ context("test-dist-numFeatures")
 # Distributions that will be used for the tests
 data <- USArrests[c("California","Wisconsin","Nebraska"),]
 nItems <- nrow(data)
-similarity <- exp(-1.0*dist(scale(data)))
+distance <- dist(scale(data))
 mass <- 1.0
-aibd2 <- aibd(mass,sample(1:nItems),similarity)
-# aibd2 <- aibd(1.001,sample(1:nItems),similarity) # To calculate power in the tests
+aibd2 <- aibd(mass, sample(1:nItems), 1.0, distance)
 ibp2 <- ibp(mass, nItems)
 
 # These tests can all be calculated theoretically. This enumerates across all feature allocations up to max_F features

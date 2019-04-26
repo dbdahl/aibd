@@ -14,8 +14,7 @@
 #' states <- c("California","Wisconsin","Nebraska","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
-#' similarity <- exp(-1.0*dist)
-#' d2 <- aibd(1,seq_along(states),similarity)
+#' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
 #' system.time(samples <- sampleFeatureAllocation(1000, d1))
 #' system.time(samples <- sampleFeatureAllocation(1000, d1))

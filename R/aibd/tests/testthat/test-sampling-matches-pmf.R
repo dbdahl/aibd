@@ -14,9 +14,9 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   dist <- if ( distr == "IBP" ) {
     ibp(mass, nItems)
   } else if ( distr == "AIBD" ) {
-    aibd(mass, sample(1:nItems), 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
+    aibd(mass, sample(1:nItems), 2, dist(scale(USArrests)[sample(1:50,nItems),]))
   } else if ( distr == "MAIBD" ) {
-    aibd(mass, NULL, 1/as.matrix(dist(scale(USArrests)[sample(1:50,nItems),]))^2)
+    aibd(mass, NULL, 2, dist(scale(USArrests)[sample(1:50,nItems),]))
   } else stop("Unrecognized distribution.")
   sigx <- 0.1
   sigw <- 1.0
@@ -43,7 +43,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   maxNFeatures <- 9
   Zall <- enumerateFeatureAllocations(nItems, maxNFeatures)
   # dist <- ibp(mass+0.1, nItems)   # Uncomment to demonstrate power of this test.
-  dist2 <- if ( inherits(dist,"aibdFADistribution") && ( nPerShuffle > 0 ) ) aibd(dist$mass, NULL, dist$similarity) else dist
+  dist2 <- if ( inherits(dist,"aibdFADistribution") && ( nPerShuffle > 0 ) ) aibd(dist$mass, NULL, dist$temperature, dist$distance, dist$decayFunction) else dist
   probs <- if ( posteriorSimulation ) {
     exp(logPosteriorLGLFM(Zall, dist2, X, sdX=sigx, sdW=sigw, implementation=implementation))
   } else {

@@ -116,7 +116,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
     Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
     parameters <- as.data.frame(ref$"_2"())
-    names(parameters) <- c("mass","standardDeviationX","standardDeviationW")
+    names(parameters) <- c("mass","temperature","standardDeviationX","standardDeviationW")
     list(featureAllocation=Zs, parameters=parameters)
   } else stop("Unsupported 'implementation' argument.")
 }

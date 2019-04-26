@@ -4,10 +4,16 @@
 #' @param mass The mass (a.k.a., concentration) parameter.
 #' @param permutation A permutation, i.e., a vector of integers \code{1, 2, ...,
 #'   n} whose length is \code{n} and whose elements are unique.
-#' @param similarity A similarity matrix, i.e., a symmetric matrix whose
-#'   \code{(i,j)} is large if items \code{i} and \code{j} as similar (i.e., have
-#'   a small distance).  An object of class \code{"dist"} is also permissible,
-#'   but is interpreted as a similarity (not as a distance).
+#' @param temperature A nonnegative scalar affecting how influential the
+#'   distance matrix is in affecting the partition distribution.
+#' @param distance A distance matrix, i.e., a symmetric matrix whose
+#'   \code{(i,j)} is small if items \code{i} and \code{j} as similar An object
+#'   of class \code{"dist"} is also permissible.
+#' @param decayFunction One of the following strings: \code{"exponential"}
+#'   (making \code{similarity = exp(-temperature*distance)}),
+#'   \code{"reciprocal"} (making \code{similarity = 1/distance^temperature}), or
+#'   \code{"identity"} (in which case \code{distance} is interpreted as a
+#'   similarity instead of a distance). )
 #'
 #' @return An object representing an attraction Indian buffet distribution
 #'   (AIBD) for feature allocations.
@@ -17,10 +23,9 @@
 #' states <- c("California","Wisconsin","Nebraska","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
-#' similarity <- exp(-1.0*dist)
-#' a1 <- aibd(1,seq_along(states),similarity)
+#' d1 <- aibd(1, seq_along(states), 1.0, dist)
 #'
-aibd <- function(mass, permutation, similarity) {
+aibd <- function(mass, permutation, temperature, distance, decayFunction=c("exponential","reciprocal","identity")[1]) {
   if ( missing(mass) || is.null(mass) || any(is.na(mass)) || any(is.nan(mass)) || !is.numeric(mass) || ( length(mass) != 1 ) ) stop("'mass' is misspecified.")
   mass <- as.double(mass)
   if ( missing(permutation) ) permutation <- NULL
@@ -29,15 +34,16 @@ aibd <- function(mass, permutation, similarity) {
     permutation <- as.integer(permutation)
     if ( ( min(permutation) < 1 ) || ( max(permutation) > length(permutation) ) || ( length(unique(permutation)) != length(permutation) ) ) stop("'permutation' is misspecified.")
   }
-  if ( missing(similarity) || is.null(similarity) || any(is.na(similarity)) || any(is.nan(similarity)) || !is.numeric(similarity) ) stop("'similarity' is misspecified.")
-  if ( inherits(similarity,"dist") ) similarity <- as.matrix(similarity)
-  else if ( is.matrix(similarity) ) {
-    if ( !isSymmetric(similarity) ) stop("'similarity' must be symmetric.")
-  } else stop("'similarity' should must be a matrix or of class 'dist'.")
-  upper <- similarity[upper.tri(similarity)]
-  if ( any( upper <= 0.0 ) ) stop("Elements of 'similarity' must be positive.")
-  if ( !all(is.finite(upper)) ) stop("Elements of 'similarity' must be finite.")
-  labels <- rownames(similarity)
-  if ( is.null(labels) ) labels <- 1:nrow(similarity)
-  structure(list(mass=mass, nItems=nrow(similarity), permutation=permutation, similarity=similarity, labels=labels), class="aibdFADistribution")
+  if ( missing(temperature) || is.null(temperature) || any(is.na(temperature)) || any(is.nan(temperature)) || !is.numeric(temperature) || ( length(temperature) != 1 ) ) stop("'temperature' is misspecified.")
+  if ( missing(distance) || is.null(distance) || any(is.na(distance)) || any(is.nan(distance)) || !is.numeric(distance) ) stop("'distance' is misspecified.")
+  if ( inherits(distance,"dist") ) distance <- as.matrix(distance) else if ( is.matrix(distance) ) {
+    if ( !isSymmetric(distance) ) stop("'distance' must be symmetric.")
+  } else stop("'distance' should must be a matrix or of class 'dist'.")
+  upper <- distance[upper.tri(distance)]
+  if ( any( upper <= 0.0 ) ) stop("Elements of 'distance' must be positive.")
+  if ( !all(is.finite(upper)) ) stop("Elements of 'distance' must be finite.")
+  labels <- rownames(distance)
+  if ( is.null(labels) ) labels <- 1:nrow(distance)
+  if ( ! ( is.character(decayFunction) && ( length(decayFunction) == 1 ) && ( decayFunction %in% c("exponential","reciprocal","identity") ) ) ) stop("'decayFunction' is misspecified.")
+  structure(list(mass=mass, nItems=nrow(distance), permutation=permutation, temperature=temperature, distance=distance, decayFunction=decayFunction, labels=labels), class="aibdFADistribution")
 }

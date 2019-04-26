@@ -36,7 +36,7 @@ object PosteriorSimulation {
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)) + "   ")
     val resultFA = Array.ofDim[FeatureAllocation](nSamples)
-    val resultOthers = Array.ofDim[Double](nSamples,3)
+    val resultOthers = Array.ofDim[Double](nSamples,4)
     val rdgs = if ( parallel ) Some(rdg.nextRandomDataGenerators(0)) else None
     var b = 1
     while (b <= nIterations) {
@@ -59,13 +59,13 @@ object PosteriorSimulation {
           case _ =>
             stateFAPrior
         }
-        stateFAPrior = stateFAPrior match {
-          case faPrior: AttractionIndianBuffetDistribution =>
-            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
-            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
-          case _ =>
-            stateFAPrior
-        }
+//        stateFAPrior = stateFAPrior match {
+//          case faPrior: AttractionIndianBuffetDistribution =>
+//            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
+//            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
+//          case _ =>
+//            stateFAPrior
+//        }
         stateLGLFM = if ( ( sdProposedStandardDeviationX <= 0.0 ) || ( sdProposedStandardDeviationW <= 0.0 ) ) stateLGLFM
         else monitorLGLFM(tmLGLFM(updateSamplingModel(stateFA, stateFAPrior, stateLGLFM, rdg, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW)))
         if (b % thin == 0) {
@@ -75,8 +75,16 @@ object PosteriorSimulation {
             case faPrior: FeatureAllocationDistribution with HasMass[_] => faPrior.mass
             case _ => 0.0
           }
-          resultOthers(index)(1) = stateLGLFM.standardDeviationX
-          resultOthers(index)(2) = stateLGLFM.standardDeviationW
+          resultOthers(index)(1) = stateFAPrior match {
+            case faPrior: AttractionIndianBuffetDistribution =>
+              faPrior.similarity match {
+                case hasTemperature: Similarity with HasTemperature[_] => hasTemperature.temperature
+                case _ => 0.0
+              }
+            case _ => 0.0
+          }
+          resultOthers(index)(2) = stateLGLFM.standardDeviationX
+          resultOthers(index)(3) = stateLGLFM.standardDeviationW
           if ( ( width > 0 ) && ( index % rate == 0 ) ) {
             print("\b"*3)
             print("*")
