@@ -33,7 +33,7 @@ trait Similarity {
 
 }
 
-class FixedSimilarity(similarity: Array[Array[Double]]) extends Similarity {
+class FixedSimilarity private[distribution] (similarity: Array[Array[Double]]) extends Similarity {
 
   val nItems = similarity.length
 

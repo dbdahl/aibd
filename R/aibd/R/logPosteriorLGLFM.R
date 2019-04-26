@@ -33,8 +33,12 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), implementation="scala") {
+logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX, sdW, implementation="scala") {
   result <- logProbabilityFeatureAllocation(featureAllocation, distribution, implementation=implementation)
-  result <- result + logLikelihoodLGLFM(featureAllocation, X, precisionX=precisionX, precisionW=precisionW, sdX=sdX, sdW=sdW, implementation=implementation)
+  if ( missing(precisionX) == missing(sdX) ) stop("Exactly one of 'precisionX' and 'sdX' should be provided.")
+  if ( missing(precisionW) == missing(sdW) ) stop("Exactly one of 'precisionW' and 'sdW' should be provided.")
+  if ( missing(precisionX) ) precisionX <- 1/sdX^2
+  if ( missing(precisionW) ) precisionW <- 1/sdW^2
+  result <- result + logLikelihoodLGLFM(featureAllocation, X, precisionX=precisionX, precisionW=precisionW, implementation=implementation)
   result
 }

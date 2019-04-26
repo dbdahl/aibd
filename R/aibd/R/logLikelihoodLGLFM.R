@@ -42,6 +42,8 @@
 #'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX, sdW, implementation="scala") {
   # Equation 26 (page 1204) from Griffiths and Gharamani JMLR 2011
+  if ( missing(precisionX) == missing(sdX) ) stop("Exactly one of 'precisionX' and 'sdX' should be provided.")
+  if ( missing(precisionW) == missing(sdW) ) stop("Exactly one of 'precisionW' and 'sdW' should be provided.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
   if ( missing(sdX) ) sdX <- 1/sqrt(precisionX)
@@ -57,7 +59,7 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionW, sdX
   K <- ncol(Z)
   if ( nrow(X) != N ) stop("The number of rows in 'featureAllocation' and 'X' should be the same.")
   if ( is.list(featureAllocation) && ( implementation == "R" ) ) {
-    return(sapply(featureAllocation, function(Z) logLikelihoodLGLFM(Z, X, precisionX, precisionW, sdX, sdW, implementation)))
+    return(sapply(featureAllocation, function(Z) logLikelihoodLGLFM(Z, X, precisionX, precisionW, implementation=implementation)))
   }
   implementation <- toupper(implementation)
   if ( implementation == "R" ) {

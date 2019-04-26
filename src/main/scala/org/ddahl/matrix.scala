@@ -39,8 +39,8 @@ object matrix {
     }
   }
 
-  def pretty(X: Matrix): String = {
-    if ( X == null ) "" else getData(X).map(_.map { x => "%1.0f".format(x) }.mkString(" ")).mkString("\n")
+  def pretty(X: Matrix, fmt: String = "%g"): String = {
+    if ( X == null ) "" else getData(X).map(_.map { x => fmt.format(x) }.mkString(" ")).mkString("\n")
   }
 
   import scala.language.implicitConversions

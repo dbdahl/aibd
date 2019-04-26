@@ -1,4 +1,4 @@
-Sys.setenv(AIBD_TEST_LEVEL="1")
+Sys.setenv(AIBD_TEST_LEVEL="3")
 
 cat(paste0("************ Starting tests at level ",Sys.getenv("AIBD_TEST_LEVEL"),". ************\n"))
 

@@ -10,15 +10,15 @@ class LikelihoodComponents private[lineargaussian] (val Z: Matrix, val Zt: Matri
   val K = if ( Z == null ) 0 else Z.cols
 }
 
-class LinearGaussianLatentFeatureModel private (val X: Matrix, val Xt: Matrix, val XtX: Matrix, val traceXtX: Double, val precisionX: Double, val precisionW: Double) {
+class LinearGaussianLatentFeatureModel private (X: Matrix, Xt: Matrix, XtX: Matrix, traceXtX: Double, precisionX: Double, precisionW: Double) {
 
-  val N = X.rows
-  val D = X.cols
+  val N = if ( X == null ) -1 else X.rows
+  val D = if ( X == null ) -1 else X.cols
 
-  def standardDeviationX = 1/sqrt(precisionX)
-  def standardDeviationW = 1/sqrt(precisionW)
-  def varianceX = 1/precisionX
-  def varianceW = 1/precisionW
+  def standardDeviationX: Double = 1/sqrt(precisionX)
+  def standardDeviationW: Double = 1/sqrt(precisionW)
+  def varianceX: Double = 1/precisionX
+  def varianceW: Double = 1/precisionW
 
   private val Dhalf = D / 2.0
   private val const = -N * Dhalf * log(2 * math.Pi) - precisionX / 2 * traceXtX
@@ -149,8 +149,7 @@ object LinearGaussianLatentFeatureModel {
     if ( m != null ) usingPrecisions(m, precisionX, precisionW)
     else {
       val N2 = X.length
-      val X2 = wrap(Array(Array(Double.NaN)))
-      new LinearGaussianLatentFeatureModel(X2, null, null, Double.NaN, Double.NaN, Double.NaN) {
+      new LinearGaussianLatentFeatureModel(null, null, null, Double.NaN, Double.NaN, Double.NaN) {
         override val N = N2
         override val D = 0
         override def logLikelihood(lc: LikelihoodComponents): Double = 0.0
