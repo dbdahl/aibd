@@ -59,13 +59,13 @@ object PosteriorSimulation {
           case _ =>
             stateFAPrior
         }
-//        stateFAPrior = stateFAPrior match {
-//          case faPrior: AttractionIndianBuffetDistribution =>
-//            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
-//            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
-//          case _ =>
-//            stateFAPrior
-//        }
+        stateFAPrior = stateFAPrior match {
+          case faPrior: AttractionIndianBuffetDistribution =>
+            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
+            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
+          case _ =>
+            stateFAPrior
+        }
         stateLGLFM = if ( ( sdProposedStandardDeviationX <= 0.0 ) || ( sdProposedStandardDeviationW <= 0.0 ) ) stateLGLFM
         else monitorLGLFM(tmLGLFM(updateSamplingModel(stateFA, stateFAPrior, stateLGLFM, rdg, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW)))
         if (b % thin == 0) {

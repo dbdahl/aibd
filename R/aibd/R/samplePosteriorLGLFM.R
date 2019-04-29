@@ -97,6 +97,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     parallel <- as.logical(parallel[1])
+    if ( parallel ) stop("Parallel computations are disabled.")
     dist <- featureAllocationDistributionToReference(distribution)
     storage.mode(featureAllocation) <- "double"
     width <- as.integer( if ( verbose ) options()$width-2L else 0L )

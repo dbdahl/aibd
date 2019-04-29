@@ -102,7 +102,8 @@ test_that("Sampling from IBP using MCMC (from Scala) gives a distribution consis
 
 test_that("Sampling from LGLFM with IBP prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(2)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=TRUE)
+  parallel <- FALSE
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP", parallel=parallel)
 })
 
 test_that("Sampling from LGLFM with IBP prior and rank-one updates in MCMC (from Scala) gives a distribution consistent with the posterior.", {
@@ -112,12 +113,14 @@ test_that("Sampling from LGLFM with IBP prior and rank-one updates in MCMC (from
 
 test_that("Sampling from LGLFM with AIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(2)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE, distr="AIBD", parallel=TRUE)
+  parallel <- FALSE
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=0, rankOneUpdates=TRUE, distr="AIBD", parallel=parallel)
 })
 
 test_that("Sampling from LGLFM with AIBD prior (with random permutation) in MCMC (from Scala) gives a distribution consistent with the posterior.", {
   requireLevel(1)
-  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD", parallel=TRUE)
+  parallel <- FALSE
+  engine("scala", constructiveMethod=FALSE, posteriorSimulation=TRUE, nPerShuffle=100, rankOneUpdates=FALSE, distr="AIBD", parallel=parallel)
 })
 
 test_that("Sampling from LGLFM with MAIBD prior in MCMC (from Scala) gives a distribution consistent with the posterior.", {
