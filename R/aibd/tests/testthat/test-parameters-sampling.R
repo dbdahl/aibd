@@ -4,10 +4,11 @@ context("parameters-sampling")
 
 test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence intervals compatible with known value from prior.", {
   requireLevel(3)
+  extensive <- FALSE
   dimW <- 3
   nItems <- 4
   distance <- dist(scale(USArrests[1:nItems, 1:nItems]))
-  nSamples <- 5000
+  nSamples <- if ( extensive ) 10000 else 5000
   nominalCoverage <- 0.90
   massShape <- 10
   massRate <- 20
@@ -15,8 +16,10 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
   temperatureRate <- 2
   maxStandardDeviationX <- 3
   maxStandardDeviationW <- 3
-  B <- 100
-  # pb <- txtProgressBar(0,B,style = 3)
+  B <- if ( extensive ) {
+    pb <- txtProgressBar(0,B,style = 3)
+    500
+  } else 100
   containsMass <- containsTemperature <- containsX <- containsW <- logical(B)
   for ( b in seq_len(B) ) {
     mass <- rgamma(1,massShape,massRate)
@@ -34,7 +37,7 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
     containsTemperature[b] <- prod(quantile(samplesAIBD$parameters$temperature,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - temperature) < 0
     containsX[b] <- prod(quantile(samplesAIBD$parameters$standardDeviationX,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigx) < 0
     containsW[b] <- prod(quantile(samplesAIBD$parameters$standardDeviationW,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigw) < 0
-    # setTxtProgressBar(pb,b)
+    if ( extensive ) setTxtProgressBar(pb,b)
   }
   expect_gte(t.test(containsMass, mu=nominalCoverage)$p.value, 0.01)
   expect_gte(t.test(containsTemperature, mu=nominalCoverage)$p.value, 0.01)
