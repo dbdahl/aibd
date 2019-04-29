@@ -16,10 +16,12 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
   temperatureRate <- 2
   maxStandardDeviationX <- 3
   maxStandardDeviationW <- 3
-  B <- if ( extensive ) {
+  if ( extensive ) {
+    B <- 500
     pb <- txtProgressBar(0,B,style = 3)
-    500
-  } else 100
+  } else {
+    B <- 100
+  }
   containsMass <- containsTemperature <- containsX <- containsW <- logical(B)
   for ( b in seq_len(B) ) {
     mass <- rgamma(1,massShape,massRate)

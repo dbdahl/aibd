@@ -8,6 +8,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="AIBD"
   # implementation="scala"; constructiveMethod=FALSE; posteriorSimulation=TRUE; nPerShuffle=0; rankOneUpdates=FALSE; distr="IBP"; parallel=TRUE
+  extensive <- FALSE
   mass <- 1.0
   nItems <- 4
   nItems <- 3
@@ -27,8 +28,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
   e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
   X <- Z %*% W + e
-  nSamples <- 10000
-  nSamples <- 1000
+  nSamples <- if ( extensive ) 10000 else 1000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   samples <- if ( constructiveMethod ) {
     if ( posteriorSimulation ) fail("constructiveMethod=TRUE and posteriorSimuation=TRUE are incompatible")
