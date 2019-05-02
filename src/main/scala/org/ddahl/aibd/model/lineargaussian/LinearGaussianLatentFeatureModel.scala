@@ -66,7 +66,13 @@ class LinearGaussianLatentFeatureModel private (X: Matrix, Xt: Matrix, XtX: Matr
       if (Z.rows != N) throw new IllegalArgumentException("Feature allocation has " + Z.rows + " items, but " + N + " were expected.")
       val Zt = Z.t
       val W = Zt * Z + diag(Array.fill(Z.cols)(ratioOfPrecisions))
-      val chol = new CholeskyDecomposition(W)
+      val chol = try {
+        new CholeskyDecomposition(W)
+      } catch {
+        case e =>
+          println(pretty(W))
+          throw e
+      }
       val m = chol.getSolver.getInverse
       val d = chol.getDeterminant
       new LikelihoodComponents(Z, Zt, m, d)

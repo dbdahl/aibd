@@ -35,7 +35,6 @@
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
-#' @param parallel Should computations be done in parallel?
 #' @param rankOneUpdates Should rank one updates for the inverse and determinant
 #'   be used? In some cases, this may be faster.
 #' @param verbose Should a progress bar and information regarding lapse time and
@@ -70,7 +69,7 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, parallel=FALSE, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -96,8 +95,6 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     nSamples <- as.integer(max(0L,nSamples[1]))
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
-    parallel <- as.logical(parallel[1])
-    if ( parallel ) stop("Parallel computations are disabled.")
     dist <- featureAllocationDistributionToReference(distribution)
     storage.mode(featureAllocation) <- "double"
     width <- as.integer( if ( verbose ) options()$width-2L else 0L )
@@ -114,7 +111,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
     rankOneUpdates <- as.logical(rankOneUpdates[1])
     lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), parallel, rankOneUpdates, newFeaturesTruncationDivisor)
+    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), rankOneUpdates, newFeaturesTruncationDivisor)
     Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
     parameters <- as.data.frame(ref$"_2"())
     names(parameters) <- c("mass","temperature","standardDeviationX","standardDeviationW")
