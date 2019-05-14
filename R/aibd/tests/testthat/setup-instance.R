@@ -1,5 +1,5 @@
-TEST_LEVEL <- 3            # 0, 1, 2, 3, 4
-TEST_EXTENSIVE <- TRUE     # FALSE or TRUE
+TEST_LEVEL <- 1            # 0, 1, 2, 3, 4
+TEST_EXTENSIVE <- FALSE    # FALSE or TRUE
 
 cat(paste0("************ Starting tests at level ",TEST_LEVEL," (extensive=",TEST_EXTENSIVE,"). ************\n"))
 

@@ -11,7 +11,7 @@ import org.apache.commons.math3.util.FastMath.{log, sqrt}
 
 object PosteriorSimulation {
 
-  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, temperaturePriorShape: Double, temperaturePriorRate: Double, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedTemperature: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Array[Double]]) = {
+  def update4AIBD(featureAllocation: FeatureAllocation, featureAllocationPrior: FeatureAllocationDistribution, lglfm: LinearGaussianLatentFeatureModel, massPriorShape: Double, massPriorRate: Double, nPerShuffle: Int, temperaturePriorShape: Double, temperaturePriorRate: Double, maxStandardDeviationX: Double, maxStandardDeviationW: Double, sdProposedTemperature: Double, sdProposedStandardDeviationX: Double, sdProposedStandardDeviationW: Double, corProposedSdXSdW: Double, nOtherUpdatesPerAllocationUpdate: Int, nSamples: Int, thin: Int, progressWidth: Int, rdg: RandomDataGenerator, rankOneUpdates: Boolean, newFeaturesTruncationDivisor: Double = 1000): (Array[FeatureAllocation], Array[Array[Int]], Array[Array[Double]]) = {
     var stateFA = featureAllocation
     var stateFAPrior = featureAllocationPrior
     var stateLGLFM = lglfm
@@ -34,37 +34,44 @@ object PosteriorSimulation {
     }
     if ( width > 0 ) print("[" + (" " * width) + "]" + ("\b" * (width + 1)) + "   ")
     val resultFA = Array.ofDim[FeatureAllocation](nSamples)
+    val resultPermutation = Array.ofDim[Int](nSamples, stateFA.nItems)
     val resultOthers = Array.ofDim[Double](nSamples,4)
     var b = 1
     while (b <= nIterations) {
       tmAll {
         stateFA = monitorFA(tmAllocation(updateFeatureAllocation(stateFA, stateFAPrior, stateLGLFM, rdg, rankOneUpdates, newFeaturesTruncationDivisor)))
-        stateFAPrior = stateFAPrior match {
-          case faPrior: FeatureAllocationDistribution with HasMass[_] =>
-            if ( ( massPriorShape <= 0 ) || ( massPriorRate <= 0 ) ) faPrior
-            else monitorFAMass(tmMass(updateMass(stateFA, faPrior, rdg, massPriorShape, massPriorRate)))
-          case _ =>
-            stateFAPrior
+        Misc.repeat(nOtherUpdatesPerAllocationUpdate) {
+          stateFAPrior = stateFAPrior match {
+            case faPrior: FeatureAllocationDistribution with HasMass[_] =>
+              if ( ( massPriorShape <= 0 ) || ( massPriorRate <= 0 ) ) faPrior
+              else monitorFAMass(tmMass(updateMass(stateFA, faPrior, rdg, massPriorShape, massPriorRate)))
+            case _ =>
+              stateFAPrior
+          }
+          stateFAPrior = stateFAPrior match {
+            case faPrior: AttractionIndianBuffetDistribution =>
+              if (nPerShuffle < 2) faPrior
+              else monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
+            case _ =>
+              stateFAPrior
+          }
+          stateFAPrior = stateFAPrior match {
+            case faPrior: AttractionIndianBuffetDistribution =>
+              if ((temperaturePriorShape <= 0) || (temperaturePriorRate <= 0)) faPrior
+              else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
+            case _ =>
+              stateFAPrior
+          }
+          stateLGLFM = if ((sdProposedStandardDeviationX <= 0.0) || (sdProposedStandardDeviationW <= 0.0)) stateLGLFM
+          else monitorLGLFM(tmLGLFM(updateSamplingModel(stateFA, stateFAPrior, stateLGLFM, rdg, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW)))
         }
-        stateFAPrior = stateFAPrior match {
-          case faPrior: AttractionIndianBuffetDistribution =>
-            if ( nPerShuffle < 2 ) faPrior
-            else monitorFAPermutation(tmPermutation(updatePermutation(stateFA, faPrior, rdg, nPerShuffle)))
-          case _ =>
-            stateFAPrior
-        }
-        stateFAPrior = stateFAPrior match {
-          case faPrior: AttractionIndianBuffetDistribution =>
-            if ( ( temperaturePriorShape <= 0 ) || ( temperaturePriorRate <= 0 ) ) faPrior
-            else monitorFATemperature(tmTemperature(updateTemperature(stateFA, faPrior, rdg, temperaturePriorShape, temperaturePriorRate, sdProposedTemperature)))
-          case _ =>
-            stateFAPrior
-        }
-        stateLGLFM = if ( ( sdProposedStandardDeviationX <= 0.0 ) || ( sdProposedStandardDeviationW <= 0.0 ) ) stateLGLFM
-        else monitorLGLFM(tmLGLFM(updateSamplingModel(stateFA, stateFAPrior, stateLGLFM, rdg, maxStandardDeviationX, maxStandardDeviationW, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW)))
         if (b % thin == 0) {
           val index = (b-1)/thin
           resultFA(index) = stateFA
+          resultPermutation(index) = stateFAPrior match {
+            case faPrior: AttractionIndianBuffetDistribution => faPrior.permutation.toArray
+            case _ => Array.ofDim[Int](stateFA.nItems)
+          }
           resultOthers(index)(0) = stateFAPrior match {
             case faPrior: FeatureAllocationDistribution with HasMass[_] => faPrior.mass
             case _ => 0.0
@@ -106,7 +113,7 @@ object PosteriorSimulation {
       println("  Temperature: " + monitorFATemperature.rate)
       println("  Sampling model: " + monitorLGLFM.rate)
     }
-    (resultFA, resultOthers)
+    (resultFA, resultPermutation, resultOthers)
   }
 
   def updateMass[T](featureAllocation: FeatureAllocation, hasMassPrior: FeatureAllocationDistribution with HasMass[T], rdg: RandomDataGenerator, priorShape: Double, priorRate: Double): (FeatureAllocationDistribution with HasMass[T], Int, Int) = {

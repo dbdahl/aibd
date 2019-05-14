@@ -69,7 +69,7 @@ class LinearGaussianLatentFeatureModel private (X: Matrix, Xt: Matrix, XtX: Matr
       val chol = try {
         new CholeskyDecomposition(W)
       } catch {
-        case e =>
+        case e: Throwable =>
           println(pretty(W))
           throw e
       }

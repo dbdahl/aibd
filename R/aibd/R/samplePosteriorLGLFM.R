@@ -69,7 +69,7 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nOtherUpdatesPerAllocationUpdate=10L, nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -93,6 +93,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     Zs
   } else if ( implementation == "SCALA" ) {
     nSamples <- as.integer(max(0L,nSamples[1]))
+    nOtherUpdatesPerAllocationUpdate <- as.integer(nOtherUpdatesPerAllocationUpdate[1])
     thin <- as.integer(thin[1])
     newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
     dist <- featureAllocationDistributionToReference(distribution)
@@ -111,10 +112,11 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     corProposedSdXSdW <- as.double(corProposedSdXSdW[1])
     rankOneUpdates <- as.logical(rankOneUpdates[1])
     lglfm <- s$LGLFM.usingPrecisions(X,precisionX,precisionW)
-    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nSamples, thin, width, s$rdg(), rankOneUpdates, newFeaturesTruncationDivisor)
+    ref <- s$PosteriorSimulation.update4AIBD(s$FA.fromMatrix(featureAllocation), dist, lglfm, massPriorShape, massPriorRate, nPerShuffle, temperaturePriorShape, temperaturePriorRate, maxStandardDeviationX, maxStandardDeviationW, sdProposedTemperature, sdProposedStandardDeviationX, sdProposedStandardDeviationW, corProposedSdXSdW, nOtherUpdatesPerAllocationUpdate, nSamples, thin, width, s$rdg(), rankOneUpdates, newFeaturesTruncationDivisor)
     Zs <- scalaPull(s(ref) ^ 'ref._1.map(_.matrix)', "arrayOfMatrices")
-    parameters <- as.data.frame(ref$"_2"())
+    permutations <- as.data.frame(ref$"_2"())
+    parameters <- as.data.frame(ref$"_3"())
     names(parameters) <- c("mass","temperature","standardDeviationX","standardDeviationW")
-    list(featureAllocation=Zs, parameters=parameters)
+    list(featureAllocation=Zs, permutations=permutations, parameters=parameters)
   } else stop("Unsupported 'implementation' argument.")
 }
