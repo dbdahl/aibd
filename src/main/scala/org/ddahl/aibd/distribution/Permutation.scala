@@ -56,7 +56,7 @@ object Permutation {
     new Permutation(Array(x: _*), x.length)
   }
 
-  def apply(x: Array[Int]): Permutation = apply(x: _*)
+  def apply(x: Array[Int]): Permutation = apply(x.toIndexedSeq: _*)
 
   def natural(nItems: Int): Permutation = new Permutation(Array.tabulate(nItems)(identity), nItems)
 

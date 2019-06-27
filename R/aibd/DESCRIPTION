@@ -9,5 +9,6 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Depends: sdols (> 1.7.4)
+Imports: rscala (> 3.2.13)
 RoxygenNote: 6.1.1
 Suggests: testthat

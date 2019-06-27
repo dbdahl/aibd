@@ -252,7 +252,7 @@ sealed trait FeatureAllocation {
 
   def enumerateFor(i: Int): Vector[FeatureAllocation] = {
     val (singletons, existing) = partitionBySingletonsOf(i)
-    val a = existing.remove(i).features.groupBy(identity).mapValues(_.size)
+    val a = existing.remove(i).features.groupBy(identity).map { case (key,value) => (key, value.size) }
     val b = a.map { x =>
       val off = x._1
       val on  = x._1 + i
@@ -344,7 +344,7 @@ sealed trait FeatureAllocation {
 
   def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
     FeatureAllocationAlternative(nItems, features.map { f =>
-      FeatureAlternative(f.toArray:_*)
+      FeatureAlternative(f.toIndexedSeq:_*)
     }:_*)
   }
 

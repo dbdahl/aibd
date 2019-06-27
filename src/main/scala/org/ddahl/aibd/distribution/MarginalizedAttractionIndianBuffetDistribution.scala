@@ -1,18 +1,20 @@
 package org.ddahl.aibd.distribution
 
 import org.ddahl.aibd._
-
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{exp, log}
+import scala.collection.parallel.immutable.ParVector
 
 class MarginalizedAttractionIndianBuffetDistribution private (val mass: Double, val similarity: Similarity) extends FeatureAllocationDistribution {
+
+  implicit val ordering = CrossCompatibility.doubleOrdering
 
   val nItems = similarity.nItems
 
   def logProbability(i: Int, fa: FeatureAllocation): Double = logProbability(fa)
 
   def logProbability(fa: FeatureAllocation): Double = {
-    val components = Permutation.enumerate(nItems).par.map(p => AttractionIndianBuffetDistribution(mass, p, similarity))
+    val components = ParVector(Permutation.enumerate(nItems):_*).map(p => AttractionIndianBuffetDistribution(mass, p, similarity))
     val nPermutations = components.length
     val logProbs = components.map(_.logProbability(fa))
     val max = logProbs.max

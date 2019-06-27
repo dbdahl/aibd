@@ -8,6 +8,7 @@ import util.Functions.{harmonicNumber, logOnInt}
 import org.ddahl.commonsmath.RandomDataGeneratorImprovements
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{log, sqrt}
+import scala.collection.parallel.immutable.ParVector
 
 object PosteriorSimulation {
 
@@ -205,10 +206,10 @@ object PosteriorSimulation {
         else {
           val lc1 = lglfm.computeLikelihoodComponents(proposals.head)
           val lc2 = lglfm.deallocateFeaturesFor(i, lc1)
-          if (parallel) proposals.par.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2)).toVector else proposals.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2))
+          if (parallel) ParVector(proposals:_*).map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2)).toVector else proposals.map(logPosterior2(i, _, featureAllocationPrior, lglfm, lc2))
         }
       } else {
-        if (parallel) proposals.par.map(logPosterior1(i, _, featureAllocationPrior, lglfm)).toVector else proposals.map(logPosterior1(i, _, featureAllocationPrior, lglfm))
+        if (parallel) ParVector(proposals:_*).map(logPosterior1(i, _, featureAllocationPrior, lglfm)).toVector else proposals.map(logPosterior1(i, _, featureAllocationPrior, lglfm))
       }
     }
     (rdg.nextItem(logWeights, onLogScale = true)._1, 1, 1)
