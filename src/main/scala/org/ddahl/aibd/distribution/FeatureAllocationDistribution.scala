@@ -1,7 +1,7 @@
 package org.ddahl.aibd.distribution
 
 import org.ddahl.aibd._
-import org.ddahl.commonsmath.RandomDataGeneratorImprovements
+import org.ddahl.commonsmath.Implicits.RandomDataGeneratorImprovements
 import org.apache.commons.math3.random.RandomDataGenerator
 
 import scala.collection.parallel.immutable.ParVector

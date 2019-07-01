@@ -5,7 +5,7 @@ import distribution._
 import org.apache.commons.math3.distribution.GammaDistribution
 import util._
 import util.Functions.{harmonicNumber, logOnInt}
-import org.ddahl.commonsmath.RandomDataGeneratorImprovements
+import org.ddahl.commonsmath.Implicits.RandomDataGeneratorImprovements
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.apache.commons.math3.util.FastMath.{log, sqrt}
 import scala.collection.parallel.immutable.ParVector
