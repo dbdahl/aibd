@@ -2,7 +2,6 @@
 #'
 .onLoad <- function(libname, pkgname) {
   s <- sdols:::s
-  scalaJARs(pkgname,s)
   scalaLazy(function(s) {
     s + '
       import org.ddahl.matrix._
