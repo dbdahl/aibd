@@ -5,8 +5,8 @@ organization := "org.ddahl"
 //version := "0.1.1"
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.12.8"
-crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0")
+scalaVersion := "2.12.10"
+crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1")
 scalacOptions ++= Seq( "-deprecation", "-unchecked", "-feature" )
 
 libraryDependencies ++= Seq(
@@ -26,7 +26,7 @@ libraryDependencies ++= {
 }
 
 Compile / unmanagedJars := {
-  val rPackages = Seq("commonsMath","sdols")
+  val rPackages = Seq("commonsMath")
   rPackages.flatMap { p =>
     import scala.sys.process._
     import java.io.File

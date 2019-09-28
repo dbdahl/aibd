@@ -2,8 +2,8 @@ package org.ddahl.aibd
 
 import util.Functions.logFactorial
 
-import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
-import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
+//import org.ddahl.sdols.featureallocation.{FeatureAllocation => FeatureAllocationAlternative}
+//import org.ddahl.sdols.featureallocation.{Feature => FeatureAlternative}
 import scala.collection.immutable.BitSet
 
 sealed trait FeatureAllocation {
@@ -342,11 +342,11 @@ sealed trait FeatureAllocation {
 
   private def lessThan(x: (Iterable[Int],Int), y: (Iterable[Int], Int)): Boolean = compare(x,y) < 0
 
-  def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
-    FeatureAllocationAlternative(nItems, features.map { f =>
-      FeatureAlternative(f.toIndexedSeq:_*)
-    }:_*)
-  }
+//  def convertToAlternativeImplementation: FeatureAllocationAlternative[Null] = {
+//    FeatureAllocationAlternative(nItems, features.map { f =>
+//      FeatureAlternative(f.toIndexedSeq:_*)
+//    }:_*)
+//  }
 
 }
 
@@ -466,9 +466,9 @@ object FeatureAllocation {
     engine(0,empty(nItems))
   }
 
-  def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {
-    fromMatrix(faa.toMatrix)
-  }
+//  def convertFromAlternativeImplementation(faa: FeatureAllocationAlternative[Null]): FeatureAllocation = {
+//    fromMatrix(faa.toMatrix)
+//  }
 
 }
 
