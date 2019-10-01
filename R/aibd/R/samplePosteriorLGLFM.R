@@ -60,10 +60,7 @@
 #' X <- matrix(double(),nrow=nrow(Z),ncol=0)
 #' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, nSamples=1000, thin=1)
 #'
-#' library(sdols)
-#' expectedPairwiseAllocationMatrix(samples$featureAllocation)
 #' Ztruth %*% t(Ztruth)
-#' plot(expectedPairwiseAllocationMatrix(samples$featureAllocation), Ztruth %*% t(Ztruth))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)

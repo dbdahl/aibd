@@ -8,7 +8,6 @@
 #' @param ... Other arguments that are currently ignored.
 #'
 #' @return An n-by-n matrix of expected values for the number of items shared among pairs.
-#' @importFrom sdols expectedPairwiseAllocationMatrix
 #' @export
 #'
 #' @examples
@@ -16,7 +15,7 @@
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
 #'
-#' d1 <- ibp(1,4)
+#' d1 <- ibp(1, 4)
 #' epam1 <- expectedPairwiseAllocationMatrix(d1,3)
 #'
 #' d2 <- aibd(1, NULL, 1.0, dist)
@@ -25,14 +24,7 @@
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
-expectedPairwiseAllocationMatrix.aibdFADistribution <- function(x, maxNFeatures, ...) {
-  dist <- featureAllocationDistributionToReference(x)
-  dist$expectedPairwiseAllocationMatrix(as.integer(maxNFeatures[1]))
-}
-
-#' @rdname expectedPairwiseAllocationMatrix.aibdFADistribution
-#' @export
-expectedPairwiseAllocationMatrix.ibpFADistribution <- function(x, maxNFeatures, ...) {
+expectedPairwiseAllocationMatrix <- function(x, maxNFeatures, ...) {
   dist <- featureAllocationDistributionToReference(x)
   dist$expectedPairwiseAllocationMatrix(as.integer(maxNFeatures[1]))
 }
