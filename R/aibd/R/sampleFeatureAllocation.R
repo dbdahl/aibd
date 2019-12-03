@@ -2,9 +2,10 @@
 #'
 #' @param nSamples An integer giving the number of samples
 #' @param distribution A feature allocation distribution
+#' @param implementation Either "R" or "scala", to indicate the implementation to use.
+#' @param parallel Either multiple cores should be used.
 #'
 #' @return A list of feature allocation matrices
-#' @param implementation Either "R" or "scala", to indicate the implementation to use.
 #' @importFrom stats rpois
 #' @export
 #'
@@ -25,7 +26,7 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala") {
+sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=TRUE) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
@@ -39,7 +40,7 @@ sampleFeatureAllocation <- function(nSamples, distribution, implementation="scal
     listOfZ
   } else if ( implementation == "SCALA" ) {
     dist <- featureAllocationDistributionToReference(distribution)
-    samples <- dist$sample(s$rdg(), as.integer(nSamples[1]))
+    samples <- dist$sample(s$rdg(), as.integer(nSamples[1]), ifelse(as.logical(parallel),0L,1L))
     scalaPull(s(samples) ^ 'samples.map(_.matrix)', "arrayOfMatrices")
   } else stop("Unsupported 'implementation' argument.")
 }
