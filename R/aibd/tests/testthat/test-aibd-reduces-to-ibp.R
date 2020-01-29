@@ -5,7 +5,7 @@ context("aibd-reduces-to-ibp")
 mass <- 1
 nItems <- 4
 maxNFeatures <- 4
-samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
+samples <- aibd:::enumerateFeatureAllocations(nItems, maxNFeatures)
 
 d1 <- ibp(mass, nItems)
 d2 <- aibd(mass, sample(1:nItems), 0.0, matrix(1,nrow=nItems,ncol=nItems), "identity")

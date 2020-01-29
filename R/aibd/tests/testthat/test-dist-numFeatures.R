@@ -13,7 +13,7 @@ ibp2 <- ibp(mass, nItems)
 # These tests can all be calculated theoretically. This enumerates across all feature allocations up to max_F features
 # and then aggregates the enumerated space into a distribution of the number of features for each cusotmer.
 max_F <- 8
-enum <- enumerateFeatureAllocations(nItems, max_F)
+enum <- aibd:::enumerateFeatureAllocations(nItems, max_F)
 prEnumAibd <- exp(logProbabilityFeatureAllocation(enum, aibd2, implementation='scala'))
 prEnumIbp <- exp(logProbabilityFeatureAllocation(enum, ibp2, implementation='scala'))
 row.feat <- t(sapply(enum, rowSums))

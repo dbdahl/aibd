@@ -7,7 +7,7 @@ data <- USArrests[c("California","Wisconsin","Nebraska","New York"),]
 nItems <- nrow(data)
 distance <- dist(scale(data))
 maxNFeatures <- 4
-samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
+samples <- aibd:::enumerateFeatureAllocations(nItems, maxNFeatures)
 # Only the natural permutation is supported by the R implementation.
 dist <- aibd(mass, 1:nItems, 1.0, distance)
 logProbsFromScala <- logProbabilityFeatureAllocation(samples, dist, implementation="scala")

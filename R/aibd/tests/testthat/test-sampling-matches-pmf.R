@@ -37,7 +37,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   sampled <- as.data.frame(freq)
   names(sampled) <- c("names","freq")
   maxNFeatures <- 9
-  Zall <- enumerateFeatureAllocations(nItems, maxNFeatures)
+  Zall <- aibd:::enumerateFeatureAllocations(nItems, maxNFeatures)
   # dist <- ibp(mass+0.1, nItems)   # Uncomment to demonstrate power of this test.
   dist2 <- if ( inherits(dist,"aibdFADistribution") && ( nPerShuffle > 0 ) ) aibd(dist$mass, NULL, dist$temperature, dist$distance, dist$decayFunction) else dist
   probs <- if ( posteriorSimulation ) {

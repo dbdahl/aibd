@@ -9,19 +9,22 @@
 #'   parameter, where the expected value if \code{massPriorShape/massPriorRate}.
 #' @param massPriorRate Rate parameter of the gamma prior on the mass parameter,
 #'   where the expected value if \code{massPriorShape/massPriorRate}.
+#' @param nPerShuffle Number of items to randomly select and permute when
+#'   proposing an update to the permutation associated with the attraction
+#'   Indian buffet distribution (AIBD).
+#' @param temperaturePriorShape ??????????
+#' @param temperaturePriorRate ??????????
 #' @param maxStandardDeviationX Maximum value parameter of the uniform prior
 #'   distribution on the standard deviation of \code{X}.
 #' @param maxStandardDeviationW Maximum value parameter of the uniform prior
 #'   distribution on the standard deviation of \code{W}.
+#' @param sdProposedTemperature ????????
 #' @param sdProposedStandardDeviationX Standard deviation of the Gaussian random
 #'   walk update for the standard deviation of \code{X}.
 #' @param sdProposedStandardDeviationW Standard deviation of the Gaussian random
 #'   walk update for the standard deviation of \code{W}.
 #' @param corProposedSdXSdW Correlation of the multivariate Gaussian random walk
 #'   updates for the standard deviations of \code{X} and \code{W}.
-#' @param nPerShuffle Number of items to randomly select and permute when
-#'   proposing an update to the permutation associated with the attraction
-#'   Indian buffet distribution (AIBD).
 #' @param newFeaturesTruncationDivisor While in theory a countable infinite
 #'   number of new features may be allocated to an item, the posterior
 #'   simulation needs to limit the number of new features that are considered.
@@ -32,6 +35,7 @@
 #'   of new features is less than the maximum posterior probability (among the
 #'   previous number of new features) dividided by
 #'   \code{newFeaturesTruncationDivisior}.
+#' @param nOtherUpdatesPerAllocationUpdate ?????????
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.
@@ -42,6 +46,7 @@
 #' @inheritParams logPosteriorLGLFM
 #'
 #' @importFrom stats sd
+#' @importFrom stats rbinom
 #' @export
 #' @examples
 #' mass <- 1
@@ -80,15 +85,16 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   if ( nrow(X) != N ) stop("The number of rows in 'featureAllocation' and 'X' should be the same.")
   storage.mode(X) <- "double"
   implementation <- toupper(implementation)
-  if ( implementation == "R" ) {
-    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for the R implementation.")
-    Zs <- vector(nSamples %/% thin, mode="list")
-    for (b in 1:(thin*nSamples)) {
-      Z <- collapsedGibbsLinModelSamplerSS(Z,sdX,sdW,distribution$mass,X)[[1]]
-      if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
-    }
-    Zs
-  } else if ( implementation == "SCALA" ) {
+#  if ( implementation == "R" ) {
+#    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for the R implementation.")
+#    Zs <- vector(nSamples %/% thin, mode="list")
+#    for (b in 1:(thin*nSamples)) {
+#      Z <- collapsedGibbsLinModelSamplerSS(Z,sdX,sdW,distribution$mass,X)[[1]]
+#      if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
+#    }
+#    Zs
+#  } else
+  if ( implementation == "SCALA" ) {
     nSamples <- as.integer(max(0L,nSamples[1]))
     nOtherUpdatesPerAllocationUpdate <- as.integer(nOtherUpdatesPerAllocationUpdate[1])
     thin <- as.integer(thin[1])

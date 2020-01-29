@@ -13,7 +13,7 @@ W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
 e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
 X <- Z %*% W + e
 maxNFeatures <- 4
-featureAllocations <- enumerateFeatureAllocations(nItems, maxNFeatures)
+featureAllocations <- aibd:::enumerateFeatureAllocations(nItems, maxNFeatures)
 dist <- ibp(mass, nItems)
 
 test_that("R and Scala give the same values for log posterior in LGLFM", {

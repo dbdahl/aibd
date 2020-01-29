@@ -5,7 +5,7 @@ context("ibp-pmf")
 mass <- 0.7
 nItems <- 4
 maxNFeatures <- 4
-samples <- enumerateFeatureAllocations(nItems, maxNFeatures)
+samples <- aibd:::enumerateFeatureAllocations(nItems, maxNFeatures)
 dist <- ibp(mass, nItems)
 logProbsFromScala <- logProbabilityFeatureAllocation(samples, dist, implementation="scala")
 
