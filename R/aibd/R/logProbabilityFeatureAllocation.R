@@ -4,8 +4,10 @@
 #' matrix or a list of feature allocations for the supplied distribution.
 #'
 #' @param featureAllocation An N-by-K binary feature allocation matrix, or a list of such matrices.
-#' @param distribution A feature allocation distribution.
-#' @param implementation Either "R" or "scala", to indicate the implementation to use.
+#' @param distribution A feature allocation distribution as defined in the functions
+#' \code{\link{aibd}} or \link{ibp}.
+#' @param implementation The default of "scala" should be used.  The "R" option is not
+#'  a supported implementation.
 #'
 #' @return The log probability of the feature allocation under the supplied distribution.
 #' @export
@@ -18,23 +20,28 @@
 #' dist <- dist(scale(data))
 #' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
-#' Z0 <- matrix(0, ncol=0, nrow=4)
-#' Z00 <- matrix(c(0,0,0,0), nrow=4)
-#' Z1 <- matrix(c(1,1,1,1), nrow=4)
-#' Z2 <- cbind(Z1,Z1)
-#' Z3 <- Z2
-#' Z3[3,2] <- 0
+#' Z1 <- matrix(c(1,1,0,1), nrow=4)
 #'
-#' all.equal(logProbabilityFeatureAllocation(Z0, d1), logProbabilityFeatureAllocation(Z0, d1,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z1, d1), logProbabilityFeatureAllocation(Z1, d1,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z2, d1), logProbabilityFeatureAllocation(Z2, d1,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z3, d1), logProbabilityFeatureAllocation(Z3, d1,"R"))
+#' logProbabilityFeatureAllocation(Z1, d1)
+#' logProbabilityFeatureAllocation(Z1, d2)
 #'
-#' all.equal(logProbabilityFeatureAllocation(Z0, d2), logProbabilityFeatureAllocation(Z0, d2,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z1, d2), logProbabilityFeatureAllocation(Z1, d2,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z2, d2), logProbabilityFeatureAllocation(Z2, d2,"R"))
-#' all.equal(logProbabilityFeatureAllocation(Z3, d2), logProbabilityFeatureAllocation(Z3, d2,"R"))
-#'
+# Z0 <- matrix(0, ncol=0, nrow=4)
+# Z00 <- matrix(c(0,0,0,0), nrow=4)
+#
+# Z2 <- cbind(Z1,Z1)
+# Z3 <- Z2
+# Z3[3,2] <- 0
+#
+# all.equal(logProbabilityFeatureAllocation(Z0, d1), logProbabilityFeatureAllocation(Z0, d1,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z1, d1), logProbabilityFeatureAllocation(Z1, d1,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z2, d1), logProbabilityFeatureAllocation(Z2, d1,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z3, d1), logProbabilityFeatureAllocation(Z3, d1,"R"))
+#
+# all.equal(logProbabilityFeatureAllocation(Z0, d2), logProbabilityFeatureAllocation(Z0, d2,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z1, d2), logProbabilityFeatureAllocation(Z1, d2,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z2, d2), logProbabilityFeatureAllocation(Z2, d2,"R"))
+# all.equal(logProbabilityFeatureAllocation(Z3, d2), logProbabilityFeatureAllocation(Z3, d2,"R"))
+#
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
 #' }

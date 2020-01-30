@@ -1,11 +1,14 @@
 #' Sample from a Feature Allocation Distribution
 #'
 #' @param nSamples An integer giving the number of samples
-#' @param distribution A feature allocation distribution
-#' @param implementation Either "R" or "scala", to indicate the implementation to use.
-#' @param parallel Either multiple cores should be used.
+#' @param distribution A feature allocation distribution as defined in the functions
+#' \code{\link{aibd}} or \link{ibp}.
+#' @param implementation The default of "scala" should be used.  The "R" option is not
+#'  a supported implementation.
+#' @param parallel Whether multiple cores should be used to generate the samples.  When \code{parallel}
+#'  is set to TRUE the number of samples returned may be greater than \code{nSamples}.
 #'
-#' @return A list of feature allocation matrices
+#' @return A list of feature allocation matrices sampled from the supplied distribution.
 #' @importFrom stats rpois
 #' @export
 #'
@@ -17,16 +20,19 @@
 #' dist <- dist(scale(data))
 #' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
-#' system.time(samples <- sampleFeatureAllocation(1000, d1))
-#' system.time(samples <- sampleFeatureAllocation(1000, d1))
-#' system.time(samples <- sampleFeatureAllocation(1000, d2))
-#' system.time(samples <- sampleFeatureAllocation(1000, d2))
+#' samples_ibp <- sampleFeatureAllocation(10, d1, parallel=FALSE)
+#' samples_aibd <- sampleFeatureAllocation(15, d2, parallel=FALSE)
+#'
+# system.time(samples <- sampleFeatureAllocation(1000, d1))
+# system.time(samples <- sampleFeatureAllocation(1000, d1))
+# system.time(samples <- sampleFeatureAllocation(1000, d2))
+# system.time(samples <- sampleFeatureAllocation(1000, d2))
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=TRUE) {
+sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=FALSE) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")

@@ -16,13 +16,13 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     aibd(mass, NULL, 2, dist(scale(USArrests)[sample(1:50,nItems),]))
   } else stop("Unrecognized distribution.")
   sigx <- 0.1
-  sigw <- 1.0
-  dimW <- 1
+  siga <- 1.0
+  dimA <- 1
   Z <- matrix(c(0,0,1,0,1,1,0,1,1,0,0,0,1,1,1,0,0,1,1,0)[1:(2*nItems)],byrow=TRUE,nrow=nItems,ncol=2)
   Ztruth <- Z
-  W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
-  e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
-  X <- Z %*% W + e
+  A <- matrix(rnorm(ncol(Z)*dimA,sd=siga),nrow=ncol(Z),ncol=dimA)
+  e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
+  X <- Z %*% A + e
   nSamples <- if ( TEST_EXTENSIVE ) 100000 else 1000
   Z <- matrix(double(),nrow=nItems,ncol=0)
   samples <- if ( constructiveMethod ) {
@@ -30,7 +30,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
     sampleFeatureAllocation(nSamples, dist, implementation=implementation)
   } else {
     if ( ! posteriorSimulation ) X <- matrix(double(),nrow=nItems,ncol=0)  # When X has zero columns, the function below just samples from the prior.
-    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdW=sigw, nPerShuffle=nPerShuffle, nSamples=nSamples, thin=10, rankOneUpdates=rankOneUpdates, verbose=TEST_EXTENSIVE)
+    samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdA=siga, nPerShuffle=nPerShuffle, nSamples=nSamples, thin=10, rankOneUpdates=rankOneUpdates, verbose=TEST_EXTENSIVE)
     if ( implementation == "R" ) samples else samples$featureAllocation
   }
   freq <- table(aibd:::featureAllocation2Id(samples))
@@ -41,7 +41,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   # dist <- ibp(mass+0.1, nItems)   # Uncomment to demonstrate power of this test.
   dist2 <- if ( inherits(dist,"aibdFADistribution") && ( nPerShuffle > 0 ) ) aibd(dist$mass, NULL, dist$temperature, dist$distance, dist$decayFunction) else dist
   probs <- if ( posteriorSimulation ) {
-    exp(logPosteriorLGLFM(Zall, dist2, X, sdX=sigx, sdW=sigw, implementation=implementation))
+    exp(logPosteriorLGLFM(Zall, dist2, X, sdX=sigx, sdA=siga, implementation=implementation))
   } else {
     exp(logProbabilityFeatureAllocation(Zall, dist2, implementation=implementation))
   }
