@@ -71,7 +71,7 @@
 #' rscala::scalaDisconnect(aibd:::s)
 #' }
 #'
-samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, implementation="scala", nOtherUpdatesPerAllocationUpdate=10L, nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
+samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionW, sdX=1/sqrt(precisionX), sdW=1/sqrt(precisionW), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationW=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationW=-1, corProposedSdXSdW=0, newFeaturesTruncationDivisor=1000, nOtherUpdatesPerAllocationUpdate=10L, nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
   if ( missing(precisionX) ) precisionX <- 1/sdX^2
   if ( missing(precisionW) ) precisionW <- 1/sdW^2
@@ -84,17 +84,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   if ( N != distribution$nItems ) stop("Inconsistent number of rows among feature allocations and prior feature allocation distribution.")
   if ( nrow(X) != N ) stop("The number of rows in 'featureAllocation' and 'X' should be the same.")
   storage.mode(X) <- "double"
-  implementation <- toupper(implementation)
-#  if ( implementation == "R" ) {
-#    if ( !inherits(distribution,"ibpFADistribution") ) stop("Only the IBP is currently available for the R implementation.")
-#    Zs <- vector(nSamples %/% thin, mode="list")
-#    for (b in 1:(thin*nSamples)) {
-#      Z <- collapsedGibbsLinModelSamplerSS(Z,sdX,sdW,distribution$mass,X)[[1]]
-#      if ( b %% thin == 0 ) Zs[[b %/% thin]] <- Z
-#    }
-#    Zs
-#  } else
-  if ( implementation == "SCALA" ) {
+
     nSamples <- as.integer(max(0L,nSamples[1]))
     nOtherUpdatesPerAllocationUpdate <- as.integer(nOtherUpdatesPerAllocationUpdate[1])
     thin <- as.integer(thin[1])
@@ -121,5 +111,5 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
     parameters <- as.data.frame(ref$"_3"())
     names(parameters) <- c("mass","temperature","standardDeviationX","standardDeviationW")
     list(featureAllocation=Zs, permutations=permutations, parameters=parameters)
-  } else stop("Unsupported 'implementation' argument.")
+
 }
