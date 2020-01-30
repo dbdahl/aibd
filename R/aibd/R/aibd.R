@@ -1,13 +1,15 @@
 #' Define an Attraction Indian Buffet Distribution (AIBD) for Feature
 #' Allocations
 #'
-#' @param mass The mass (a.k.a., concentration) parameter.
+#' @param mass The mass (a.k.a., concentration) parameter of the AIBD.
 #' @param permutation A permutation, i.e., a vector of integers \code{1, 2, ...,
-#'   n} whose length is \code{n} and whose elements are unique.
-#' @param temperature A nonnegative scalar affecting how influential the
-#'   distance matrix is in affecting the partition distribution.
+#'   n} whose length is \code{n} and whose elements are unique.  Using the Indian
+#'   buffet analogy, the permutation represents the order the customers enter the buffet.
+#' @param temperature A nonnegative scalar which determines how influential the
+#'   distance matrix is in the feature allocation distribution.  The AIBD reduces to
+#'   the IBP when the temperature is zero and diverges from the IBP as the temperature increases.
 #' @param distance A distance matrix, i.e., a symmetric matrix whose
-#'   \code{(i,j)} is small if items \code{i} and \code{j} as similar An object
+#'   \code{(i,j)} entry is small if items \code{i} and \code{j} are similar.  An object
 #'   of class \code{"dist"} is also permissible.
 #' @param decayFunction One of the following strings: \code{"exponential"}
 #'   (making \code{similarity = exp(-temperature*distance)}),
