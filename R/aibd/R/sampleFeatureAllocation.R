@@ -1,8 +1,12 @@
 #' Sample from a Feature Allocation Distribution
 #'
+#' This function obtains a sample from a previously defined feature allocation
+#' distribution object using wither the \code{\link{ibp}} or the \code{\link{aibd}}
+#' functions.
+#'
 #' @param nSamples An integer giving the number of samples
-#' @param distribution A feature allocation distribution as defined in the functions
-#' \code{\link{aibd}} or \link{ibp}.
+#' @param distribution A feature allocation distribution object as defined in the functions
+#' \code{\link{aibd}} or \code{\link{ibp}}.
 #' @param implementation The default of "scala" should be used.  The "R" option is not
 #'  a supported implementation.
 #' @param parallel Whether multiple cores should be used to generate the samples.  When \code{parallel}

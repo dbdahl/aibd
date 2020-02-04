@@ -1,9 +1,10 @@
-#' Sample from the Posterior Distribution of the Linear Gaussian Feature
-#' Allocation Model
+#' Sample from the Posterior Distribution of the Linear Gaussian
+#' Feature Allocation Model
 #'
 #' This function samples from the posterior distribution of the linear Gaussian
-#' latent feature model (LGLFM) using an Indian buffet process (IBP) prior on
-#' the feature allocations.
+#' latent feature model (LGLFM) using an Indian buffet process (IBP) or an
+#' Attraction Indian Buffet Distribution (AIBD) prior over possible
+#' feature allocations.
 #'
 #' @param massPriorShape Shape parameter of the gamma prior on the mass
 #'   parameter, where the prior expected value is \code{massPriorShape/massPriorRate}.
@@ -37,7 +38,7 @@
 #'   simulation needs to limit the number of new features that are considered.
 #'   The value of this argument controls when to stop considering additional
 #'   features.  Starting with 0 and 1 new features, the posterior
-#'   probabililities are computed.  Additional new features are considered but
+#'   probabilities are computed.  Additional new features are considered but
 #'   the algorithm stops when the posterior probabilities of the current number
 #'   of new features is less than the maximum posterior probability (among the
 #'   previous number of new features) divided by
@@ -63,19 +64,13 @@
 #' sigx <- 0.1
 #' siga <- 1.0
 #' dimA <- 1
-#' nItems <- 8  # Should be a multiple of 4
+#' nItems <- 8
 #' dist <- ibp(mass, nItems)
 #' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
-#' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
-#' Ztruth <- Z
 #' A <- matrix(rnorm(ncol(Z)*dimA,sd=siga),nrow=ncol(Z),ncol=dimA)
 #' e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
 #' X <- Z %*% A + e
 #' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdA=siga, nSamples=1000, thin=1)
-#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
-#' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdA=siga, nSamples=1000, thin=1)
-#'
-#' Ztruth %*% t(Ztruth)
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)

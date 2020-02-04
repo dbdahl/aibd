@@ -5,7 +5,7 @@
 #'
 #' @param featureAllocation An N-by-K binary feature allocation matrix, or a list of such matrices.
 #' @param distribution A feature allocation distribution as defined in the functions
-#' \code{\link{aibd}} or \link{ibp}.
+#' \code{\link{aibd}} or \code{\link{ibp}}.
 #' @param implementation The default of "scala" should be used.  The "R" option is not
 #'  a supported implementation.
 #'

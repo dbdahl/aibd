@@ -1,5 +1,7 @@
-#' Define an Attraction Indian Buffet Distribution (AIBD) for Feature
-#' Allocations
+#' Define an Attraction Indian Buffet Distribution (AIBD) for Feature Allocations
+#'
+#' This function  defines an Attraction Indian Buffet Distribution (AIBD) object which is a
+#' distribution over feature allocations.
 #'
 #' @param mass The mass (a.k.a., concentration) parameter of the AIBD.
 #' @param permutation A permutation, i.e., a vector of integers \code{1, 2, ...,

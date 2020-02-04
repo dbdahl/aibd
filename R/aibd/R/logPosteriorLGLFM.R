@@ -19,13 +19,9 @@
 #' dimA <- 1
 #' nItems <- 8  # Should be a multiple of 4
 #' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
-#' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
-#' Ztruth <- Z
 #' A <- matrix(rnorm(ncol(Z)*dimA,sd=siga),nrow=ncol(Z),ncol=dimA)
 #' e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
 #' X <- Z %*% A + e
-#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
-#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
 #' logPosteriorLGLFM(Z, ibp(1,nItems), X, sdX=sigx, sdA=siga)
 #'

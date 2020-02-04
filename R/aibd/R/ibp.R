@@ -1,5 +1,8 @@
 #' Define an Indian Buffet Process (IBP) Distribution for Feature Allocations
 #'
+#' This function defines an Indian Buffet Process (IBP) object which is a
+#' distribution over feature allocations.
+#'
 #' @param mass The mass (a.k.a., concentration) parameter.
 #' @param x A character vector giving the labels of the items to place in a feature allocation, or an integer giving the number of items.
 #'

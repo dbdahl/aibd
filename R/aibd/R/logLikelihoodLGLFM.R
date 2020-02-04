@@ -16,7 +16,7 @@
 #'   must be specified if \code{precisionX} is missing.
 #' @param sdA The scalar precision of a latent feature.  This must be specified
 #'   if \code{precisionA} is missing.
-#' @param implementation The default of "scala" should be used.  The "R" option is not
+#' @param implementation The default of \code{"scala"} should be used.  The \code{"R"} option is not
 #'  a supported implementation.
 #'
 #' @seealso This function is an implementation of the log of Equation (26) in "The Indian Buffet Process:
@@ -30,14 +30,12 @@
 #' dimA <- 1
 #' nItems <- 8  # Should be a multiple of 4
 #' Z <- matrix(c(1,0,1,1,0,1,0,0),byrow=TRUE,nrow=nItems,ncol=2)
-#' Z <- Z[order(Z %*% c(2,1)),c(2,1)]
-#' Ztruth <- Z
 #' A <- matrix(rnorm(ncol(Z)*dimA,sd=siga),nrow=ncol(Z),ncol=dimA)
 #' e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
 #' X <- Z %*% A + e
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
-#' X <- matrix(double(),nrow=nrow(Z),ncol=0)
-#' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
+# X <- matrix(double(),nrow=nrow(Z),ncol=0)
+# logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
