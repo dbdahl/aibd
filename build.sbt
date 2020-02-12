@@ -5,7 +5,7 @@ organization := "org.ddahl"
 version := "0.1.1"
 //version := "0.1.1-SNAPSHOT"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.1"
 crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1")
 scalacOptions ++= Seq( "-deprecation", "-unchecked", "-feature" )
 
