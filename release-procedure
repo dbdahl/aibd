@@ -6,7 +6,6 @@ Run 'package -s -f'
 Commit everything to Git, including the package in the deliveries directory.
 Run 'deploy-R-package'
 Test on Linux, Mac OS, and Windows (use https://win-builder.r-project.org/)
-Test depending packages
 Tag in Git the version using "bin/tag" script.
 Submit to CRAN
 Bump (development) version number in build.sbt
