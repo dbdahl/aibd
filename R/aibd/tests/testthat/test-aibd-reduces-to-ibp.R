@@ -1,6 +1,6 @@
 context("aibd-reduces-to-ibp")
 
-# skip("aibd-reduces-to-ibp")
+if ( skipall ) skip("aibd-reduces-to-ibp")
 
 mass <- 1
 nItems <- 4

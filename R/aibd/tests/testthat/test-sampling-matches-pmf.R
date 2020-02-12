@@ -1,6 +1,6 @@
 context("sampling-matches-pmf")
 
-# skip("sampling-matches-pmf")
+if ( skipall ) skip("sampling-matches-pmf")
 
 engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulation=FALSE, nPerShuffle=0, rankOneUpdates=FALSE, distr="IBP") {
   # set.seed(234232)

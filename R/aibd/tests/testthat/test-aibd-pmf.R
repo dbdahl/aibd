@@ -1,6 +1,6 @@
 context("aibd-pmf")
 
-# skip("aibd-pmf")
+if ( skipall ) skip("aibd-pmf")
 
 mass <- 0.7
 data <- USArrests[c("California","Wisconsin","Nebraska","New York"),]

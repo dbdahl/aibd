@@ -1,6 +1,6 @@
 context("test-dist-numFeatures")
 
-# skip("test-dist-numFeatures")
+if ( skipall ) skip("test-dist-numFeatures")
 
 # Distributions that will be used for the tests
 data <- USArrests[c("California","Wisconsin","Nebraska"),]

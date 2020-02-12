@@ -1,6 +1,6 @@
 context("lglfm-posterior")
 
-# skip("lglfm-posterior")
+if ( skipall ) skip("lglfm-posterior")
 
 mass <- 2.0
 sigx <- 0.5

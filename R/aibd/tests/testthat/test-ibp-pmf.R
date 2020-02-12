@@ -1,6 +1,6 @@
 context("ibp-pmf")
 
-# skip("ibp-pmf")
+if ( skipall ) skip("ibp-pmf")
 
 mass <- 0.7
 nItems <- 4

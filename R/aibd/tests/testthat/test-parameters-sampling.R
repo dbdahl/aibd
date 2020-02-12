@@ -1,6 +1,6 @@
 context("parameters-sampling")
 
-# skip("parameters-sampling")
+if ( skipall ) skip("parameters-sampling")
 
 test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence intervals compatible with known value from prior.", {
   requireLevel(3)
