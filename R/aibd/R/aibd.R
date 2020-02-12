@@ -24,10 +24,12 @@
 #' @export
 #'
 #' @examples
+#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' states <- c("California","Wisconsin","Nebraska","New York")
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
-#' d1 <- aibd(1, seq_along(states), 1.0, dist)
+#' aibd(1, seq_along(states), 1.0, dist)
+#' }
 #'
 aibd <- function(mass, permutation, temperature, distance, decayFunction=c("exponential","reciprocal","identity")[1]) {
   if ( missing(mass) || is.null(mass) || any(is.na(mass)) || any(is.nan(mass)) || !is.numeric(mass) || ( length(mass) != 1 ) ) stop("'mass' is misspecified.")

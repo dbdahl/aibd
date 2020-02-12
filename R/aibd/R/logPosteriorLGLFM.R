@@ -14,6 +14,7 @@
 #'   density.
 #' @export
 #' @examples
+#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' sigx <- 0.1
 #' siga <- 1.0
 #' dimA <- 1
@@ -27,6 +28,7 @@
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
+#' }
 #' }
 #'
 logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionA, sdX, sdA, implementation="scala") {

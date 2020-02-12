@@ -25,6 +25,7 @@
 #' @return A numeric vector giving the log of the likelihood.
 #' @export
 #' @examples
+#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' sigx <- 0.1
 #' siga <- 1.0
 #' dimA <- 1
@@ -39,6 +40,7 @@
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
+#' }
 #' }
 #'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionA, sdX, sdA, implementation="scala") {

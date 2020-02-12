@@ -17,6 +17,7 @@
 #' @export
 #'
 #' @examples
+#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' d1 <- ibp(1,4)
 #'
 #' states <- c("California","Wisconsin","Nebraska","New York")
@@ -34,6 +35,7 @@
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
+#' }
 #' }
 #'
 sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=FALSE) {

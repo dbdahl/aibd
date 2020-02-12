@@ -60,6 +60,7 @@
 #' @importFrom stats rbinom
 #' @export
 #' @examples
+#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' mass <- 1
 #' sigx <- 0.1
 #' siga <- 1.0
@@ -74,6 +75,7 @@
 #'
 #' \dontshow{
 #' rscala::scalaDisconnect(aibd:::s)
+#' }
 #' }
 #'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionA, sdX=1/sqrt(precisionX), sdA=1/sqrt(precisionA), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationA=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationA=-1, corProposedSdXSdA=0, newFeaturesTruncationDivisor=1000, nOtherUpdatesPerAllocationUpdate=10L, nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
