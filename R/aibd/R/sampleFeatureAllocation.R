@@ -51,7 +51,8 @@ sampleFeatureAllocation <- function(nSamples, distribution, implementation="scal
   } else if ( implementation == "SCALA" ) {
     dist <- featureAllocationDistributionToReference(distribution)
     samples <- dist$sample(s$rdg(), as.integer(nSamples[1]), ifelse(as.logical(parallel),0L,1L))
-    scalaPull(s(samples) ^ 'samples.map(_.matrix)', "arrayOfMatrices")
+    result <- scalaPull(s(samples) ^ 'samples.map(_.matrix)', "arrayOfMatrices")
+    result[seq_len(nSamples)]
   } else stop("Unsupported 'implementation' argument.")
 }
 

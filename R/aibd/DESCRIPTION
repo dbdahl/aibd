@@ -4,7 +4,6 @@ Title: Attraction Indian Buffet Distribution
 Version: 0.1.1
 Authors@R: c(person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu"),person(given="Richard",family="Warr",role=c("aut"),email="warr@stat.byu.edu"),person(given="Jeremy",family="Meyer",role=c("aut"),email="jeremymeyer23@hotmail.com"))
 Description: An implementation of probability mass function and sampling algorithms for the attraction Indian buffet distribution (AIBD) is provided.
-    Please see the paper (CITATION) for details.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

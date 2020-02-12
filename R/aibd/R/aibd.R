@@ -1,6 +1,6 @@
 #' Define an Attraction Indian Buffet Distribution (AIBD) for Feature Allocations
 #'
-#' This function  defines an Attraction Indian Buffet Distribution (AIBD) object which is a
+#' This function specifies an Attraction Indian Buffet Distribution (AIBD), which is a
 #' distribution over feature allocations.
 #'
 #' @param mass The mass (a.k.a., concentration) parameter of the AIBD.
@@ -17,9 +17,9 @@
 #'   (making \code{similarity = exp(-temperature*distance)}),
 #'   \code{"reciprocal"} (making \code{similarity = 1/distance^temperature}), or
 #'   \code{"identity"} (in which case \code{distance} is interpreted as a
-#'   similarity instead of a distance). )
+#'   similarity instead of a distance).
 #'
-#' @return An object representing an attraction Indian buffet distribution
+#' @return An object representing an Attraction Indian Buffet Distribution
 #'   (AIBD) for feature allocations.
 #' @export
 #'
