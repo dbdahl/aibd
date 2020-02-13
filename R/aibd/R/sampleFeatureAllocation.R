@@ -24,8 +24,8 @@
 #' dist <- dist(scale(data))
 #' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
-#' samples_ibp <- sampleFeatureAllocation(10, d1)
-#' samples_aibd <- sampleFeatureAllocation(15, d2)
+#' samples_ibp <- sampleFeatureAllocation(10, d1, parallel=FALSE)
+#' samples_aibd <- sampleFeatureAllocation(15, d2, parallel=FALSE)
 #'
 # system.time(samples <- sampleFeatureAllocation(1000, d1))
 # system.time(samples <- sampleFeatureAllocation(1000, d1))
