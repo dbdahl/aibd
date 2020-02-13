@@ -9,8 +9,7 @@
 #' \code{\link{aibd}} or \code{\link{ibp}}.
 #' @param implementation The default of "scala" should be used.  The "R" option is not
 #'  a supported implementation.
-#' @param parallel Whether multiple cores should be used to generate the samples.  When \code{parallel}
-#'  is set to TRUE the number of samples returned may be greater than \code{nSamples}.
+#' @param parallel Whether multiple cores should be used to generate the samples.
 #'
 #' @return A list of feature allocation matrices sampled from the supplied distribution.
 #' @importFrom stats rpois
@@ -25,8 +24,8 @@
 #' dist <- dist(scale(data))
 #' d2 <- aibd(1, seq_along(states), 1.0, dist)
 #'
-#' samples_ibp <- sampleFeatureAllocation(10, d1, parallel=FALSE)
-#' samples_aibd <- sampleFeatureAllocation(15, d2, parallel=FALSE)
+#' samples_ibp <- sampleFeatureAllocation(10, d1)
+#' samples_aibd <- sampleFeatureAllocation(15, d2)
 #'
 # system.time(samples <- sampleFeatureAllocation(1000, d1))
 # system.time(samples <- sampleFeatureAllocation(1000, d1))
@@ -38,7 +37,7 @@
 #' }
 #' }
 #'
-sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=FALSE) {
+sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=TRUE) {
   if ( missing(nSamples) || is.null(nSamples) || is.na(nSamples) || is.nan(nSamples) ||
        !is.numeric(nSamples) || ( length(nSamples) != 1 ) ) stop("'nSamples' is misspecified.")
   if ( !any(sapply(c("ibpFADistribution","aibdFADistribution"),function(x) inherits(distribution,x))) ) stop("Unsupported distribution.")
