@@ -61,7 +61,7 @@ engine <- function(implementation="R", constructiveMethod=TRUE, posteriorSimulat
   coverage
   z <- ( coverage - confidenceLevel ) / sqrt( confidenceLevel * (1-confidenceLevel) / nrow(both) )
   z
-  expect_gt( z, qnorm(0.001) )
+  expect_gt( z, qnorm(0.0001) )
 }
 
 # The tests below sample from the IBP and computes the relative frequency of
