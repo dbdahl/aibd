@@ -13,7 +13,7 @@ dist <- aibd(mass, 1:nItems, 1.0, distance)
 logProbsFromScala <- logProbabilityFeatureAllocation(samples, dist, implementation="scala")
 
 test_that("R and Scala give the same values for AIBD PMF", {
-  requireLevel(1)
+  requireLevel(2)
   logProbsFromR <- logProbabilityFeatureAllocation(samples, dist, implementation="R")
   expect_equal(logProbsFromR, logProbsFromScala)
 })
@@ -24,7 +24,7 @@ test_that("AIBD PMF (almost) sums to one.", {
 })
 
 test_that("MAIBD PMF (almost) sums to one.", {
-  requireLevel(1)
+  requireLevel(2)
   dist2 <- aibd(mass, NULL, 1.0, distance)
   probs <- exp(logProbabilityFeatureAllocation(samples, dist2))
   expect_gte(sum(probs), 0.983)

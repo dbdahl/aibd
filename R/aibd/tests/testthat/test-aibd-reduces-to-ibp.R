@@ -19,7 +19,7 @@ test_that("IBP and AIBD are the same when the distances are equal (using Scala).
 
 test_that("IBP and AIBD are the same when the distances are equal (using R).", {
   # Only the natural permutation is supported by the R implementation.
-  requireLevel(1)
+  requireLevel(2)
   d2 <- aibd(mass, 1:nItems, 0.0, matrix(1,nrow=nItems,ncol=nItems), "identity")
   expect_equal(
     logProbabilityFeatureAllocation(samples,d1,implementation="R"),
