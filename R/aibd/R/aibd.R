@@ -29,6 +29,10 @@
 #' data <- USArrests[states,]
 #' dist <- dist(scale(data))
 #' aibd(1, seq_along(states), 1.0, dist)
+#'
+#' \dontshow{
+#' rscala::scalaDisconnect(aibd:::s)
+#' }
 #' }
 #'
 aibd <- function(mass, permutation, temperature, distance, decayFunction=c("exponential","reciprocal","identity")[1]) {
