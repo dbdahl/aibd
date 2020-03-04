@@ -1,7 +1,12 @@
 #' @import rscala
 #'
 .onLoad <- function(libname, pkgname) {
+  pkgEnv <- parent.env(environment())
+  flagEnv <- new.env(parent=pkgEnv)
+  assign("flagEnv",flagEnv,envir=pkgEnv)
+  assign("isLoaded",FALSE,envir=flagEnv)
   delayedAssign("s",{
+    assign("isLoaded",TRUE,envir=flagEnv)
     s <- scala("commonsMath")
     s + '
       import org.apache.commons.math3.random.{ RandomDataGenerator => RDG }
@@ -19,10 +24,10 @@
       }
     '
     s
-  },assign.env=parent.env(environment()))
+  },assign.env=pkgEnv)
 }
 
 .onUnload <- function(libpath) {
-  close(s)
+  if ( get("isLoaded",envir=flagEnv) ) close(s)
 }
 
