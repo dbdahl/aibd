@@ -72,10 +72,6 @@
 #' e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
 #' X <- Z %*% A + e
 #' samples <- samplePosteriorLGLFM(Z, dist, X, sdX=sigx, sdA=siga, nSamples=1000, thin=1)
-#'
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
 #' }
 #'
 samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionA, sdX=1/sqrt(precisionX), sdA=1/sqrt(precisionA), massPriorShape=-1, massPriorRate=-1, nPerShuffle=0L, temperaturePriorShape=-1, temperaturePriorRate=-1, maxStandardDeviationX=sd(X), maxStandardDeviationA=maxStandardDeviationX, sdProposedTemperature=-1, sdProposedStandardDeviationX=-1, sdProposedStandardDeviationA=-1, corProposedSdXSdA=0, newFeaturesTruncationDivisor=1000, nOtherUpdatesPerAllocationUpdate=10L, nSamples=1L, thin=1L, rankOneUpdates=FALSE, verbose=TRUE) {
@@ -95,6 +91,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   nOtherUpdatesPerAllocationUpdate <- as.integer(nOtherUpdatesPerAllocationUpdate[1])
   thin <- as.integer(thin[1])
   newFeaturesTruncationDivisor <- as.double(newFeaturesTruncationDivisor[1])
+  scalaEnsure()
   dist <- featureAllocationDistributionToReference(distribution)
   storage.mode(featureAllocation) <- "double"
   width <- as.integer( if ( verbose ) options()$width-2L else 0L )
@@ -116,6 +113,7 @@ samplePosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX,
   Zs <- Zs[seq_len(nSamples)]
   permutations <- as.data.frame(ref$"_2"())
   parameters <- as.data.frame(ref$"_3"())
+  scalaDisconnect(s)
   names(parameters) <- c("mass","temperature","standardDeviationX","standardDeviationA")
   list(featureAllocation=Zs, permutations=permutations, parameters=parameters)
 }

@@ -10,14 +10,8 @@
 #' @export
 #'
 #' @examples
-#' \donttest{ # Regardless of size, the initial warmup can exceed CRAN's 5 seconds threshold
 #' ibp(1,5)
 #' ibp(1,c("CA","WI","NE","NY","UT"))
-#'
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
-#' }
 #'
 ibp <- function(mass, x) {
   if ( missing(mass) || is.null(mass) || any(is.na(mass)) || any(is.nan(mass)) || !is.numeric(mass) || ( length(mass) != 1 ) ) stop("'mass' is misspecified.")

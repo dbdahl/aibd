@@ -20,10 +20,10 @@
 # d2 <- aibd(1, NULL, 1.0, dist)
 # epam2 <- expectedPairwiseAllocationMatrix(d2,3)
 #
-# \dontshow{
-# rscala::scalaDisconnect(aibd:::s)
-# }
 expectedPairwiseAllocationMatrix <- function(x, maxNFeatures, ...) {
+  scalaEnsure()
   dist <- featureAllocationDistributionToReference(x)
-  dist$expectedPairwiseAllocationMatrix(as.integer(maxNFeatures[1]))
+  result <- dist$expectedPairwiseAllocationMatrix(as.integer(maxNFeatures[1]))
+  scalaDisconnect(s)
+  result
 }

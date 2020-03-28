@@ -25,10 +25,6 @@
 #' X <- Z %*% A + e
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
 #' logPosteriorLGLFM(Z, ibp(1,nItems), X, sdX=sigx, sdA=siga)
-#'
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
 #' }
 #'
 logPosteriorLGLFM <- function(featureAllocation, distribution, X, precisionX, precisionA, sdX, sdA, implementation="scala") {

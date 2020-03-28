@@ -26,15 +26,6 @@
 #'
 #' samples_ibp <- sampleFeatureAllocation(10, d1, parallel=FALSE)
 #' samples_aibd <- sampleFeatureAllocation(15, d2, parallel=FALSE)
-#'
-# system.time(samples <- sampleFeatureAllocation(1000, d1))
-# system.time(samples <- sampleFeatureAllocation(1000, d1))
-# system.time(samples <- sampleFeatureAllocation(1000, d2))
-# system.time(samples <- sampleFeatureAllocation(1000, d2))
-#'
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
 #' }
 #'
 sampleFeatureAllocation <- function(nSamples, distribution, implementation="scala", parallel=TRUE) {
@@ -50,9 +41,11 @@ sampleFeatureAllocation <- function(nSamples, distribution, implementation="scal
     }
     listOfZ
   } else if ( implementation == "SCALA" ) {
+    scalaEnsure()
     dist <- featureAllocationDistributionToReference(distribution)
     samples <- dist$sample(s$rdg(), as.integer(nSamples[1]), ifelse(as.logical(parallel),0L,1L))
     result <- scalaPull(s(samples) ^ 'samples.map(_.matrix)', "arrayOfMatrices")
+    scalaDisconnect(s)
     result[seq_len(nSamples)]
   } else stop("Unsupported 'implementation' argument.")
 }

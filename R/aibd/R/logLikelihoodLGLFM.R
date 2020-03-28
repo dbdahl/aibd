@@ -35,12 +35,6 @@
 #' e <- rnorm(nrow(Z)*ncol(A),0,sd=sigx)
 #' X <- Z %*% A + e
 #' logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
-# X <- matrix(double(),nrow=nrow(Z),ncol=0)
-# logLikelihoodLGLFM(Z, X, sdX=sigx, sdA=siga)
-#'
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
 #' }
 #'
 logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionA, sdX, sdA, implementation="scala") {
@@ -73,8 +67,11 @@ logLikelihoodLGLFM <- function(featureAllocation, X, precisionX, precisionA, sdX
     part3 <- -1/(2*sdX^2)*sum(diag(t(X)%*%(diag(N)-Z%*%M%*%t(Z))%*%X))
     part1 + part2 + part3
   } else if ( implementation == "SCALA" ) {
+    scalaEnsure()
     m <- s$LGLFM.usingPrecisions(s$wrap(X),precisionX,precisionA)
     featureAllocation <- if ( ! is.list(featureAllocation) ) list(featureAllocation) else featureAllocation
-    m$logLikelihood(s(arr=scalaPush(featureAllocation,"arrayOfMatrices",s)) ^ 'arr.map(wrap)')
+    result <- m$logLikelihood(s(arr=scalaPush(featureAllocation,"arrayOfMatrices",s)) ^ 'arr.map(wrap)')
+    scalaDisconnect(s)
+    result
   } else stop("Unsupported 'implementation' argument.")
 }

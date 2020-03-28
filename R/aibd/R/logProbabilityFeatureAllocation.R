@@ -25,27 +25,6 @@
 #'
 #' logProbabilityFeatureAllocation(Z1, d1)
 #' logProbabilityFeatureAllocation(Z1, d2)
-#'
-# Z0 <- matrix(0, ncol=0, nrow=4)
-# Z00 <- matrix(c(0,0,0,0), nrow=4)
-#
-# Z2 <- cbind(Z1,Z1)
-# Z3 <- Z2
-# Z3[3,2] <- 0
-#
-# all.equal(logProbabilityFeatureAllocation(Z0, d1), logProbabilityFeatureAllocation(Z0, d1,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z1, d1), logProbabilityFeatureAllocation(Z1, d1,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z2, d1), logProbabilityFeatureAllocation(Z2, d1,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z3, d1), logProbabilityFeatureAllocation(Z3, d1,"R"))
-#
-# all.equal(logProbabilityFeatureAllocation(Z0, d2), logProbabilityFeatureAllocation(Z0, d2,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z1, d2), logProbabilityFeatureAllocation(Z1, d2,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z2, d2), logProbabilityFeatureAllocation(Z2, d2,"R"))
-# all.equal(logProbabilityFeatureAllocation(Z3, d2), logProbabilityFeatureAllocation(Z3, d2,"R"))
-#
-#' \dontshow{
-#' rscala::scalaDisconnect(aibd:::s)
-#' }
 #' }
 #'
 logProbabilityFeatureAllocation <- function(featureAllocation, distribution, implementation="scala") {
@@ -104,8 +83,11 @@ logProbabilityFeatureAllocation <- function(featureAllocation, distribution, imp
       K*log(alpha) - alpha * HN - sum(xi*log(1:N)+lfactorial(xi)) + tot.prod
     }
   } else if ( implementation == "SCALA" ) {
+    scalaEnsure()
     featureAllocation <- if ( ! is.list(featureAllocation) ) list(featureAllocation) else featureAllocation
     dist <- featureAllocationDistributionToReference(distribution)
-    dist$logProbability(scalaPush(featureAllocation, "arrayOfMatrices", s))
+    result <- dist$logProbability(scalaPush(featureAllocation, "arrayOfMatrices", s))
+    scalaDisconnect(s)
+    result
   }
 }

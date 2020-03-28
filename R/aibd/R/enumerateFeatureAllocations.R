@@ -32,11 +32,10 @@
 #
 # all.equal(probs1,probs1r)
 #
-# \dontshow{
-# rscala::scalaDisconnect(aibd:::s)
-# }
-#
 enumerateFeatureAllocations <- function(nItems, maxNFeatures) {
+  scalaEnsure()
   ref <- s$FA.enumerate(as.integer(nItems[1]), as.integer(maxNFeatures[1]))
-  scalaPull(s(ref) ^ 'ref.map(_.matrix).toArray', "arrayOfMatrices")
+  result <- scalaPull(s(ref) ^ 'ref.map(_.matrix).toArray', "arrayOfMatrices")
+  scalaDisconnect(s)
+  result
 }
