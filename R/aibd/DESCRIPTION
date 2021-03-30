@@ -6,7 +6,6 @@ Authors@R: c(person(given="David B.",family="Dahl",role=c("aut","cre"),email="da
 Description: An implementation of probability mass function and sampling algorithms is provided for the attraction Indian buffet distribution (AIBD), originally from Dahl (2016) <https://ww2.amstat.org/meetings/jsm/2016/onlineprogram/ActivityDetails.cfm?SessionID=213038>.
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 Imports: utils, rscala (>= 3.2.18), commonsMath (>= 1.2.5)
 RoxygenNote: 7.1.0
 Suggests: testthat
