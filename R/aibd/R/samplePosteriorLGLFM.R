@@ -1,32 +1,44 @@
-#' Sample from the Posterior Distribution of the Linear Gaussian
-#' Feature Allocation Model
+#' Sample from the Posterior Distribution of the Linear Gaussian Feature
+#' Allocation Model
 #'
 #' This function samples from the posterior distribution of the linear Gaussian
 #' latent feature model (LGLFM) using an Indian buffet process (IBP) or an
-#' Attraction Indian Buffet Distribution (AIBD) prior over possible
-#' feature allocations.
+#' Attraction Indian Buffet Distribution (AIBD) prior over possible feature
+#' allocations.
+#'
+#' The default values for some of the tuning parameters governing the MCMC
+#' updates of the various parameters are \code{-1}, which effectively leaves
+#' those parameters fixed.  These default values for the tuning parameters can
+#' be changed to treat the associated parameters as random.  Likewise,
+#' \code{nPerShuffle=0} implies a fixed permutation.
 #'
 #' @param massPriorShape Shape parameter of the gamma prior on the mass
-#'   parameter, where the prior expected value is \code{massPriorShape/massPriorRate}.
-#'   If either \code{massPriorShape} or \code{massPriorRate} is set to \code{-1}, then the
-#'   mass parameter is assumed to be fixed (as defined in the \code{\link{aibd}} object).
+#'   parameter, where the prior expected value is
+#'   \code{massPriorShape/massPriorRate}. If either \code{massPriorShape} or
+#'   \code{massPriorRate} is set to \code{-1}, then the mass parameter is
+#'   assumed to be fixed (as defined in the \code{\link{aibd}} object).
 #' @param massPriorRate Rate parameter of the gamma prior on the mass parameter,
 #'   where the expected value if \code{massPriorShape/massPriorRate}.
 #' @param nPerShuffle Number of items to randomly select and permute when
 #'   proposing an update to the permutation associated with the attraction
-#'   Indian buffet distribution (AIBD).
-#' @param temperaturePriorShape Shape parameter of the gamma prior on the temperature
-#'   parameter, where the prior expected value is \code{temperaturePriorShape/temperaturePriorRate}.
-#'   If either \code{temperaturePriorShape} or \code{temperaturePriorRate} is set to \code{-1}, then the
-#'   temperature parameter is assumed to be fixed (as defined in the \code{\link{aibd}} object).
-#' @param temperaturePriorRate Rate parameter of the gamma prior on the temperature
-#'   parameter, where the prior expected value is \code{temperaturePriorShape/temperaturePriorRate}.
+#'   Indian buffet distribution (AIBD). The prior on the permutation is the
+#'   discrete uniform, but one can set \code{nPerShuffle} to an integer less
+#'   than 2 to effectively fix the permutation.
+#' @param temperaturePriorShape Shape parameter of the gamma prior on the
+#'   temperature parameter, where the prior expected value is
+#'   \code{temperaturePriorShape/temperaturePriorRate}. If either
+#'   \code{temperaturePriorShape} or \code{temperaturePriorRate} is set to
+#'   \code{-1}, then the temperature parameter is assumed to be fixed (as
+#'   defined in the \code{\link{aibd}} object).
+#' @param temperaturePriorRate Rate parameter of the gamma prior on the
+#'   temperature parameter, where the prior expected value is
+#'   \code{temperaturePriorShape/temperaturePriorRate}.
 #' @param maxStandardDeviationX Maximum value parameter of the uniform prior
 #'   distribution on the standard deviation of \code{X}.
 #' @param maxStandardDeviationA Maximum value parameter of the uniform prior
 #'   distribution on the standard deviation of \code{A}.
-#' @param sdProposedTemperature Standard deviation of the Gaussian random
-#'   walk update for the standard deviation of the temperature.
+#' @param sdProposedTemperature Standard deviation of the Gaussian random walk
+#'   update for the standard deviation of the temperature.
 #' @param sdProposedStandardDeviationX Standard deviation of the Gaussian random
 #'   walk update for the standard deviation of \code{X}.
 #' @param sdProposedStandardDeviationA Standard deviation of the Gaussian random
@@ -37,16 +49,16 @@
 #'   number of new features may be allocated to an item, the posterior
 #'   simulation needs to limit the number of new features that are considered.
 #'   The value of this argument controls when to stop considering additional
-#'   features.  Starting with 0 and 1 new features, the posterior
-#'   probabilities are computed.  Additional new features are considered but
-#'   the algorithm stops when the posterior probabilities of the current number
-#'   of new features is less than the maximum posterior probability (among the
-#'   previous number of new features) divided by
-#'   \code{newFeaturesTruncationDivisior}.
-#' @param nOtherUpdatesPerAllocationUpdate This parameter controls how many additional
-#'   MCMC updates occur for all other random model parameters for one update of the
-#'   \code{featureAllocation} matrix.  Using values of \code{nOtherUpdatesPerAllocationUpdate > 1}
-#'   will presumably improving the mixing of the MCMC with relatively minimal computational cost.
+#'   features.  Starting with 0 and 1 new features, the posterior probabilities
+#'   are computed.  Additional new features are considered but the algorithm
+#'   stops when the posterior probabilities of the current number of new
+#'   features is less than the maximum posterior probability (among the previous
+#'   number of new features) divided by \code{newFeaturesTruncationDivisior}.
+#' @param nOtherUpdatesPerAllocationUpdate This parameter controls how many
+#'   additional MCMC updates occur for all other random model parameters for one
+#'   update of the \code{featureAllocation} matrix.  Using values of
+#'   \code{nOtherUpdatesPerAllocationUpdate > 1} will presumably improving the
+#'   mixing of the MCMC with relatively minimal computational cost.
 #' @param nSamples Number of feature allocations to return.  The actual number
 #'   of iterations of the algorithm is \code{thin*nSamples}.
 #' @param thin Only save 1 in \code{thin} feature allocations.

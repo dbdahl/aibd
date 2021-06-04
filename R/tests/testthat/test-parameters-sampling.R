@@ -33,7 +33,7 @@ test_that("Posterior simulation for sigmaX, sigmaW, and mass yields confidence i
     W <- matrix(rnorm(ncol(Z)*dimW,sd=sigw),nrow=ncol(Z),ncol=dimW)
     e <- rnorm(nrow(Z)*ncol(W),0,sd=sigx)
     X <- Z %*% W + e
-    samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdW=sigw, massPriorShape=massShape, massPriorRate=massRate, nPerShuffle=nItems, temperaturePriorShape=temperatureShape, temperaturePriorRate=temperatureRate, maxStandardDeviationX=maxStandardDeviationX, maxStandardDeviationW=maxStandardDeviationW, sdProposedTemperature=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationW=0.2, corProposedSdXSdW=-0.3, implementation="scala", nSamples=nSamples, rankOneUpdates=FALSE, verbose=FALSE)
+    samplesAIBD <- samplePosteriorLGLFM(Z, distAIBD, X, sdX=sigx, sdA=sigw, massPriorShape=massShape, massPriorRate=massRate, nPerShuffle=nItems, temperaturePriorShape=temperatureShape, temperaturePriorRate=temperatureRate, maxStandardDeviationX=maxStandardDeviationX, maxStandardDeviationA=maxStandardDeviationW, sdProposedTemperature=1, sdProposedStandardDeviationX=0.2, sdProposedStandardDeviationA=0.2, corProposedSdXSdA=-0.3, nSamples=nSamples, rankOneUpdates=FALSE, verbose=FALSE)
     containsMass[b] <- prod(quantile(samplesAIBD$parameters$mass,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - mass) < 0
     containsTemperature[b] <- prod(quantile(samplesAIBD$parameters$temperature,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - temperature) < 0
     containsX[b] <- prod(quantile(samplesAIBD$parameters$standardDeviationX,c((1-nominalCoverage)/2,1-(1-nominalCoverage)/2)) - sigx) < 0

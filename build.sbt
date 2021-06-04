@@ -2,24 +2,24 @@ name := "aibd"
 
 organization := "org.ddahl"
 
-//version := "0.1.9"
-version := "0.1.8-SNAPSHOT"
+version := "0.1.9"
+//version := "0.1.9-SNAPSHOT"
 
-scalaVersion := "2.13.1"
-crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1")
+scalaVersion := "2.13.6"
+crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.6")
 scalacOptions ++= Seq( "-deprecation", "-unchecked", "-feature" )
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1" withSources(),
-  "org.scalactic" %% "scalactic" % "3.0.8",
-  "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+  "org.scalactic" %% "scalactic" % "3.2.9",
+  "org.scalatest" %% "scalatest" % "3.2.9" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
 )
 
 libraryDependencies ++= {
   CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, major)) if major >= 13 =>
-      Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0")
+      Seq("org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.3")
     case _ =>
       Seq()
   }

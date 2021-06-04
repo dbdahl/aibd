@@ -1,4 +1,4 @@
-TEST_LEVEL <- 1            # 0, 1, 2, 3, 4, 5
+TEST_LEVEL <- 5            # 0, 1, 2, 3, 4, 5
 TEST_EXTENSIVE <- FALSE    # FALSE or TRUE
 
 requireLevel <- function(requiredLevel) {

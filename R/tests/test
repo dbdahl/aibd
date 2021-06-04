@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cd $(dirname $(readlink -f "$0"))
+
+R -s -e 'testthat::test_dir("testthat")'
+#R -s -e 'testthat::test_file("testthat/test-parameters-sampling.R")'; echo ------
+#R -s -e 'testthat::test_file("testthat/test-sampling-matches-pmf.R")'; echo ------
+

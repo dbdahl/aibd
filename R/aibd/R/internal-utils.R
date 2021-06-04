@@ -1,3 +1,9 @@
+featureAllocation2Id <- function(Z) {
+  if ( ! is.list(Z) ) Z <- list(Z)
+  ref <- scalaPush(Z, "arrayOfMatrices", s)
+  s(ref) * 'ref.map { m => FA.fromMatrix(m).id }'
+}
+
 id2FeatureAllocation <- function(id, nItems) {
   cells <- as.numeric(strsplit(id,",")[[1]])
   sapply(cells,function(cell) as.integer(intToBits(cell)))[1:nItems,]
