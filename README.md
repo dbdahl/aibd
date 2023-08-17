@@ -14,7 +14,7 @@ remotes::install_github("dbdahl/aibd/R/aibd")
 
 ## Resources
 
-* [Paper](https://doi.org/10.1214/21-BA1279) describing the methods implemented in this package.
+* [Paper](https://doi.org/10.1214/21-BA1279) describes the methods implemented in this package.
 
 ```R
 library(aibd)
