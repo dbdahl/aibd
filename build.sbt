@@ -2,8 +2,8 @@ name := "aibd"
 
 organization := "org.ddahl"
 
-//version := "0.1.10"
-version := "0.1.9-SNAPSHOT"
+version := "0.1.10"
+//version := "0.1.10-SNAPSHOT"
 
 scalaVersion := "2.13.6"
 crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.6")
