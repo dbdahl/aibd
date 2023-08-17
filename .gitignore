@@ -5,8 +5,6 @@
 /R/aibd/inst/java/scala-*/*.jar
 /R/aibd/java/*.jar
 /R/aibd.Rcheck
-/R/aibd/man
-/R/aibd/NAMESPACE
 /R/deliveries
 /deliveries/aibd_*.tar.gz
 /deliveries/aibd.Rcheck

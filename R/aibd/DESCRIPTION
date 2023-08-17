@@ -7,4 +7,4 @@ Description: An implementation of probability mass function and sampling algorit
 License: GPL-3
 Encoding: UTF-8
 Imports: utils, rscala (>= 3.2.19), commonsMath (>= 1.2.5)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
