@@ -2,8 +2,6 @@
 /.metals
 /R/aibd/.Rproj.user
 /R/aibd_*.tar.gz
-/R/aibd/inst/java/scala-*/*.jar
-/R/aibd/java/*.jar
 /R/aibd.Rcheck
 /R/deliveries
 /deliveries/aibd_*.tar.gz
