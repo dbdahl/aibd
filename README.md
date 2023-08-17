@@ -8,7 +8,6 @@ In R, install the package by executing:
 
 ```R
 install.packages("remotes")
-library("remotes")
 remotes::install_github("dbdahl/rscala/R/rscala")
 remotes::install_github("dbdahl/aibd/R/aibd")
 ```
@@ -16,4 +15,11 @@ remotes::install_github("dbdahl/aibd/R/aibd")
 ## Resources
 
 * [Paper](https://doi.org/10.1214/21-BA1279) describing the methods implemented in this package.
+
+```R
+library(aibd)
+example(aibd)
+help(aibd)
+```
+
 
